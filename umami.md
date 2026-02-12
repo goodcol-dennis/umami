@@ -413,7 +413,45 @@ Maintain a memory file that carries learnings between conversations:
 - **Architecture patterns** — e.g., "adding a new component type requires updates in these 6 files." Prevents a codebase search every time.
 - **Pre-existing failures** — known test failures that aren't your bugs. Prevents the AI from spending tokens diagnosing out-of-scope issues.
 
-### 9.3 Documentation That Replaces Exploration
+### 9.3 Pre-Derived Codebase Understanding
+
+The most expensive repeated cost is not file reads — it's the agent re-deriving the same conclusions about your codebase every session. "This is an Express app, routes go here, services call the db layer, config lives in env vars" — that understanding gets rebuilt from scratch each time unless you write it down as statements of fact.
+
+Maintain a **codebase understanding document** (e.g., `CODEBASE.md` at the repo root). This is not architecture docs, not a directory map — it's the conclusions the agent would reach after exploring, written in advance so it never has to.
+
+**What to capture:**
+
+| Category | Example |
+|----------|---------|
+| **How to do common tasks** | "To add a new API endpoint: create a route file in `src/api/`, a service in `src/services/`, and a migration in `db/migrations/`. Register the route in `src/api/index.ts`." |
+| **Where things live and why** | "All database queries go through `src/db/` — never call the DB directly from a route handler. This is enforced by convention, not tooling." |
+| **How components connect** | "Routes call services. Services call db. Services never import from routes. DB functions return plain objects, not ORM models." |
+| **Runtime behavior** | "The app reads config from environment variables at startup. No hot-reload for config — restart required." |
+| **Non-obvious constraints** | "The `users` table has a unique constraint on email, but the app validates uniqueness in the service layer before hitting the DB to return a friendlier error." |
+| **Testing patterns** | "Integration tests use a separate test database, created fresh per suite via `scripts/reset-test-db.sh`. Unit tests mock the db layer." |
+
+**What NOT to capture:**
+
+- Things that change every sprint (use Active Change blocks for that)
+- Opinions or aspirations ("we should refactor X") — only capture what IS, not what should be
+- Anything already in MEMORY.md — no duplication
+
+**When to update it:**
+
+- After completing a feature that changes how the codebase works (new layer, new pattern, new convention)
+- After an agent session where the agent had to re-derive something that should have been pre-written
+- As part of the "Before Every PR/Merge" checklist
+
+**The key instruction in CLAUDE.md:**
+
+```
+Read CODEBASE.md before starting any task. Treat it as ground truth for how this project works.
+Do not re-derive what is already stated there. Only explore files you plan to modify.
+```
+
+The goal is zero "let me understand the codebase" processing. The agent reads the document and already understands. When the codebase evolves, the document evolves with it.
+
+### 9.4 Documentation That Replaces Exploration
 
 Every doc the AI doesn't have to search for is tokens saved:
 
@@ -421,14 +459,14 @@ Every doc the AI doesn't have to search for is tokens saved:
 - **Convention docs** — the AI follows a documented pattern instead of inferring one from scattered examples.
 - **Decision records** — "we chose X over Y because Z." Prevents re-evaluation of settled decisions.
 
-### 9.4 Structural Habits
+### 9.5 Structural Habits
 
 - **Link docs to specific file paths** — `see [tools/definitions.ts](src/tools/definitions.ts)` not "see the definitions file." Eliminates glob/grep round-trips.
 - **Pin environment details** — fixed ports, fixed paths, fixed versions. Each ambiguity resolved costs a tool call.
 - **Delegate broad searches to subagents** — use cheaper/smaller models for exploration; keep the primary context focused on implementation.
 - **Keep instruction files concise** — a 200-line memory file costs less per session than a 2000-line one. Link to detail files rather than inlining everything.
 
-### 9.5 The Math
+### 9.6 The Math
 
 A typical "let me find that file" cycle costs ~2,000–5,000 tokens (glob, read results, maybe grep, read file). A single line in a project instruction file pointing to the exact path costs ~20 tokens. Over a session with dozens of file lookups, front-loaded context can reduce token consumption by 30–50%.
 
@@ -581,6 +619,7 @@ Unused code is invisible debt that compounds. It inflates files (increasing toke
 - [ ] No type errors (strict mode).
 - [ ] Active Change acceptance criteria all checked.
 - [ ] Documentation updated if architecture changed.
+- [ ] CODEBASE.md updated if codebase patterns, conventions, or structure changed.
 - [ ] UX/style audit consulted for UI changes.
 - [ ] Acknowledged gaps updated if new debt introduced.
 - [ ] Decision record written in decisions log.

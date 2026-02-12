@@ -1,0 +1,608 @@
+# Rapid Development Guardrails — Project Template
+
+This document is a template for establishing processes, testing strategies, and AI token efficiency practices that enable fast, reliable software development. It is intended to be adapted per-project and consumed by both humans and LLMs.
+
+**This is a general-purpose template.** It must not contain references to any specific project, codebase, brand, or product. All examples should use generic descriptions. If you adapt this template for a specific project, do so in that project's own docs — not here.
+
+**This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Clone it alongside your project directories and reference it via relative path. Do NOT copy it into a project's `docs/` folder.
+
+**Recommended layout:**
+
+```
+~/projects/
+├── umami/                ← this repo (git@github.com:goodcol-dennis/umami.git)
+│   └── umami.md
+├── project-a/
+│   └── CLAUDE.md         ← references ../umami/umami.md
+├── project-b/
+│   └── CLAUDE.md         ← references ../umami/umami.md
+└── ...
+```
+
+**Add a reference in each project's `CLAUDE.md`:**
+
+```markdown
+## Shared Templates
+- Development guardrails: `../umami/umami.md` (shared across projects — do not copy or modify from within consuming projects)
+```
+
+---
+
+## 0. Project Discovery — Onboarding Questionnaire
+
+Before applying any guardrails, establish what the project actually is. This template was originally written for web applications, but many projects are multi-layer systems where the web UI is just one surface. Applying web-centric guardrails to a data pipeline project (or vice versa) wastes effort and creates structural misfits.
+
+**Run this questionnaire at the start of every new project.** The answers determine which sections of this template apply, which need adaptation, and which are irrelevant.
+
+### How to Run This (for AI assistants)
+
+Do NOT present these as blank questions and wait for answers. That wastes the user's time and your tokens. Instead:
+
+1. **Explore first.** Read the project's CLAUDE.md, README, directory structure, existing docs, package files, and a sample of the source code. Most answers are discoverable from the codebase.
+2. **Propose answers.** Fill in the questionnaire with your best understanding based on what you found. Be specific — cite file paths, quote config values, reference existing docs.
+3. **Present for confirmation.** Show the user your proposed answers and ask them to correct anything wrong. Frame it as: "Here's what I understand about the project — what did I get wrong?"
+4. **Capture corrections.** Any corrections from the user are high-value context. Write them into MEMORY.md or the project instruction file immediately.
+
+This "propose-then-confirm" pattern typically costs 2,000-5,000 tokens for the exploration + one round of user confirmation. Asking blank questions and waiting costs the same in tokens but takes 4-6 rounds of back-and-forth and risks the user providing incomplete answers because they don't know what level of detail you need.
+
+### 0.1 Project Identity
+
+| Question | Why It Matters |
+|----------|---------------|
+| What is the project's name and one-line purpose? | Anchors every decision. A name that says "analysis" implies different guardrails than one that says "platform." |
+| Who is the author / owner? | Establishes who makes final calls on architecture and scope. |
+| What is the expected lifespan? (prototype / 1-2 years / 3-7 years / indefinite) | A 6-month prototype doesn't need ADRs. A 5-year platform does. |
+| Who will maintain this after the initial build? (same team / handoff / unknown) | If handoff is expected, documentation and convention discipline must be higher. |
+
+### 0.2 System Shape — "What Kind of Thing Is This?"
+
+Most projects are not single-layer. Identify all layers that apply:
+
+| Layer | Present? | Description if yes |
+|-------|----------|-------------------|
+| **Data ingestion** | yes / no | Where does data come from? (APIs, files, databases, email, manual entry) |
+| **Data warehouse / storage** | yes / no | What stores the data? (PostgreSQL, SQLite, S3, data lake) |
+| **Data pipeline / transforms** | yes / no | Is there calculation or transformation logic between ingestion and consumption? |
+| **API / service layer** | yes / no | Does a backend serve data to consumers? (REST, GraphQL, gRPC) |
+| **Web frontend** | yes / no | Is there a browser-based UI? |
+| **CLI / scripts** | yes / no | Are there operational scripts or CLI tools? |
+| **Background jobs / scheduling** | yes / no | Are there scheduled or event-triggered processes? |
+| **External integrations** | yes / no | Does the system talk to third-party services? (SharePoint, Slack, ERP, EDI) |
+
+**Why this matters:** A project with 4 layers needs a change propagation map organized per-layer, test strategies per-layer, and potentially different languages per-layer. A single-layer web app needs none of that.
+
+### 0.3 Current State — "Where Are We?"
+
+| Question | Why It Matters |
+|----------|---------------|
+| Which layers exist today vs. are planned? | Don't build guardrails for layers that don't exist yet. Add them when the layer starts. |
+| Is there existing code, data, or documentation? | Adapting guardrails to existing work is different from greenfield. Don't restructure a working codebase just to match a template. |
+| What has already been decided? (tech stack, hosting, patterns) | Settled decisions should be captured in ADRs immediately — not re-evaluated during onboarding. |
+| What is explicitly out of scope? | Prevents scope creep. If the project won't have a mobile app, say so. |
+
+### 0.4 Evolution Plan — "Where Is This Going?"
+
+| Question | Why It Matters |
+|----------|---------------|
+| What is the MVP? Which layers are in the first deliverable? | Determines which guardrails to set up now vs. defer. |
+| What's the expected build order? (e.g., data layer first → API → UI) | The change propagation map and test infrastructure should follow the build order, not be set up all at once. |
+| Are there hard dependencies between layers? (e.g., "UI can't start until API exists") | Identifies the critical path and where to invest guardrail effort first. |
+| What are the known risks or open questions? | Capture these in the technical debt audit immediately. Known unknowns are better than unknown unknowns. |
+
+### 0.5 Applying the Template
+
+Once the questionnaire is complete, use this mapping:
+
+| If the project has... | Apply these sections | Skip or defer |
+|-----------------------|---------------------|---------------|
+| Data ingestion / pipelines | §3 (testing — data quality layer), §3b (TDD + debugging), §4 (validation), §5 (state tracking), §10 (change map per-layer) | §3 visual regression (no UI yet) |
+| Database / warehouse | §2 (specs — schema contracts), §3 (test doubles for DB), §6 (strict types), §7 (data dictionary as living doc) | §7 UX audit (no UI) |
+| API / backend | §2 (specs — API contracts), §3 (API/service tests + test doubles), §3b (TDD), §4 (validation), §6 (type checking) | §3 visual regression |
+| Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | — (full template applies) |
+| CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
+| Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | — |
+
+### 0.6 Example: Onboarding a Multi-Layer System
+
+Consider a project that has a web dashboard, but the dashboard sits on top of a data ingestion layer, a calculation pipeline, and a data warehouse. The project directory contains `lib/pipeline/` and `lib/extraction/` — not `src/components/`.
+
+If the AI skips discovery and applies this template as-is, it will scaffold `src/components/`, write E2E browser tests, set up visual regression, and create ADRs about frontend stack choices — missing the fact that the data pipeline is the core of the system and the web UI doesn't exist yet.
+
+**After running the questionnaire, the system shape becomes clear:**
+
+```
+Layer 4: Web Dashboard        ← NOT YET BUILT
+Layer 3: API                  ← NOT YET BUILT
+Layer 2: Calculation Pipeline ← OPERATIONAL
+Layer 1: Data Ingestion + DB  ← OPERATIONAL
+```
+
+**What this changes about template application:**
+- §1 (Project structure): Organized around pipeline and extraction modules, not frontend components. Test structure mirrors `lib/`, not a UI tree.
+- §2 (Specs): Data dictionary and source registry are the critical specs — not UI component contracts.
+- §3 (Testing): First tests cover calculation logic and data transforms — not E2E browser tests. Visual regression is deferred until the UI layer exists.
+- §7 (Documentation): ADRs capture data architecture decisions (pipeline approach, ingestion strategy) — not just frontend stack choices.
+- §10 (Change propagation): Map is organized into per-layer sections — not a flat table assuming one codebase.
+
+**The propose-then-confirm pattern in action:**
+
+The AI explores the codebase, proposes that it's a web application, and presents its understanding. The user corrects: "this is more than a web project — the web part is the dashboard on top of data ingestion, pipelines, and a warehouse." That single correction restructures the entire guardrail setup — project description, change propagation map, test priorities, ADR scope, and persistent memory framing.
+
+Without the confirmation step, the AI would have silently applied web-centric guardrails and the misfit wouldn't surface until real development starts — after tokens and time had been spent on the wrong structure.
+
+**Key lesson:** The AI should always propose its understanding of the project shape and get confirmation before scaffolding guardrails. A 30-second correction from the user prevents hours of structural rework.
+
+---
+
+## 1. Project Structure
+
+A predictable structure eliminates orientation cost for every new contributor — human or AI.
+
+```
+project-root/
+├── CLAUDE.md              # AI assistant instructions (injected every session)
+├── README.md              # Human onboarding
+├── .gitignore
+│
+├── docs/                  # Prescriptive documentation (not descriptive)
+│   ├── architecture/      # System design, component contracts, data flow
+│   │   ├── README.md      # Index with file paths to every doc
+│   │   └── *.svg          # Diagrams (never ASCII art)
+│   ├── audits/            # Living audit files with resolution status
+│   ├── decisions/         # Architecture Decision Records (ADRs)
+│   └── ui/                # UX specs, mockups, design system
+│
+├── src/ (or per-layer dirs like frontend/, backend/, middleware/)
+│   ├── components/        # UI components, grouped by feature
+│   ├── tools/             # Domain-specific modules
+│   ├── types/             # Shared type definitions
+│   ├── utils/             # Pure utility functions
+│   └── validation/        # Runtime validation logic
+│
+├── tests/                 # Test files, mirroring src/ structure
+│   ├── unit/
+│   ├── e2e/
+│   ├── visual/
+│   │   └── snapshots/     # Version-controlled baseline images
+│   └── conftest or setup  # Shared fixtures, helpers
+│
+└── config files           # tsconfig, vitest, playwright, pyproject, etc.
+```
+
+### Structure Principles
+
+- **Mirror src/ in tests/** — finding the test for a file should never require searching.
+- **One index file per doc directory** — a README.md listing every doc with its file path and one-line purpose.
+- **Types live together** — shared types in one place, not scattered across modules.
+- **Config at the root** — all tool configs (linter, formatter, test runner, build) at project root, not nested.
+- **No deep nesting** — if a path exceeds 4 levels, flatten it. Deep trees cost navigation tokens.
+
+### Workspace Partitioning
+
+Multi-phase projects often have code with different lifecycles in the same repo. Discovery/analysis scripts that were essential during the research phase become dead weight during application development — cluttering the dependency list, confusing test suites, and inflating the project surface area.
+
+**Partition by lifecycle, not by language:**
+
+```
+project-root/
+├── analysis/                    ← Discovery phase (own pyproject.toml / package.json)
+│   ├── pyproject.toml          # Separate deps (analysis-only libraries)
+│   ├── scripts/                # Extraction, migration, exploration scripts
+│   ├── lib/                    # Analysis-specific modules
+│   └── tests/                  # Analysis tests (run separately)
+│
+├── infrastructure/              ← IaC, Docker, deployment
+│   ├── docker-compose.yml
+│   └── docker/                 # Init scripts, seed data
+│
+├── src/ (or per-layer dirs)     ← Application code (active development)
+├── tests/                       ← Application tests
+└── pyproject.toml               ← Application deps only
+```
+
+**Rules:**
+- Each partition has its own dependency manifest. Analysis tools (Excel parsers, data profilers) don't pollute the production dependency list.
+- Application code never imports from the analysis partition. The analysis partition may import from application code if needed for validation.
+- Tests run independently: `pytest tests/` for the application, `cd analysis && pytest tests/` for analysis.
+- Discovery work is done when it's done. Don't restructure it retroactively to match application conventions — just wall it off.
+
+---
+
+## 2. Specification-First Development
+
+Every feature starts with a written spec, not code. Architecture documents and diagrams define system behavior, component contracts, and design constraints before implementation begins. These serve as the source of truth for all contributors.
+
+### What to Specify
+
+- **System architecture** — how components connect and communicate.
+- **Component contracts** — typed inputs, outputs, and configuration schemas.
+- **Design system** — enforced visual language (colors, typography, spacing) so the UI stays consistent regardless of who writes the code.
+- **Data contracts** — data shapes validated at design time, catching mismatches before runtime.
+
+### How Specs Prevent Waste
+
+A spec that takes 30 minutes to write prevents hours of rework. For AI contributors specifically, a spec means the AI implements to a target rather than inferring intent from context clues — fewer clarification questions, fewer wrong-direction implementations.
+
+---
+
+## 3. Multi-Layer Test Infrastructure
+
+Testing spans the full stack across complementary layers:
+
+| Layer | Purpose | Catches |
+|-------|---------|---------|
+| **Unit tests** | Logic correctness | Regressions in parsers, validators, state management, utility functions |
+| **E2E browser tests** | User flow integrity | Broken interactions, navigation failures, data persistence issues |
+| **Visual regression** | Pixel-level UI stability | Unintended cosmetic changes; baselines updated only for intentional changes |
+| **API/service tests** | Contract adherence | Protocol violations, serialization errors, edge cases in data handling |
+
+### Testing Principles
+
+- **Baselines are version-controlled artifacts** — screenshots and snapshots checked into git, not generated on the fly.
+- **Update baselines only for intentional changes** — this prevents cosmetic drift and makes every visual change a deliberate decision.
+- **Run tests before committing UI changes** — always. No exceptions.
+- **Hard timeouts on all test layers** — per-test timeout, global kill switch, and memory caps prevent runaway processes.
+- **Document pre-existing failures** — known failures that aren't your bugs should be listed so contributors don't waste time diagnosing them.
+
+### Test Doubles for External Dependencies
+
+Production code should target production infrastructure. Tests should run without that infrastructure. The solution is a thin adapter in the test suite — not conditional branches in production code.
+
+**Wrong:** Scattering `if test_mode then ... else ...` throughout production code so it works with both a real service and a test substitute. This doubles maintenance, masks integration issues, and makes production code harder to read.
+
+**Right:** Write production code for the production target only. In `tests/`, create a lightweight adapter that conforms to the same interface but translates to a simpler backend. The adapter is never imported by production code.
+
+**When to use:** Any dependency that requires infrastructure to run — databases, HTTP services, message brokers, file storage, email providers. The adapter pattern lets unit and integration tests run instantly without containers or network access.
+
+**When NOT to use:** Integration tests that are specifically validating the real infrastructure. Mark those tests separately (e.g., `@pytest.mark.integration`) and run them against the real thing in CI or manually.
+
+### Type Assumptions at System Boundaries
+
+When data crosses a boundary between two tools (export → import, API response → client model, serialization → deserialization), type coercion failures are the most common source of integration bugs. Each tool has its own default type representations, and they rarely agree.
+
+**The pattern:** Tool A exports data in a format that looks correct to Tool A. Tool B imports it and fails because its type expectations are stricter, looser, or simply different.
+
+**The discipline:** Every time data crosses a tool boundary, audit the type assumptions on both sides. Don't assume that "it worked in Tool A" means it will load cleanly into Tool B. Test the boundary explicitly — ideally with a small representative sample — before running the full pipeline.
+
+Common failure categories:
+- **Nullability differences** — one side allows nulls, the other doesn't, or null is represented differently (empty string vs. `NULL` vs. omitted field).
+- **Numeric precision** — one side uses integers, the other uses floats, or precision/scale constraints differ.
+- **Sentinel values in typed columns** — source data uses human-readable markers (text) in columns the schema declares as numeric or boolean.
+- **Auto-generated fields** — one side includes them in exports, the other expects them to be auto-populated on import.
+- **Temporal types** — native datetime objects vs. ISO strings vs. Unix timestamps. Timezone-aware vs. naive.
+
+**The fix is always the same:** make the boundary contract explicit. Specify column lists, validate types before crossing, and test with real data samples — not just the happy path.
+
+---
+
+## 3b. Development Process Discipline
+
+§3 defines *what* to test. This section defines *how* to develop — the process that produces tested, correct code.
+
+### Test-First Development (RED-GREEN-REFACTOR)
+
+For new features and bug fixes, write a failing test before writing implementation code:
+
+1. **RED** — Write a test that captures the expected behavior. Run it. It must fail. If it passes, you're not testing anything new.
+2. **GREEN** — Write the minimum code to make the test pass. No extra logic, no premature abstractions, no "while I'm here" improvements.
+3. **REFACTOR** — Clean up only after green. Extract duplication, improve names, simplify structure — but the tests must stay green throughout.
+
+**Why this order matters:** Writing the test first forces you to think about the interface before the implementation. It also guarantees that every behavior has a test — coverage is a side effect, not a separate task.
+
+**When to skip:** Trivial changes where the test would be more complex than the code (typo fixes, config tweaks, comment edits, adding a log line).
+
+### Systematic Debugging
+
+When a test fails or a bug is reported, do not guess. Follow this process:
+
+1. **Reproduce** — Get the exact error. Copy the traceback or error message. Identify the failing input and the expected vs. actual output.
+2. **Isolate** — Narrow the scope. Which layer? Which function? Which line? Write the smallest reproducing test case if one doesn't exist.
+3. **Root-cause** — Read the code at the failure point. Trace data flow backward from the symptom to the source. Find where actual diverges from expected. The root cause is almost never at the crash site — it's upstream.
+4. **Fix and verify** — Fix the root cause, not the symptom. Run the failing test to confirm the fix. Run the full suite to confirm no regressions.
+
+**Anti-patterns to avoid:**
+- **Shotgun debugging** — changing multiple things hoping one works. This makes it impossible to know which change fixed the problem, and often introduces new issues.
+- **Defensive masking** — wrapping the crash site in try/except or adding a null check to suppress the error. The bug still exists; you've just hidden it.
+- **Fix-and-pray** — making a change without running the failing test to confirm it actually works.
+
+### Verification Before Completion
+
+Before marking any task as done — whether it's a feature, a bug fix, or a refactor:
+
+- [ ] All existing tests still pass (full suite, not just the new test)
+- [ ] New behavior has test coverage (from the RED step above)
+- [ ] No unrelated files were modified (scope discipline)
+- [ ] Changes match what was requested — nothing more, nothing less
+
+This checklist is not bureaucracy. It catches the two most common sources of wasted follow-up work: regressions from untested side effects, and scope creep that the requester didn't ask for.
+
+---
+
+## 4. Runtime Validation
+
+The system validates structural correctness on every edit, not just before execution.
+
+### Categories of Checks
+
+- **Missing or excess connections** between components.
+- **Unconfigured components** with required fields left empty.
+- **Cycle detection** in directed graphs or pipelines.
+- **Orphaned components** with no connections.
+- **Type mismatches** at connection boundaries.
+- **Schema compatibility** — warn on mismatch, block on incompatibility.
+
+### Severity Model
+
+| Level | Behavior |
+|-------|----------|
+| **Error** | Blocks execution. Must be resolved. |
+| **Warning** | Informs the user. Does not block. |
+| **Info** | Logged for observability. No user action required. |
+
+Enforcement belongs in the engine, not the UI. The UI reflects validation state; it doesn't own it.
+
+---
+
+## 5. State Tracking & Recoverability
+
+Every state mutation is tracked through content-addressable hashing or equivalent versioning.
+
+- **Change detection** — diffs computed at field level, not "the whole file changed."
+- **Undo/redo** — navigable version history, not a naive stack.
+- **Deduplication** — identical states produce identical hashes, no redundant storage.
+- **Debounced persistence** — frequent edits batched to avoid write storms, with forced caps to prevent data loss.
+
+The result: every edit is recoverable, and you can always answer "what changed and when."
+
+---
+
+## 6. Enforced Consistency Rules
+
+Discipline is codified, not left to individual discretion.
+
+- **Strict type checking** — no implicit `any`, no unchecked nulls. The type system is a guardrail, not a suggestion.
+- **Style rules** — all theming via variables, no hardcoded values, reuse existing patterns. Documented in an audit file with resolution tracking.
+- **Environment isolation** — fixed ports, pinned runtime versions, isolated dependency environments (virtualenvs, lockfiles).
+- **Resource guardrails** — hard timeouts, memory caps, and global kill switches on test runners and build processes.
+
+---
+
+## 7. Documentation as Constraint
+
+Documentation is prescriptive, not descriptive. It defines what is allowed, not what exists.
+
+### Living Audit Files
+
+- **Style/CSS audit** — what patterns are allowed, what's banned, what's been fixed. Updated as issues are resolved.
+- **UX audit** — inventory of known issues by severity, with resolution status.
+- **Critical rules** — mandatory behaviors stated as imperatives: "visually inspect generated assets before reporting success," "read before editing," "run tests before committing UI changes."
+
+### Architecture Decision Records (ADRs)
+
+For every non-obvious choice, document:
+- **Context** — what problem prompted the decision.
+- **Decision** — what was chosen.
+- **Alternatives considered** — what was rejected and why.
+- **Consequences** — what this decision makes easier and harder.
+
+This prevents re-litigation of settled decisions by future contributors (including AI).
+
+---
+
+## 8. Acknowledged Gaps
+
+Transparency about what isn't automated yet is itself a guardrail. Document these explicitly:
+
+- CI/CD pipeline status (local-only vs. automated).
+- Linting/formatting automation (manual vs. tooled).
+- Pre-commit hooks (present, planned, or intentionally absent).
+- Coverage thresholds (enforced or aspirational).
+- Known technical debt with severity and ownership.
+
+Documenting gaps prevents false confidence and makes the cost of each gap visible to decision-makers.
+
+---
+
+## 9. Token Efficiency Practices
+
+AI-assisted development bills by the token. Every search the AI runs, every file it reads to orient itself, every clarification question — that's spend. These practices minimize waste without reducing output quality.
+
+### 9.1 Front-Load Context via Project Instructions
+
+Provide a project instruction file (e.g., `CLAUDE.md`) at the repo root. This is injected into every AI session automatically. It should contain:
+
+| Section | Why It Saves Tokens |
+|---------|-------------------|
+| **Exact versions** (runtime, package manager, language) | Eliminates "let me check what version" exploration |
+| **Common commands** (copy-paste-ready) | No tokens spent figuring out how to run tests or start a dev server |
+| **Project structure** (directory tree with one-line descriptions) | AI navigates directly instead of globbing |
+| **Critical rules** (non-negotiable constraints) | Stated once, followed everywhere — no re-discovery |
+| **Doc index with file paths** (topic → exact path) | AI reads the right doc on the first try instead of searching |
+
+### 9.2 Persistent Memory Across Sessions
+
+Maintain a memory file that carries learnings between conversations:
+
+- **Known pitfalls** — framework quirks, API limitations, broken assumptions. Without this, the AI rediscovers the same dead ends every session.
+- **Selector/API workarounds** — hard-won knowledge about what doesn't work and what to do instead.
+- **Architecture patterns** — e.g., "adding a new component type requires updates in these 6 files." Prevents a codebase search every time.
+- **Pre-existing failures** — known test failures that aren't your bugs. Prevents the AI from spending tokens diagnosing out-of-scope issues.
+
+### 9.3 Documentation That Replaces Exploration
+
+Every doc the AI doesn't have to search for is tokens saved:
+
+- **Audit files with resolution status** — the AI checks whether an issue is already fixed instead of re-investigating.
+- **Convention docs** — the AI follows a documented pattern instead of inferring one from scattered examples.
+- **Decision records** — "we chose X over Y because Z." Prevents re-evaluation of settled decisions.
+
+### 9.4 Structural Habits
+
+- **Link docs to specific file paths** — `see [tools/definitions.ts](src/tools/definitions.ts)` not "see the definitions file." Eliminates glob/grep round-trips.
+- **Pin environment details** — fixed ports, fixed paths, fixed versions. Each ambiguity resolved costs a tool call.
+- **Delegate broad searches to subagents** — use cheaper/smaller models for exploration; keep the primary context focused on implementation.
+- **Keep instruction files concise** — a 200-line memory file costs less per session than a 2000-line one. Link to detail files rather than inlining everything.
+
+### 9.5 The Math
+
+A typical "let me find that file" cycle costs ~2,000–5,000 tokens (glob, read results, maybe grep, read file). A single line in a project instruction file pointing to the exact path costs ~20 tokens. Over a session with dozens of file lookups, front-loaded context can reduce token consumption by 30–50%.
+
+---
+
+## 10. Change Propagation Maps
+
+For every recurring change type, document which files must be updated and in what order. This is the single highest-value token optimization: without it, the AI rediscovers the dependency chain every session through grep and file reads (~15,000 tokens). With it, zero search cost.
+
+```
+| Change type         | Files touched (in order)                              |
+|---------------------|-------------------------------------------------------|
+| New component type  | types → definitions → renderer → main → i18n → gallery |
+| New API endpoint    | backend/routes → middleware/proxy → frontend/api-client |
+| New UI element      | component file → styles → main integration             |
+| Schema change       | types → validation → affected configs                   |
+```
+
+**Maintain this table in the project instruction file** (e.g., CLAUDE.md) or the persistent memory file — wherever the AI reads it at session start.
+
+Update it whenever a new recurring pattern emerges. If you've done the same type of change three times and touched the same files each time, it belongs in the map.
+
+---
+
+## 11. File Size Budgets
+
+Large files are the primary driver of both token cost and technical debt:
+
+- A 500-line file costs ~1,500 tokens per read. If the AI reads it 3 times per session, that's 4,500 tokens on one file.
+- A 2,000-line file costs ~6,000 tokens per read. Three reads = 18,000 tokens.
+- A 4,000-line file costs ~12,000 tokens per read. Three reads = 36,000 tokens — on a single file.
+
+**Budget: files over 400 lines are candidates for extraction.** Not a hard rule, but a signal to evaluate whether the file has accrued multiple responsibilities.
+
+Signs a file needs splitting:
+- It appears in every change propagation map (it does too many things).
+- Multiple unrelated functions live in the same file.
+- The AI regularly reads the whole file but only modifies 10-20 lines.
+- Merge conflicts happen frequently in the file.
+
+Splitting large files also reduces blast radius: a change to one extracted module doesn't require the AI to re-read 3,000 unrelated lines for context.
+
+---
+
+## 12. Lightweight Change Tracking
+
+Per-feature discipline without framework overhead.
+
+### Starting a Feature
+
+Write 5-10 lines in the persistent memory file:
+
+```markdown
+## Active Change
+Branch: feat/feature-name
+Scope: What this change does (one line)
+OUT: What is explicitly not in scope
+Acceptance:
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Tests pass, baselines updated (if UI)
+```
+
+The AI sees this at session start and knows the target. No clarification questions, no re-scoping.
+
+### Finishing a Feature
+
+Move one paragraph to a decisions log (`docs/decisions.md`), append-only, reverse chronological:
+
+```markdown
+## YYYY-MM-DD — Feature Name (branch → main)
+Decision: What was chosen and why.
+Rejected: What was considered and why it was rejected.
+Files changed: List of key files modified.
+```
+
+This is your archival trail. It costs ~50 tokens per entry when the AI scans the file, and it prevents re-litigation of settled decisions.
+
+### Session Handoff
+
+When a session ends mid-work, write a handoff block in the memory file:
+
+```markdown
+## Session Handoff
+Branch: feat/feature-name
+Last completed: What was finished this session
+Next: What should happen next (with file paths and line numbers)
+Blocked: Any blockers, or "None"
+Test status: Which layers have been run, which haven't
+```
+
+The next session reads this and resumes in ~200 tokens instead of spending 5,000+ tokens re-orienting through git log, git diff, and file reads.
+
+Remove the handoff block once the next session has picked up the work.
+
+---
+
+## 13. Dead Code Hygiene
+
+Unused code is invisible debt that compounds. It inflates files (increasing token cost per read), creates false grep matches (wasting search tokens), and causes import removal bugs when the AI deletes what it thinks is unused.
+
+### Rules
+
+- **When removing or replacing a function**, grep for all references before deleting. This prevents the class of bug where an import is removed but still referenced as a type cast or in a dynamic context.
+- **When extracting shared helpers**, verify every call site is updated in the same commit. Partial migrations — where some code uses the old local helper and some uses the new shared one — are the most common source of subtle bugs.
+- **Never leave unused imports or exports for "later"** — the cost of removing dead code only increases as more code accumulates around it.
+- **Delete, don't comment out.** Commented-out code is noise that costs tokens to read and never gets uncommented. Git history preserves anything you might need back.
+
+---
+
+## 14. Putting It Together — Checklist
+
+### Before Starting a Feature
+
+- [ ] Active Change block written in persistent memory (scope, acceptance criteria).
+- [ ] Written spec or ADR exists for non-trivial work.
+- [ ] Change propagation map consulted — know which files will be touched.
+- [ ] Relevant architecture docs and audits reviewed.
+- [ ] Design system consulted (if UI work).
+- [ ] Validation rules reviewed (if data/logic work).
+
+### During Development
+
+- [ ] **Test-first:** failing test written before implementation code (§3b).
+- [ ] Test passes with minimum implementation (GREEN), then refactor.
+- [ ] No file exceeds the size budget without justification.
+- [ ] Unused imports/exports removed immediately, not deferred.
+- [ ] Grep for all references before deleting or renaming any function.
+- [ ] All call sites updated when extracting shared helpers.
+- [ ] Bugs investigated systematically: reproduce → isolate → root-cause → fix (§3b). No shotgun fixes.
+
+### Before Every Commit
+
+- [ ] **Full test suite passes** — not just the new test, the entire suite.
+- [ ] No unrelated files were modified (scope discipline).
+- [ ] Changes match what was requested — nothing more, nothing less.
+- [ ] Generated assets visually inspected (if applicable).
+- [ ] Git status reviewed — no unintended files staged.
+- [ ] Dependency environment active (virtualenv, correct Node version).
+- [ ] Baselines updated only for intentional UI changes.
+
+### At Session End (if work is incomplete)
+
+- [ ] Session handoff block written in persistent memory.
+- [ ] Branch pushed so next session has the latest state.
+
+### Before Every PR/Merge
+
+- [ ] All test layers pass.
+- [ ] No type errors (strict mode).
+- [ ] Active Change acceptance criteria all checked.
+- [ ] Documentation updated if architecture changed.
+- [ ] UX/style audit consulted for UI changes.
+- [ ] Acknowledged gaps updated if new debt introduced.
+- [ ] Decision record written in decisions log.
+- [ ] Active Change and Session Handoff blocks removed from memory.
+
+---
+
+## Principle
+
+Speed without guardrails is just velocity toward defects. These mechanisms ensure that code — whether written by a human or an AI — is typed, tested, validated at runtime, visually regression-checked, version-tracked, and architecturally constrained before it reaches a user.

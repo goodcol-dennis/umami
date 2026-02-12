@@ -4,26 +4,11 @@ This document is a template for establishing processes, testing strategies, and 
 
 **This is a general-purpose template.** It must not contain references to any specific project, codebase, brand, or product. All examples should use generic descriptions. If you adapt this template for a specific project, do so in that project's own docs — not here.
 
-**This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Clone it alongside your project directories and reference it via relative path. Do NOT copy it into a project's `docs/` folder.
-
-**Recommended layout:**
-
-```
-~/projects/
-├── umami/                ← this repo (git@github.com:goodcol-dennis/umami.git)
-│   └── umami.md
-├── project-a/
-│   └── CLAUDE.md         ← references ../umami/umami.md
-├── project-b/
-│   └── CLAUDE.md         ← references ../umami/umami.md
-└── ...
-```
-
-**Add a reference in each project's `CLAUDE.md`:**
+**This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Do NOT copy it into a project's `docs/` folder. Instead, reference it by URL in each project's `CLAUDE.md`:
 
 ```markdown
 ## Shared Templates
-- Development guardrails: `../umami/umami.md` (shared across projects — do not copy or modify from within consuming projects)
+- Development guardrails: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md (shared across projects — do not copy or modify from within consuming projects)
 ```
 
 ---

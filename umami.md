@@ -41,6 +41,7 @@ This "propose-then-confirm" pattern typically costs 2,000-5,000 tokens for the e
 | Who is the author / owner? | Establishes who makes final calls on architecture and scope. |
 | What is the expected lifespan? (prototype / 1-2 years / 3-7 years / indefinite) | A 6-month prototype doesn't need ADRs. A 5-year platform does. |
 | Who will maintain this after the initial build? (same team / handoff / unknown) | If handoff is expected, documentation and convention discipline must be higher. |
+| Are there compliance or regulatory requirements? (SOC 2 / ISO 27001 / HIPAA / PCI DSS / FDA / none / unknown) | Compliance changes how strictly guardrails are applied. A hobby project can skip ADRs; a SOC 2-scoped service cannot. If compliance applies, ADRs (§7), acknowledged gaps (§8), change tracking (§12), test evidence (§3), and state tracking (§5) shift from "recommended" to "required" — they produce the artifacts auditors ask for. |
 
 ### 0.2 System Shape — "What Kind of Thing Is This?"
 
@@ -89,6 +90,7 @@ Once the questionnaire is complete, use this mapping:
 | Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | — (full template applies) |
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | — |
+| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §14 (checklists — process evidence). These shift from "recommended" to **required**. | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
 
 ### 0.6 Example: Onboarding a Multi-Layer System
 

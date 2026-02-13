@@ -74,6 +74,25 @@ Then whenever you want a gap analysis, just tell your agent: *"Audit our process
 | §13 | Dead code hygiene — delete, don't comment out |
 | §14 | Checklist — before starting, during dev, before commit, before merge |
 
+## Compliance and regulated environments
+
+Umami isn't a compliance framework, but many of its practices produce exactly the artifacts that auditors and compliance frameworks ask for. If your project is subject to SOC 2, ISO 27001, HIPAA, PCI DSS, or similar requirements, you'll find that adopting umami's guardrails gets you a long way toward the "documented, repeatable process" that those frameworks demand.
+
+| Umami practice | What it produces for compliance |
+|---|---|
+| **Architecture Decision Records** (§7) | Decision traceability — why choices were made, what was rejected |
+| **Spec-first development** (§2) | Requirements documentation before implementation |
+| **Multi-layer testing** (§3) | Evidence of verification at every layer |
+| **Version-controlled baselines** (§3) | Proof that changes were intentional and reviewed |
+| **Runtime validation** (§4) | Input validation and structural correctness checks |
+| **State tracking with hashing** (§5) | Audit trail with integrity verification |
+| **Acknowledged gaps** (§8) | A living risk register — known gaps with severity and ownership |
+| **Change propagation maps** (§10) | Change impact analysis — what a change touches and in what order |
+| **Change tracking** (§12) | Change management records — scope, acceptance criteria, decisions |
+| **Pre-commit/pre-merge checklists** (§14) | Process evidence — proof that steps were followed, not just defined |
+
+The project discovery questionnaire (§0.1) now asks about compliance requirements upfront. When compliance applies, several sections shift from "recommended" to "required" — the template adapts its own rigor based on the answer.
+
 ## How is this different from Superpowers?
 
 [Superpowers](https://github.com/obra/superpowers) is an excellent project that tackles a related problem. Both aim to make AI-assisted development more disciplined and reliable. They're complementary, not competing — but they solve different problems with different trade-offs.

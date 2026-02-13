@@ -4,11 +4,14 @@ This document is a template for establishing processes, testing strategies, and 
 
 **This is a general-purpose template.** It must not contain references to any specific project, codebase, brand, or product. All examples should use generic descriptions. If you adapt this template for a specific project, do so in that project's own docs — not here.
 
-**This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Do NOT copy it into a project's `docs/` folder. Instead, reference it by URL in each project's `CLAUDE.md`:
+**This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Do NOT copy it into a project's `docs/` folder. Instead, keep the URL in each project's `CLAUDE.md` as a reference for on-demand process audits:
 
 ```markdown
-## Shared Templates
-- Development guardrails: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md (shared across projects — do not copy or modify from within consuming projects)
+## Process Audit Reference
+- Development guardrails: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
+  Do NOT fetch this every session. This is a reference URL for periodic process reviews.
+  When the user asks you to audit the development process, fetch this document and
+  compare its recommendations against the project's current state.
 ```
 
 ---

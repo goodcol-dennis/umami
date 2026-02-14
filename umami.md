@@ -90,7 +90,8 @@ Once the questionnaire is complete, use this mapping:
 | Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | — (full template applies) |
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | — |
-| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §14 (checklists — process evidence). These shift from "recommended" to **required**. | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — |
 
 ### 0.6 Example: Onboarding a Multi-Layer System
 
@@ -582,7 +583,116 @@ Unused code is invisible debt that compounds. It inflates files (increasing toke
 
 ---
 
-## 14. Putting It Together — Checklist
+## 14. Agent Orchestration
+
+When your AI tooling supports multi-agent workflows — a lead agent delegating to specialist workers — the same guardrail principles apply, but the coordination model introduces new opportunities for token efficiency and new risks for waste.
+
+This section is tool-agnostic. The patterns apply whether you're using Claude Code, Cursor, Windsurf, Copilot Workspace, or any agentic framework that supports delegation.
+
+### The Orchestration Model
+
+Most multi-agent systems follow the same pattern:
+
+```
+Human
+  └─→ Lead Agent (full context, all tools)
+        ├─→ Worker A (restricted context, read-only tools)
+        ├─→ Worker B (restricted context, specific tools)
+        └─→ Worker C (own context, own tools)
+```
+
+Each worker gets its own context window, a restricted toolset, and focused instructions. Results are summarized back to the lead. The lead's context stays clean — it never sees the 50 files Worker A read during exploration, only the 3-sentence conclusion.
+
+### Delegation Principles
+
+**Delegate when:**
+
+- The task is **exploratory** — searching, reading, profiling. Worker context is disposable; don't pollute the lead's context with search results.
+- Tasks are **independent and parallelizable** — security review, performance review, and test coverage review can run simultaneously.
+- The task produces **verbose output** that only needs a summary — test suite runs, linting reports, dependency audits.
+- A **cheaper/faster model** can handle it — codebase search and file reading don't need your most capable model.
+
+**Don't delegate when:**
+
+- The task requires **back-and-forth with the user** — delegation adds latency to every exchange.
+- The task is **trivially small** — spawning a worker for a single grep adds overhead without savings.
+- The task **depends on the lead's accumulated context** — if the worker would need the full conversation history to do its job, delegation doesn't save tokens; it duplicates them.
+
+### Skill Libraries
+
+A **skill** is a reusable set of instructions for a recurring agent task. Different tools call these different things — custom prompts, system instructions, agent templates, slash commands — but the concept is universal: pre-written instructions that replace per-session re-derivation.
+
+```
+project-root/
+├── .ai/                          # Or .claude/, .cursor/, etc.
+│   └── skills/
+│       ├── security-review/
+│       │   └── instructions.md   # What to check, how to report
+│       ├── pr-summary/
+│       │   └── instructions.md   # How to summarize a PR
+│       └── data-migration/
+│           └── instructions.md   # Pre-flight checks, rollback steps
+```
+
+**What makes a good skill:**
+
+- Encodes domain knowledge that would otherwise be re-derived every session.
+- Defines a clear output format so results are consistent and comparable across runs.
+- Specifies which tools the agent needs (and which it doesn't — restricting tools reduces risk and token spend).
+- Can inject dynamic context (current git diff, recent errors, open issues) so the agent starts with fresh state, not stale instructions.
+
+**When to create a skill:** You've given the same instructions to an agent 3+ times, or a task requires domain-specific checklists (security review, accessibility audit, compliance check).
+
+**Token impact:** A skill that pre-loads a 200-token instruction set replaces the 2,000–5,000 tokens the agent would spend figuring out the same approach through exploration. Skills stored in the project repo also ensure every team member's agents behave consistently — same review standards, same output format, same checklists.
+
+### Parallel Work Patterns
+
+The highest-value use of multi-agent orchestration is **parallel review and analysis**:
+
+| Pattern | Workers | Output |
+|---------|---------|--------|
+| **Multi-angle code review** | Security + Performance + Test coverage | Three independent reports, synthesized by lead |
+| **Exploratory research** | One per subsystem (auth, database, API) | Each worker maps its subsystem; lead assembles the full picture |
+| **Test execution** | One per test layer (unit, integration, E2E) | Parallel test runs; lead aggregates pass/fail |
+| **Competing hypotheses** | One per theory for a bug | Each investigates one theory; strongest result wins |
+
+**Coordination rules:**
+
+- Each worker should operate on **non-overlapping scope**. Two agents editing the same file is a merge conflict waiting to happen.
+- Workers should report in a **structured format** so the lead can synthesize without re-reading raw output.
+- Use a **shared task list** if your tooling supports it — workers claim tasks, preventing duplicate effort.
+
+### External Tool Integration
+
+Most AI development tools support connecting agents to external services — issue trackers, monitoring, databases, CI/CD. The agent equivalent of giving a developer tool access.
+
+**High-value integrations:**
+
+| Integration | Token savings |
+|-------------|--------------|
+| **Issue tracker** | Agent reads issue directly (~200 tokens) instead of you copy-pasting descriptions + comments (~2,000+ tokens) |
+| **Error monitoring** | Agent queries recent errors to prioritize bugs instead of you describing symptoms |
+| **Database schema** | Agent queries schema directly instead of you describing table structures |
+| **CI/CD pipeline** | Agent reads build logs and test results instead of you pasting terminal output |
+
+**Configuration scope matters:**
+
+- **Personal** — your credentials, your preferences. Not committed to the repo.
+- **Project** — shared team integrations. Committed to the repo (without secrets) so every team member's agents have the same access.
+
+### Agent Orchestration Anti-Patterns
+
+| Anti-Pattern | Symptom | Fix |
+|--------------|---------|-----|
+| **Over-delegation** | Spawning workers for single-grep tasks | Only delegate when overhead (spawn + summarize) < doing it inline |
+| **Duplicate exploration** | Lead and worker both searching the same files | Delegate exploration OR do it yourself — never both |
+| **Context duplication** | Passing the full conversation to every worker | Workers get focused instructions, not the whole history |
+| **Unsupervised destruction** | Worker deletes files or pushes code without review | Restrict worker toolsets; require human approval for destructive actions |
+| **Skill rot** | Skills reference outdated file paths or deprecated APIs | Review skills when you update the change propagation map (§10) or codebase understanding doc (§9.3) |
+
+---
+
+## 15. Putting It Together — Checklist
 
 ### Before Starting a Feature
 
@@ -592,6 +702,7 @@ Unused code is invisible debt that compounds. It inflates files (increasing toke
 - [ ] Relevant architecture docs and audits reviewed.
 - [ ] Design system consulted (if UI work).
 - [ ] Validation rules reviewed (if data/logic work).
+- [ ] Existing skills reviewed — are there reusable templates for this type of work? (§14)
 
 ### During Development
 
@@ -602,6 +713,7 @@ Unused code is invisible debt that compounds. It inflates files (increasing toke
 - [ ] Grep for all references before deleting or renaming any function.
 - [ ] All call sites updated when extracting shared helpers.
 - [ ] Bugs investigated systematically: reproduce → isolate → root-cause → fix (§3b). No shotgun fixes.
+- [ ] Exploration delegated to worker agents where appropriate (§14) — keep lead context focused on implementation.
 
 ### Before Every Commit
 
@@ -629,6 +741,8 @@ Unused code is invisible debt that compounds. It inflates files (increasing toke
 - [ ] Acknowledged gaps updated if new debt introduced.
 - [ ] Decision record written in decisions log.
 - [ ] Active Change and Session Handoff blocks removed from memory.
+- [ ] Skill library updated if a new reusable agent pattern emerged (§14).
+- [ ] Skills reviewed for stale references (file paths, APIs) if codebase structure changed (§14).
 
 ---
 

@@ -8,21 +8,41 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 ## What is this?
 
-[`umami.md`](umami.md) is a comprehensive development guardrails document designed to be consumed by both humans and LLM coding agents (like Claude Code, Cursor, Copilot, etc.). It covers project discovery, specification-first development, multi-layer testing, runtime validation, state tracking, documentation discipline, token efficiency, and more.
+[`umami.md`](umami.md) is a comprehensive development guardrails document designed to be consumed by both humans and LLM coding agents (like Claude Code, Cursor, Copilot, etc.). It covers project discovery, specification-first development, multi-layer testing, runtime validation, state tracking, documentation discipline, token efficiency, agent orchestration, and more.
 
-It is **not** tied to any specific project. You reference it from your project and let your AI agent adapt its guidance to your codebase.
+**Domain-specific extensions** supplement the core with guardrails tailored to specific project types:
+
+| Extension | Covers |
+|-----------|--------|
+| [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets |
+| [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, observability |
+| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection |
+| [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance |
+| [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance |
+| [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline |
+
+The core template is **not** tied to any specific project. You reference it (and the relevant extensions) from your project and let your AI agent adapt the guidance to your codebase.
 
 ## How to use it
 
-### 1. Copy the raw URL
+### 1. Copy the raw URLs
 
 ```
+# Core guardrails (always)
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
+
+# Extensions (pick the ones that match your project)
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-web.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
 ```
 
 ### 2. Give it to your LLM agent
 
-Paste the URL into a conversation with your AI coding assistant and ask something like:
+Paste the core URL (and any relevant extension URLs) into a conversation with your AI coding assistant and ask something like:
 
 > Here are my development guardrails: [paste URL]
 >
@@ -45,15 +65,23 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 
 ```markdown
 ## Process Audit Reference
-- Development guardrails: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
-  Do NOT fetch this every session. This is a reference URL for periodic process reviews.
-  When the user asks you to audit the development process, fetch this document and
-  compare its recommendations against the project's current state.
+- Development guardrails (core): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
+- Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-web.md
+- Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
+- Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
+- Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
+- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
+- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+  Do NOT fetch these every session. These are reference URLs for periodic process reviews.
+  When the user asks you to audit the development process, fetch the core document and
+  any relevant extensions, then compare their recommendations against the project's current state.
 ```
 
 Then whenever you want a gap analysis, just tell your agent: *"Audit our process against the guardrails doc in CLAUDE.md."* It knows where to find it without you having to dig up the URL.
 
 ## What the document covers
+
+### Core (`umami.md`)
 
 | Section | Topic |
 |---------|-------|
@@ -72,7 +100,19 @@ Then whenever you want a gap analysis, just tell your agent: *"Audit our process
 | §11 | File size budgets — keep files small to reduce token cost and complexity |
 | §12 | Lightweight change tracking — active change blocks, session handoffs |
 | §13 | Dead code hygiene — delete, don't comment out |
-| §14 | Checklist — before starting, during dev, before commit, before merge |
+| §14 | Agent orchestration — delegation, skills, parallel review, tool integration |
+| §15 | Checklist — before starting, during dev, before commit, before merge |
+
+### Extensions
+
+| File | Sections | When to apply |
+|------|----------|---------------|
+| [`umami-web.md`](umami-web.md) | §17.1–17.7 | Project has a web frontend |
+| [`umami-data.md`](umami-data.md) | §18.1–18.7 | Project has data ingestion, pipelines, or a data warehouse |
+| [`umami-iac.md`](umami-iac.md) | §16.1–16.11 | Project has infrastructure-as-code or cloud provisioning |
+| [`umami-mobile.md`](umami-mobile.md) | §19.1–19.6 | Project has a native or cross-platform mobile app |
+| [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.7 | Project is built on WordPress |
+| [`umami-drupal.md`](umami-drupal.md) | §21.1–21.8 | Project is built on Drupal |
 
 ## Compliance and regulated environments
 
@@ -89,7 +129,8 @@ Umami isn't a compliance framework, but many of its practices produce exactly th
 | **Acknowledged gaps** (§8) | A living risk register — known gaps with severity and ownership |
 | **Change propagation maps** (§10) | Change impact analysis — what a change touches and in what order |
 | **Change tracking** (§12) | Change management records — scope, acceptance criteria, decisions |
-| **Pre-commit/pre-merge checklists** (§14) | Process evidence — proof that steps were followed, not just defined |
+| **Agent orchestration** (§14) | Delegation discipline — consistent, auditable use of AI agents |
+| **Pre-commit/pre-merge checklists** (§15) | Process evidence — proof that steps were followed, not just defined |
 
 The project discovery questionnaire (§0.1) now asks about compliance requirements upfront. When compliance applies, several sections shift from "recommended" to "required" — the template adapts its own rigor based on the answer.
 
@@ -125,4 +166,4 @@ If you try this on your project and find gaps, patterns that don't apply, or thi
 
 ## Important
 
-**Do not copy `umami.md` into your project.** Always reference it by URL so every project stays in sync with the latest version. Adapt it for your specific project in that project's own docs.
+**Do not copy `umami.md` or the extension files into your project.** Always reference them by URL so every project stays in sync with the latest version. Adapt the guidance for your specific project in that project's own docs.

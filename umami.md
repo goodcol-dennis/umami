@@ -8,10 +8,16 @@ This document is a template for establishing processes, testing strategies, and 
 
 ```markdown
 ## Process Audit Reference
-- Development guardrails: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
-  Do NOT fetch this every session. This is a reference URL for periodic process reviews.
-  When the user asks you to audit the development process, fetch this document and
-  compare its recommendations against the project's current state.
+- Development guardrails (core): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
+- Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-web.md
+- Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
+- Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
+- Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
+- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
+- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+  Do NOT fetch these every session. These are reference URLs for periodic process reviews.
+  When the user asks you to audit the development process, fetch the core document and
+  any relevant extensions, then compare their recommendations against the project's current state.
 ```
 
 ---
@@ -57,6 +63,10 @@ Most projects are not single-layer. Identify all layers that apply:
 | **CLI / scripts** | yes / no | Are there operational scripts or CLI tools? |
 | **Background jobs / scheduling** | yes / no | Are there scheduled or event-triggered processes? |
 | **External integrations** | yes / no | Does the system talk to third-party services? (SharePoint, Slack, ERP, EDI) |
+| **Infrastructure / IaC** | yes / no | Is there infrastructure-as-code? (Terraform, Pulumi, CloudFormation, CDK) |
+| **Mobile app** | yes / no | Is there a native or cross-platform mobile app? (iOS, Android, React Native, Flutter) |
+| **CMS / WordPress** | yes / no | Is the project built on WordPress? (themes, plugins, site builds) |
+| **CMS / Drupal** | yes / no | Is the project built on Drupal? (modules, themes, config management) |
 
 **Why this matters:** A project with 4 layers needs a change propagation map organized per-layer, test strategies per-layer, and potentially different languages per-layer. A single-layer web app needs none of that.
 
@@ -80,18 +90,24 @@ Most projects are not single-layer. Identify all layers that apply:
 
 ### 0.5 Applying the Template
 
-Once the questionnaire is complete, use this mapping:
+Once the questionnaire is complete, use this mapping to determine which core sections and extension files apply:
 
-| If the project has... | Apply these sections | Skip or defer |
-|-----------------------|---------------------|---------------|
-| Data ingestion / pipelines | §3 (testing — data quality layer), §3b (TDD + debugging), §4 (validation), §5 (state tracking), §10 (change map per-layer) | §3 visual regression (no UI yet) |
-| Database / warehouse | §2 (specs — schema contracts), §3 (test doubles for DB), §6 (strict types), §7 (data dictionary as living doc) | §7 UX audit (no UI) |
-| API / backend | §2 (specs — API contracts), §3 (API/service tests + test doubles), §3b (TDD), §4 (validation), §6 (type checking) | §3 visual regression |
-| Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | — (full template applies) |
-| CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
-| Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | — |
-| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
-| AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — |
+| If the project has... | Apply these sections | Extension file | Skip or defer |
+|-----------------------|---------------------|----------------|---------------|
+| Data ingestion / pipelines | §3 (testing — data quality layer), §3b (TDD + debugging), §4 (validation), §5 (state tracking), §10 (change map per-layer) | [umami-data.md](umami-data.md) | §3 visual regression (no UI yet) |
+| Database / warehouse | §2 (specs — schema contracts), §3 (test doubles for DB), §6 (strict types), §7 (data dictionary as living doc) | [umami-data.md](umami-data.md) | §7 UX audit (no UI) |
+| API / backend | §2 (specs — API contracts), §3 (API/service tests + test doubles), §3b (TDD), §4 (validation), §6 (type checking) | — | §3 visual regression |
+| Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | [umami-web.md](umami-web.md) | — (full template applies) |
+| Mobile app | §2 (specs), §3 (unit + integration tests), §3b (TDD), §6 (strict types), §12 (release tracking) | [umami-mobile.md](umami-mobile.md) | §3 visual regression (use device matrix testing instead) |
+| Infrastructure / IaC | §2 (specs — infra contracts), §6 (pinning), §7 (ADRs — cloud decisions), §8 (acknowledged gaps) | [umami-iac.md](umami-iac.md) | §3 visual/E2E, §4 runtime validation (use drift detection instead) |
+| CMS / WordPress | §3 (testing), §3b (TDD), §6 (consistency — coding standards), §7 (ADRs — plugin/architecture decisions), §8 (acknowledged gaps — plugin risks) | [umami-wordpress.md](umami-wordpress.md) | — |
+| CMS / Drupal | §3 (testing), §3b (TDD), §5 (state tracking — config management), §6 (coding standards), §7 (ADRs — module/architecture decisions), §8 (acknowledged gaps — module risks) | [umami-drupal.md](umami-drupal.md) | — |
+| CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | — | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
+| Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
+| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | — | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
+
+**Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
 ### 0.6 Example: Onboarding a Multi-Layer System
 

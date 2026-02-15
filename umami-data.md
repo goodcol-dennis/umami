@@ -142,6 +142,126 @@ Application code has logging, metrics, and error tracking. Data pipelines need t
 
 ---
 
+## 18.8 Backward/Forward Compatibility
+
+Schema evolution (§18.3) defines the mechanics of changing schemas. This section defines the **compatibility contracts** that determine whether a change is safe.
+
+**Two directions of compatibility:**
+- **Backward compatible** — new code can read old data. Adding a nullable column is backward compatible. Renaming a column is not.
+- **Forward compatible** — old code can read new data. Adding a column that old consumers ignore is forward compatible. Changing a column's type is not.
+
+**Why both matter:** In any system where producers and consumers deploy at different times — which is every system with more than one component — you need both. A pipeline that writes a new format before all consumers can read it will break consumers. A consumer that can't read last month's data after a schema change will break backfills.
+
+**Compatibility rules for data formats:**
+
+| Change | Backward? | Forward? | Safe? |
+|---|---|---|---|
+| Add nullable column | Yes | Yes (if consumers ignore unknown) | Safe |
+| Add required column | No | Yes | Unsafe — old data lacks the column |
+| Remove column | Yes (if new code doesn't read it) | No | Unsafe — old consumers expect it |
+| Rename column | No | No | Unsafe — treat as add + deprecate |
+| Widen type (int → bigint) | Yes | Usually yes | Generally safe |
+| Narrow type (bigint → int) | No | No | Unsafe — old data may overflow |
+| Change encoding (JSON → Avro) | No | No | Requires migration period |
+
+**The discipline:**
+- Every schema change should be evaluated against both directions before applying.
+- Breaking changes require a migration period: deploy consumers that handle both formats, then change the format, then remove old-format handling.
+- For serialization formats (Avro, Protobuf), use schema registries that enforce compatibility checks automatically.
+- For databases, this maps directly to the deprecation periods in §18.3 — but extend the thinking to API responses, message queues, file formats, and any other data boundary.
+
+---
+
+## 18.9 Delivery Guarantees
+
+§18.2 covers idempotency — making pipelines safe to re-run. This section addresses the broader question: **how many times will each record be processed, and what does that mean for correctness?**
+
+**Three delivery models:**
+
+| Model | What it means | Risk | When you see it |
+|---|---|---|---|
+| **At-most-once** | Fire and forget. If processing fails, the record is lost. | Data loss | UDP, fire-and-forget queues, log shipping without acknowledgment |
+| **At-least-once** | Retry until acknowledged. Records may be delivered multiple times. | Duplicates | Most message queues (SQS, RabbitMQ, Kafka consumer groups) |
+| **Exactly-once** | Each record processed exactly once, even across failures. | Complexity | Kafka transactions, database-backed dedup, idempotent writes |
+
+**The practical reality:** True exactly-once is hard and expensive. Most production systems are at-least-once with idempotent consumers — which is effectively exactly-once from the consumer's perspective.
+
+**What to document:**
+- For each pipeline stage, state which delivery guarantee it provides. Don't assume — verify.
+- If the guarantee is at-least-once, document how duplicates are handled (upsert, dedup table, idempotent writes from §18.2).
+- If the guarantee is at-most-once, document why data loss is acceptable for that stage (e.g., debug logs, non-critical metrics).
+
+**Anti-patterns:**
+- **Assuming exactly-once when you have at-least-once.** If your pipeline doesn't deduplicate, re-delivered messages will create duplicates in your warehouse. Aggregations (sums, counts) will be wrong.
+- **Acknowledging before processing.** If you ack a message from the queue before completing the work, a crash loses the record — you've turned at-least-once into at-most-once.
+- **Ignoring ordering.** Even with at-least-once delivery, messages may arrive out of order. If your pipeline depends on processing events in sequence, you need ordering guarantees or order-independent logic.
+
+---
+
+## 18.10 Derived Data and Source of Truth
+
+Every data system has a **source of truth** — the authoritative record of what happened. Everything else — aggregations, indexes, caches, materialized views, denormalized tables, dashboards — is **derived data** that can be rebuilt from the source.
+
+**Why this distinction matters:**
+- If a derived table is wrong, you rebuild it from the source of truth. No data is lost.
+- If the source of truth is wrong, you have a real problem.
+- Knowing which is which determines your recovery strategy, your backup priorities, and your debugging approach.
+
+**Rules:**
+- **Identify the source of truth for every dataset.** Is it the raw event log? The transactional database? The upstream API? Document this in the source registry (§18.5).
+- **Derived data should be rebuildable.** If you can't reconstruct a table from its source, it's not derived — it's another source of truth, and it needs the same protection (backups, validation, access control).
+- **Keep derivation logic in code, not in ad-hoc queries.** A materialized view created by a one-off SQL script is a time bomb — when it needs updating, nobody knows how it was built. Derivation pipelines should be versioned, tested, and replayable (§18.6).
+- **When source and derived disagree, the source wins.** If a dashboard shows different numbers than the raw data, the dashboard is wrong. Investigate the derivation, not the source.
+
+**Common derived data patterns:**
+
+| Pattern | Source | Derived | Rebuild strategy |
+|---|---|---|---|
+| **Aggregation tables** | Transaction records | Daily/weekly summaries | Re-run aggregation pipeline for affected date range |
+| **Search indexes** | Primary database | Elasticsearch / Solr index | Full or incremental reindex |
+| **Caches** | API responses / DB queries | Redis / Memcached | Invalidate and repopulate |
+| **Materialized views** | Base tables | Denormalized query tables | Refresh from base tables |
+| **Data warehouse** | Operational databases | Analytics tables | Backfill from source systems (§18.6) |
+
+**Anti-patterns:**
+- **Mutating derived data directly.** If someone manually edits an aggregation table instead of fixing the source data, the next rebuild will overwrite the edit. Fix upstream.
+- **Multiple sources of truth for the same fact.** If customer address lives in both the CRM and the billing system and they disagree, you have two sources of truth — pick one and derive the other.
+- **No rebuild path.** If the only way to recreate a table is "the person who built it runs the script manually," you don't have a pipeline — you have a dependency on a person.
+
+---
+
+## 18.11 Batch vs Stream Processing
+
+Data processing falls into two fundamental modes. Choosing the wrong one wastes effort; mixing them without discipline creates systems nobody can reason about.
+
+| | Batch | Stream |
+|---|---|---|
+| **When data arrives** | All at once (file drop, scheduled query, full export) | Continuously (events, messages, change data capture) |
+| **Processing model** | Run periodically on accumulated data | Process each record as it arrives |
+| **Latency** | Minutes to hours | Seconds to minutes |
+| **Complexity** | Lower — easier to reason about, test, and debug | Higher — must handle ordering, late arrivals, failures mid-stream |
+| **Error recovery** | Re-run the batch | Replay from offset / checkpoint |
+| **Best for** | Reports, aggregations, bulk transforms, backfills | Real-time dashboards, alerts, event-driven workflows |
+
+**When to use batch:**
+- Data arrives in bulk (file drops, daily exports, API pulls).
+- Consumers don't need results faster than the batch interval.
+- The processing logic is complex and benefits from seeing the full dataset (joins, aggregations, dedup across the whole set).
+- You need simplicity and testability over low latency.
+
+**When to use stream:**
+- Data arrives continuously and consumers need near-real-time results.
+- The value of the data degrades quickly (fraud detection, alerting, live dashboards).
+- Events need to trigger downstream actions immediately (order placed → fulfillment started).
+
+**When you need both:**
+Many systems need batch for historical analysis and stream for real-time. The discipline is keeping them from diverging:
+- **Shared logic:** The transformation logic should be the same code path for batch and stream where possible. Two implementations that should produce the same output but are written and maintained separately will drift.
+- **Reconciliation:** Periodically compare stream-derived results against batch-recomputed results. Discrepancies reveal bugs in one path or the other.
+- **Lambda vs Kappa:** The lambda architecture (separate batch + stream paths) is common but doubles maintenance. The kappa architecture (stream-only, replay for historical) is simpler when the tooling supports it. Choose deliberately, document the decision in an ADR (§7).
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Data Pipeline Equivalent |
@@ -153,6 +273,10 @@ Application code has logging, metrics, and error tracking. Data pipelines need t
 | §4 Runtime Validation | §18.7 Data observability (continuous monitoring, not just test-time checks) |
 | §5 State Tracking | §18.6 Backfill logging (what was reprocessed, when, why) |
 | §7 Documentation | §18.5 Source registry + §18.3 Data dictionary |
+| §2 / §3 Contracts | §18.8 Backward/forward compatibility (safe schema evolution) |
+| §3b Process Discipline | §18.9 Delivery guarantees (at-least-once, exactly-once, dedup) |
+| §5 State Tracking | §18.10 Derived data — know where truth lives vs. what's rebuildable |
+| §7 ADRs | §18.11 Batch vs stream — architecture decision with long-term consequences |
 
 ---
 
@@ -163,14 +287,19 @@ Application code has logging, metrics, and error tracking. Data pipelines need t
 - [ ] Data quality tests updated for new or changed columns (§18.1).
 - [ ] Boundary contracts reviewed if source or target changed (§18.4).
 - [ ] Schema migration scripted and tested in non-prod (§18.3).
+- [ ] Backward/forward compatibility assessed for schema changes (§18.8).
+- [ ] Delivery guarantee documented and dedup strategy verified (§18.9).
 
 ### Before Every Data PR
 - [ ] Data quality tests pass on representative sample.
 - [ ] Source registry updated if new source added or existing source changed (§18.5).
 - [ ] Backfill tested if pipeline logic changed (§18.6).
 - [ ] Data dictionary updated for schema changes (§18.3).
+- [ ] Source of truth identified for any new dataset; derivation path documented (§18.10).
 
 ### Periodic
 - [ ] Data observability alerts reviewed — no ignored or noisy alerts (weekly).
 - [ ] Source registry reviewed — contacts current, quirks documented (quarterly).
 - [ ] Orphaned tables/views sweep — unused artifacts removed (quarterly).
+- [ ] Batch vs stream reconciliation — compare outputs if both paths exist (monthly) (§18.11).
+- [ ] Derived data audit — can every derived table be rebuilt from its source? (quarterly) (§18.10).

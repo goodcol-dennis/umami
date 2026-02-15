@@ -15,8 +15,8 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | Extension | Covers |
 |-----------|--------|
 | [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets |
-| [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, observability |
-| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection |
+| [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, observability, backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
+| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs |
 | [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance |
 | [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance |
 | [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline |
@@ -108,8 +108,8 @@ Then whenever you want a gap analysis, just tell your agent: *"Audit our process
 | File | Sections | When to apply |
 |------|----------|---------------|
 | [`umami-web.md`](umami-web.md) | §17.1–17.7 | Project has a web frontend |
-| [`umami-data.md`](umami-data.md) | §18.1–18.7 | Project has data ingestion, pipelines, or a data warehouse |
-| [`umami-iac.md`](umami-iac.md) | §16.1–16.11 | Project has infrastructure-as-code or cloud provisioning |
+| [`umami-data.md`](umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
+| [`umami-iac.md`](umami-iac.md) | §16.1–16.14 | Project has infrastructure-as-code or cloud provisioning |
 | [`umami-mobile.md`](umami-mobile.md) | §19.1–19.6 | Project has a native or cross-platform mobile app |
 | [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.7 | Project is built on WordPress |
 | [`umami-drupal.md`](umami-drupal.md) | §21.1–21.8 | Project is built on Drupal |
@@ -180,6 +180,25 @@ Umami operationalizes many of the principles from *The Pragmatic Programmer* by 
 | **Your Knowledge Portfolio** | Token efficiency (§9) — pre-derived understanding, persistent memory, front-loaded context |
 
 The mapping isn't one-to-one — umami extends these ideas into the AI-assisted development era, where token cost, session handoffs, and agent coordination are first-class concerns that the book (written before LLMs) couldn't anticipate.
+
+## Relationship to Designing Data-Intensive Applications
+
+The data and infrastructure extensions draw heavily from the principles in *Designing Data-Intensive Applications* by Martin Kleppmann. Where Kleppmann teaches *why* these concepts matter, umami encodes *what to do about them* in your project guardrails.
+
+| DDIA Concept | Where Umami Operationalizes It |
+|---|---|
+| **Reliability, Scalability, Maintainability** | Project discovery (§0.1) — identify which pillar is the primary driver before choosing architecture |
+| **Schema Evolution & Encoding** | Backward/forward compatibility (§18.8) — evaluate every schema change for both directions |
+| **Exactly-Once / At-Least-Once Delivery** | Delivery guarantees (§18.9) — document the guarantee each pipeline stage provides |
+| **Derived Data & Sources of Truth** | Derived data discipline (§18.10) — know what's rebuildable vs. what's authoritative |
+| **Batch vs Stream Processing** | Processing model trade-offs (§18.11) — choose deliberately, reconcile when using both |
+| **Fault Tolerance & Replication** | Reliability engineering (§16.12) — redundancy, failover, RTO/RPO, restore drills |
+| **Partitioning & Load** | Scalability awareness (§16.13) — load parameters, bottleneck identification, capacity planning |
+| **SLOs & Consistency** | SLOs/SLIs/error budgets (§16.14) — measurable reliability targets driving infrastructure decisions |
+| **Idempotency** | Pipeline idempotency (§18.2) — safe-to-rerun pipelines, upsert patterns, checkpoint tracking |
+| **Data Quality & Validation** | Data quality testing (§18.1) — completeness, uniqueness, freshness, referential integrity |
+
+Kleppmann's book focuses on *understanding* distributed systems. Umami translates that understanding into checklists, rules, and review practices that prevent the failure modes the book describes.
 
 ## Contributing
 

@@ -20,6 +20,7 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance |
 | [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance |
 | [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline |
+| [`umami-observability.md`](umami-observability.md) | Three signals (metrics/logs/traces), OpenTelemetry, OpenMetrics, instrumentation discipline, alerting, dashboards, cost management |
 
 The core template is **not** tied to any specific project. You reference it (and the relevant extensions) from your project and let your AI agent adapt the guidance to your codebase.
 
@@ -38,6 +39,7 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-observability.md
 ```
 
 ### 2. Give it to your LLM agent
@@ -72,6 +74,7 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
 - Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+- Extension — Observability: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-observability.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   any relevant extensions, then compare their recommendations against the project's current state.
@@ -113,6 +116,7 @@ Then whenever you want a gap analysis, just tell your agent: *"Audit our process
 | [`umami-mobile.md`](umami-mobile.md) | §19.1–19.6 | Project has a native or cross-platform mobile app |
 | [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.7 | Project is built on WordPress |
 | [`umami-drupal.md`](umami-drupal.md) | §21.1–21.8 | Project is built on Drupal |
+| [`umami-observability.md`](umami-observability.md) | §22.1–22.9 | System has components running in production that need monitoring |
 
 ## Compliance and regulated environments
 

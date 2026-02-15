@@ -15,6 +15,7 @@ This document is a template for establishing processes, testing strategies, and 
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
 - Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+- Extension — Observability: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-observability.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   any relevant extensions, then compare their recommendations against the project's current state.
@@ -68,6 +69,7 @@ Most projects are not single-layer. Identify all layers that apply:
 | **Mobile app** | yes / no | Is there a native or cross-platform mobile app? (iOS, Android, React Native, Flutter) |
 | **CMS / WordPress** | yes / no | Is the project built on WordPress? (themes, plugins, site builds) |
 | **CMS / Drupal** | yes / no | Is the project built on Drupal? (modules, themes, config management) |
+| **Observability** | yes / no | Does the system need production monitoring? (metrics, logging, tracing, alerting) |
 
 **Why this matters:** A project with 4 layers needs a change propagation map organized per-layer, test strategies per-layer, and potentially different languages per-layer. A single-layer web app needs none of that.
 
@@ -103,6 +105,7 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | Infrastructure / IaC | §2 (specs — infra contracts), §6 (pinning), §7 (ADRs — cloud decisions), §8 (acknowledged gaps) | [umami-iac.md](umami-iac.md) | §3 visual/E2E, §4 runtime validation (use drift detection instead) |
 | CMS / WordPress | §3 (testing), §3b (TDD), §6 (consistency — coding standards), §7 (ADRs — plugin/architecture decisions), §8 (acknowledged gaps — plugin risks) | [umami-wordpress.md](umami-wordpress.md) | — |
 | CMS / Drupal | §3 (testing), §3b (TDD), §5 (state tracking — config management), §6 (coding standards), §7 (ADRs — module/architecture decisions), §8 (acknowledged gaps — module risks) | [umami-drupal.md](umami-drupal.md) | — |
+| Observability / monitoring | §3 (testing — verify instrumentation), §4 (runtime validation), §7 (ADRs — tool choices, SLO decisions), §8 (acknowledged gaps — blind spots) | [umami-observability.md](umami-observability.md) | — |
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | — | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
 | Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | — | Nothing skipped — compliance adds rigor, it doesn't remove sections. |

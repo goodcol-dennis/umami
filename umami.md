@@ -109,6 +109,8 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
+**Adapt the process, don't serve it.** This template is a starting point, not a compliance checklist. If a section doesn't fit your project, skip it — the "Skip or defer" column exists for this reason. If a recommended practice creates more overhead than value for your specific context, drop it and document why in an ADR (§7). The worst application of these guardrails is treating them as rules to satisfy rather than tools to use. A team that follows 8 sections well will outperform a team that mechanically follows all 15 poorly.
+
 ### 0.6 Example: Onboarding a Multi-Layer System
 
 Consider a project that has a web dashboard, but the dashboard sits on top of a data ingestion layer, a calculation pipeline, and a data warehouse. The project directory contains `lib/pipeline/` and `lib/extraction/` — not `src/components/`.
@@ -183,6 +185,7 @@ project-root/
 - **Types live together** — shared types in one place, not scattered across modules.
 - **Config at the root** — all tool configs (linter, formatter, test runner, build) at project root, not nested.
 - **No deep nesting** — if a path exceeds 4 levels, flatten it. Deep trees cost navigation tokens.
+- **Orthogonal by default** — changes to one module should not require changes to unrelated modules. If adding a feature requires edits in 6 files that have nothing to do with each other, the structure has coupled things that should be independent. Signs of poor orthogonality: a single change type appears in multiple unrelated rows of the change propagation map (§10), or two modules import from each other.
 
 ### Workspace Partitioning
 
@@ -230,6 +233,18 @@ Every feature starts with a written spec, not code. Architecture documents and d
 
 A spec that takes 30 minutes to write prevents hours of rework. For AI contributors specifically, a spec means the AI implements to a target rather than inferring intent from context clues — fewer clarification questions, fewer wrong-direction implementations.
 
+### When Not to Specify
+
+Specs have diminishing returns. Over-specifying is its own form of waste — a spec that takes longer to write than the implementation it describes is overhead, not discipline.
+
+**Skip the spec when:**
+- The change is trivial — typo fixes, config tweaks, adding a log line, updating a dependency version.
+- The implementation is smaller than the spec would be — if describing the work takes more effort than doing the work, just do the work.
+- The behavior is already fully specified by an existing test — writing a new spec that restates what the test already captures adds no value.
+- You're prototyping to learn — write the spec *after* the prototype clarifies the requirements, not before. Specifying unknowns produces fiction, not contracts.
+
+**The signal:** If you find yourself writing a spec and realizing you can't specify the behavior because you don't understand the problem well enough, stop specifying and start prototyping. A prototype that reveals the right spec is more valuable than a spec that encodes the wrong assumptions.
+
 ---
 
 ## 3. Multi-Layer Test Infrastructure
@@ -239,9 +254,26 @@ Testing spans the full stack across complementary layers:
 | Layer | Purpose | Catches |
 |-------|---------|---------|
 | **Unit tests** | Logic correctness | Regressions in parsers, validators, state management, utility functions |
+| **Property-based tests** | Invariant correctness across generated inputs | Edge cases you didn't think of — boundary values, empty inputs, unicode, overflow |
 | **E2E browser tests** | User flow integrity | Broken interactions, navigation failures, data persistence issues |
 | **Visual regression** | Pixel-level UI stability | Unintended cosmetic changes; baselines updated only for intentional changes |
 | **API/service tests** | Contract adherence | Protocol violations, serialization errors, edge cases in data handling |
+
+### Property-Based Testing
+
+Example-based tests verify the cases you thought of. Property-based tests find the cases you didn't. Instead of specifying individual inputs and expected outputs, you define *properties* (invariants) that must hold for *any* valid input, and the framework generates hundreds or thousands of test cases automatically.
+
+**When to use:**
+- **Parsers and serializers** — "parse(serialize(x)) should equal x for any x."
+- **Data transforms** — "output row count should equal input row count" or "no nulls in required fields after transform."
+- **Business rules** — "discount never exceeds the item price" or "account balance never goes negative."
+- **API contracts** — "response schema is valid for any combination of query parameters."
+
+**When not to use:** UI interactions, integration tests with external services, or any test where the property is harder to state than the individual cases.
+
+**Frameworks:** Hypothesis (Python), fast-check (JavaScript/TypeScript), QuickCheck (Haskell/Erlang), Proptest (Rust), jqwik (Java).
+
+**Token impact for AI development:** Property-based tests are especially valuable when agents write code, because agents tend to test the happy path and common edge cases but miss unusual input combinations. A property-based test suite catches bugs the agent (or human) would never think to write example tests for.
 
 ### Testing Principles
 
@@ -311,6 +343,19 @@ When a test fails or a bug is reported, do not guess. Follow this process:
 - **Shotgun debugging** — changing multiple things hoping one works. This makes it impossible to know which change fixed the problem, and often introduces new issues.
 - **Defensive masking** — wrapping the crash site in try/except or adding a null check to suppress the error. The bug still exists; you've just hidden it.
 - **Fix-and-pray** — making a change without running the failing test to confirm it actually works.
+
+### Don't Program by Coincidence
+
+Code that works is not the same as code you understand. If you can't explain *why* a fix works — what was wrong, what the fix changes, and why the change is correct — you haven't found the root cause. You've found a coincidence.
+
+This is especially critical in AI-assisted development. Agents will iterate toward passing tests by changing code until the error disappears. The result often works but for the wrong reason — a side effect, a type coercion, a timing change that masks the real bug. When the next change shifts conditions slightly, the "fix" breaks.
+
+**The discipline:**
+- **Before committing a fix, state the root cause.** Not "I changed X and the test passed" but "the bug was caused by Y, and the fix addresses Y by doing Z." If you can't state this, you're programming by coincidence.
+- **Be suspicious of fixes you can't explain.** If a one-line change fixes a complex bug and you don't understand why, investigate further. You may have masked the bug, not fixed it.
+- **Trace the data flow.** For any non-trivial fix, trace the data from input to the point of failure. Understand each transformation. If a step surprises you, that surprise is either a bug or a gap in your understanding — either way, it needs resolution.
+
+**Anti-pattern — Iteration-until-green:** Changing code repeatedly until tests pass, without understanding what each change does. Each iteration adds a layer of changes whose interactions are unknown. Even if the tests eventually pass, the code is now a stack of guesses — fragile, unmaintainable, and dangerous to modify.
 
 ### Verification Before Completion
 
@@ -546,11 +591,23 @@ Write 5-10 lines in the persistent memory file:
 Branch: feat/feature-name
 Scope: What this change does (one line)
 OUT: What is explicitly not in scope
+Magnitude: S / M / L / XL
 Acceptance:
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Tests pass, baselines updated (if UI)
 ```
+
+**Magnitude estimates** prevent the most common planning failure: starting a "small change" that turns out to touch 15 files across 3 layers. This is not a time estimate — it's a scope estimate.
+
+| Size | Meaning | Signal to stop and re-scope |
+|------|---------|----------------------------|
+| **S** | 1–3 files, one layer, no new patterns | You're past 5 files |
+| **M** | 4–10 files, one layer, or a new pattern within existing architecture | You're past 12 files or touching a second layer |
+| **L** | 10+ files, multiple layers, or a new architectural pattern | Scope is growing beyond the original acceptance criteria |
+| **XL** | Cross-cutting change affecting most of the codebase | Consider splitting into multiple smaller changes |
+
+If the actual magnitude exceeds the estimate by more than one step (estimated S, actually L), stop and re-scope before continuing. The estimate was wrong, which means the understanding was wrong, which means the acceptance criteria may also be wrong.
 
 The AI sees this at session start and knows the target. No clarification questions, no re-scoping.
 
@@ -705,6 +762,15 @@ Most AI development tools support connecting agents to external services — iss
 | **Context duplication** | Passing the full conversation to every worker | Workers get focused instructions, not the whole history |
 | **Unsupervised destruction** | Worker deletes files or pushes code without review | Restrict worker toolsets; require human approval for destructive actions |
 | **Skill rot** | Skills reference outdated file paths or deprecated APIs | Review skills when you update the change propagation map (§10) or codebase understanding doc (§9.3) |
+
+### Team Coordination (Human + Agent)
+
+When multiple developers work with AI agents on the same codebase, coordinate the humans — the agents will follow.
+
+- **Shared conventions file, not per-developer memory.** Project instruction files (CLAUDE.md, CODEBASE.md) are the team's shared understanding. Individual agent memory files hold personal preferences. Don't let critical project knowledge live only in one developer's agent memory — if that developer leaves, the knowledge leaves with them.
+- **Review agent-generated code like any other code.** Code review discipline doesn't change because an agent wrote it. The reviewer is responsible for understanding what they approve — "the agent wrote it" is not a justification for merging code no human understands (§3b — Don't Program by Coincidence).
+- **Avoid parallel agent edits to the same files.** Two agents editing the same file in separate branches produces merge conflicts that are hard to resolve because neither developer fully understands the other agent's changes. Coordinate scope before starting, not after conflicting.
+- **Converge on shared skills.** If two developers create different agent skills for the same task (e.g., two different security review prompts), consolidate them into the project skill library. Inconsistent agent behavior across the team produces inconsistent output.
 
 ---
 

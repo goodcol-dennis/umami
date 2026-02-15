@@ -160,6 +160,27 @@ A major motivation for umami was **token efficiency across sessions.** Regressio
 
 **Can you use both?** Yes. Superpowers keeps the agent disciplined during execution. Umami keeps the project structured so that disciplined execution doesn't get wasted on a disorganized codebase. They address different layers of the same problem.
 
+## Relationship to The Pragmatic Programmer
+
+Umami operationalizes many of the principles from *The Pragmatic Programmer* by Andy Hunt and Dave Thomas. Rather than leaving those ideas as abstract advice, umami encodes them into concrete guardrails, checklists, and project structures.
+
+| Pragmatic Programmer Principle | Where Umami Operationalizes It |
+|---|---|
+| **DRY** (Don't Repeat Yourself) | Change propagation maps (§10), single-source-of-truth structure (§1) |
+| **Orthogonality** | Modular project structure (§1), extension architecture, decoupled components |
+| **ETC** (Easy to Change) | File size budgets (§11), dead code hygiene (§13), living documentation (§7) |
+| **Tracer Bullets** | Spec-first development (§2) — build a thin end-to-end slice first, then fill in |
+| **Design by Contract** | Runtime validation (§4), schema contracts, boundary testing |
+| **Property-Based Testing** | Multi-layer test infrastructure (§3) — test invariants, not just examples |
+| **Don't Program by Coincidence** | Development process discipline (§3b) — understand why code works, not just that it works |
+| **The Specification Trap** | "When Not to Specify" (§2) — know when a spec adds drag instead of clarity |
+| **Broken Windows** | Acknowledged gaps (§8) — make tech debt visible rather than letting it accumulate silently |
+| **Estimating** | Magnitude estimates in change tracking (§12) — S/M/L/XL scope before starting work |
+| **Pragmatic Teams** | Agent orchestration (§14) — coordination patterns for human + AI teams |
+| **Your Knowledge Portfolio** | Token efficiency (§9) — pre-derived understanding, persistent memory, front-loaded context |
+
+The mapping isn't one-to-one — umami extends these ideas into the AI-assisted development era, where token cost, session handoffs, and agent coordination are first-class concerns that the book (written before LLMs) couldn't anticipate.
+
 ## Contributing
 
 If you try this on your project and find gaps, patterns that don't apply, or things that should be added — open an issue or PR. This document gets better when people use it on real projects and report back what worked and what didn't.

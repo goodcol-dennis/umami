@@ -161,6 +161,9 @@ project-root/
 │   ├── decisions/         # Architecture Decision Records (ADRs)
 │   └── ui/                # UX specs, mockups, design system
 │
+├── poc/                   # Proof-of-concept experiments (§3b)
+│   └── <experiment-name>/ # Each POC in its own directory with a README
+│
 ├── src/ (or per-layer dirs like frontend/, backend/, middleware/)
 │   ├── components/        # UI components, grouped by feature
 │   ├── tools/             # Domain-specific modules
@@ -356,6 +359,33 @@ This is especially critical in AI-assisted development. Agents will iterate towa
 - **Trace the data flow.** For any non-trivial fix, trace the data from input to the point of failure. Understand each transformation. If a step surprises you, that surprise is either a bug or a gap in your understanding — either way, it needs resolution.
 
 **Anti-pattern — Iteration-until-green:** Changing code repeatedly until tests pass, without understanding what each change does. Each iteration adds a layer of changes whose interactions are unknown. Even if the tests eventually pass, the code is now a stack of guesses — fragile, unmaintainable, and dangerous to modify.
+
+### Proof-of-Concept and Exploratory Code
+
+Not all coding aims at production. POCs prove that a design, technology choice, or integration approach works before committing to full implementation. Exploratory coding builds understanding of a problem space, an API, or a data shape. Both produce artifacts that need lifecycle management — left unmanaged, they become confusing dead weight.
+
+**Types:**
+- **Proof of Concept (POC)** — a minimal build to validate a complex design or technology choice. The goal is a go/no-go decision, not a shippable feature.
+- **Exploratory coding** — code written to learn. Understanding an unfamiliar API, profiling a data shape, testing a library's behavior under load. The deliverable is knowledge, not code.
+- **Spike** — a time-boxed investigation into a specific technical question, usually with a fixed deadline and a narrow scope.
+
+**The workflow:**
+
+1. **Start with a question.** Write down what you're trying to learn. "Can our system handle 10k concurrent WebSocket connections?" is a POC. "How does this payment API handle partial refunds?" is exploration. Vague goals ("let's play with X") produce vague results.
+2. **Isolate from the main codebase.** POC code lives in `poc/<experiment-name>/` (see §1 structure) or on a dedicated branch — never mixed into production code. Each experiment gets its own directory with a README stating the question being investigated.
+3. **Time-box the work.** POCs without deadlines become zombie projects. Set a boundary ("2 days to prove this works") and evaluate at the end, even if the answer is "needs more investigation."
+4. **Document findings.** When done, the README answers: What was the question? What did you build? What did you learn? What's the recommendation (proceed / don't proceed / needs more investigation)?
+5. **Bridge to production with a gap analysis.** A working POC is not production-ready code. Before integrating, identify the gaps: error handling, testing, security, performance, observability, edge cases the POC intentionally skipped. The gap analysis becomes the integration spec (§2).
+
+**Artifact lifecycle:**
+- **Keep and reference** — the POC documents a useful pattern or a rejected approach. Keep the directory with its README, link to the relevant ADR (§7). This prevents future contributors from re-investigating the same question.
+- **Archive** — served its purpose, might provide context later. Tag the branch or note it in an ADR. Remove from the active `poc/` directory.
+- **Delete** — fully integrated or approach definitively abandoned. Dead POCs are dead code (§13).
+
+**Rules:**
+- **Never copy POC code into production.** POC code cuts corners on purpose — hardcoded values, no error handling, skipped edge cases. Integrating it imports all those shortcuts as tech debt. Rewrite against the integration spec.
+- **Review `poc/` periodically.** If nobody can explain why a POC is still there or what question it answered, it's a cleanup candidate.
+- **Document negative results.** A POC that proves something *doesn't* work is as valuable as one that proves it does — it prevents the next person (or agent) from repeating the investigation.
 
 ### Verification Before Completion
 
@@ -653,6 +683,7 @@ Unused code is invisible debt that compounds. It inflates files (increasing toke
 - **When extracting shared helpers**, verify every call site is updated in the same commit. Partial migrations — where some code uses the old local helper and some uses the new shared one — are the most common source of subtle bugs.
 - **Never leave unused imports or exports for "later"** — the cost of removing dead code only increases as more code accumulates around it.
 - **Delete, don't comment out.** Commented-out code is noise that costs tokens to read and never gets uncommented. Git history preserves anything you might need back.
+- **POC artifacts have a lifecycle too.** Proof-of-concept and exploratory code (§3b) should be reviewed periodically. If a POC has been fully integrated or the approach was abandoned, delete the directory. If it documents a useful rejected approach, keep it with a README — but don't let `poc/` become a graveyard of unexplained experiments.
 
 ---
 
@@ -779,7 +810,8 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 ### Before Starting a Feature
 
 - [ ] Active Change block written in persistent memory (scope, acceptance criteria).
-- [ ] Written spec or ADR exists for non-trivial work.
+- [ ] Written spec or ADR exists for non-trivial work. If the problem isn't well enough understood to spec, start with a POC (§3b).
+- [ ] For complex or unfamiliar designs: POC completed, findings documented, gap analysis done before full implementation.
 - [ ] Change propagation map consulted — know which files will be touched.
 - [ ] Relevant architecture docs and audits reviewed.
 - [ ] Design system consulted (if UI work).
@@ -821,6 +853,7 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 - [ ] CODEBASE.md updated if codebase patterns, conventions, or structure changed.
 - [ ] UX/style audit consulted for UI changes.
 - [ ] Acknowledged gaps updated if new debt introduced.
+- [ ] `poc/` directory reviewed — any completed or abandoned experiments cleaned up (§3b, §13).
 - [ ] Decision record written in decisions log.
 - [ ] Active Change and Session Handoff blocks removed from memory.
 - [ ] Skill library updated if a new reusable agent pattern emerged (§14).

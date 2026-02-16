@@ -158,6 +158,46 @@ The core template (§2) covers specification-first development. For web frontend
 
 ---
 
+## 17.8 Frontend Observability
+
+Performance budgets (§17.6) set targets in the lab. Frontend observability measures what users actually experience in production — different devices, different networks, different usage patterns.
+
+### Real User Monitoring (RUM)
+
+Lab testing (Lighthouse, bundler analysis) catches regressions before deploy. RUM captures what happens after deploy — on real devices, real networks, under real load.
+
+**What to measure in production:**
+
+| Signal | What it tells you | Lab equivalent |
+|--------|-------------------|----------------|
+| **LCP** (Largest Contentful Paint) | How fast content appears for real users | Lighthouse LCP score |
+| **INP** (Interaction to Next Paint) | How responsive the page feels when users interact | Lighthouse FID/INP |
+| **CLS** (Cumulative Layout Shift) | How stable the page is during load | Lighthouse CLS score |
+| **TTFB** (Time to First Byte) | Server and network latency real users experience | Dev tools network tab |
+
+**Rules:**
+- Measure Core Web Vitals from real users, not just synthetic tests. A page that scores 100 in Lighthouse on your dev machine may have a 4s LCP on a mid-range phone over 3G.
+- Segment RUM data by device type, connection speed, and geography. Aggregate p75 hides that your mobile users on slow connections have a terrible experience.
+- Set alerts when field metrics degrade beyond your performance budgets (§17.6). A 20% LCP regression that persists for 24 hours should trigger investigation.
+
+### Client-Side Error Tracking
+
+JavaScript errors in production are invisible unless you capture them. Users don't file bug reports for a broken dropdown — they leave.
+
+**What to capture:**
+- **Unhandled exceptions** — `window.onerror`, `unhandledrejection`. Include the stack trace, browser, OS, and URL.
+- **Failed API calls** — responses with 4xx/5xx status or network failures. Include the endpoint, status, and request context (not the request body — it may contain PII).
+- **Console errors** — framework-specific errors (React error boundaries, Vue error handlers) that don't bubble to `window.onerror`.
+
+**Rules:**
+- Never include PII, auth tokens, or request/response bodies in error telemetry.
+- Group errors by stack trace, not by message — the same root cause with slightly different inputs should be one issue, not thousands.
+- Track error-free session rate as a health metric. A sudden drop correlates with a bad deploy.
+
+**Tooling (examples, not prescriptions):** Sentry, LogRocket, Datadog RUM, OpenTelemetry browser SDK, web-vitals library.
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Web Frontend Equivalent |
@@ -167,6 +207,7 @@ The core template (§2) covers specification-first development. For web frontend
 | §6 Consistency | §17.2 Design system + §17.3 Style audit |
 | §7 Documentation | §17.3 Living style audit, design system docs |
 | §11 File Size | §17.6 Performance budgets (bundle size, image weight) |
+| §4 Observability | §17.8 Frontend observability — RUM, error tracking, production performance |
 
 ---
 
@@ -184,3 +225,8 @@ The core template (§2) covers specification-first development. For web frontend
 - [ ] Style audit updated if new patterns introduced or violations found.
 - [ ] Responsive behavior verified at all defined breakpoints.
 - [ ] Loading, empty, and error states verified for new components.
+- [ ] Error boundaries in place for new async components (§17.8).
+
+### After Deploy
+- [ ] RUM metrics checked — no Core Web Vitals regression vs. pre-deploy baseline (§17.8).
+- [ ] Client-side error rate stable — no spike in unhandled exceptions (§17.8).

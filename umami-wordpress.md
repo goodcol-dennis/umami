@@ -343,6 +343,40 @@ wp search-replace 'https://staging.example.com' 'https://example.com' --all-tabl
 
 ---
 
+## 20.8 Production Monitoring
+
+WordPress sites fail in ways that are invisible without monitoring: silent PHP fatal errors, plugins that degrade performance after an update, wp-cron jobs that stop running, and slow queries that accumulate as content grows.
+
+### Error Logging
+
+```php
+// wp-config.php — production error logging (NOT display)
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true );      // Write errors to wp-content/debug.log
+define( 'WP_DEBUG_DISPLAY', false ); // Never show errors to visitors
+@ini_set( 'display_errors', 0 );
+```
+
+**Rules:**
+- Enable `WP_DEBUG_LOG` in production but **never** `WP_DEBUG_DISPLAY`. Displaying errors to visitors leaks server paths and PHP internals.
+- Set up log rotation for `debug.log` — an unrotated log on a high-traffic site grows indefinitely.
+- For production-grade logging, send logs to an external aggregation service (Logtail, Papertrail, CloudWatch, Loki) rather than relying on a local file. External aggregation lets you search, alert, and retain logs beyond what the server's disk can hold.
+- Never log sensitive data — user passwords, payment details, or full request bodies.
+
+### Uptime and Health Monitoring
+
+- **External uptime monitoring** — check the site from outside your infrastructure. If your server is down, it can't tell you it's down. Use a service that checks HTTP status and response time on a schedule.
+- **WP-Cron health** — WordPress's pseudo-cron depends on site visits. Low-traffic sites may have cron jobs that don't run. If scheduled tasks matter (email digests, cache clearing, scheduled posts), configure a real system cron: `*/5 * * * * curl -s https://example.com/wp-cron.php > /dev/null 2>&1`. Monitor that it runs.
+- **Site Health API** — WordPress's built-in Site Health (Tools → Site Health) reports issues. For automated monitoring, the REST API endpoint `/wp-json/wp-site-health/v1/tests/` exposes these checks programmatically.
+
+### Performance Monitoring
+
+- **Query count and time per page** — Query Monitor is invaluable in development/staging. For production, track query counts and response times via server-side monitoring (New Relic, Datadog, or server access logs with response time).
+- **Object cache hit rate** — if using Redis or Memcached, monitor hit rates. A low hit rate means the cache isn't helping; investigate what's bypassing it.
+- **Slow query logging** — enable MySQL/MariaDB slow query log for queries >1s. Plugin updates or content growth can introduce queries that worked fine at 1,000 posts but crawl at 50,000.
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | WordPress Equivalent |
@@ -355,6 +389,7 @@ wp search-replace 'https://staging.example.com' 'https://example.com' --all-tabl
 | §8 Acknowledged Gaps | §20.2 Abandoned plugin risks, known plugin conflicts |
 | §11 File Size | §20.3 functions.php decomposition |
 | §13 Dead Code | §20.2 Plugin inventory — unused plugins are dead code with attack surface |
+| §4 Observability | §20.8 Production monitoring — error logging, uptime, performance |
 
 ---
 
@@ -381,3 +416,6 @@ wp search-replace 'https://staging.example.com' 'https://example.com' --all-tabl
 - [ ] Core, plugin, and theme updates applied (weekly) (§20.2).
 - [ ] Backup verification — confirm backups are restorable, not just present (monthly).
 - [ ] User accounts audited — remove inactive admin accounts, verify MFA enabled (quarterly).
+- [ ] Error logs reviewed — recurring errors identified and addressed (weekly) (§20.8).
+- [ ] WP-Cron health verified — scheduled tasks running on time (monthly) (§20.8).
+- [ ] Slow query log reviewed — new slow queries identified after updates or content growth (monthly) (§20.8).

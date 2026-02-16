@@ -261,6 +261,91 @@ Infrastructure exists to serve a system, and that system has reliability targets
 
 ---
 
+## 16.15 Observability as Infrastructure
+
+Observability — metrics, logs, traces, and alerts — is infrastructure. The monitoring stack needs the same discipline as any other provisioned system: version-controlled configuration, environment promotion, cost management, and documented architecture decisions.
+
+### Instrument with OTEL
+
+Use OpenTelemetry (OTEL) as the vendor-neutral standard for instrumentation. The key architectural benefit: your application code emits telemetry through the OTEL SDK, the OTEL Collector receives and routes it, and the backend (Grafana, Datadog, Prometheus, etc.) is a configuration change — not a re-instrumentation.
+
+**What to provision:**
+- **OTEL Collector** — deploy as a sidecar or standalone service. It decouples applications from backends, handles batching and retry, and lets you change backends without touching application code.
+- **Metrics backend** — Prometheus, Mimir, CloudWatch, Datadog. Choose one, document the decision in an ADR.
+- **Log aggregation** — centralized logging (Loki, Elasticsearch, CloudWatch Logs). Structured JSON logs (§4) from every service, searchable by trace ID.
+- **Tracing backend** — Jaeger, Tempo, X-Ray. Needed for distributed systems; optional for single-service deployments.
+
+**Rules:**
+- Use OTEL SDKs for all new instrumentation — not vendor-specific SDKs. Even if you're committed to one vendor today, the switching cost later is significant.
+- Use auto-instrumentation first, manual instrumentation second. Most frameworks have OTEL auto-instrumentation libraries that capture HTTP requests, database calls, and external service calls with zero code changes.
+- Pin OTEL SDK versions like any other dependency (§16.7).
+
+### Alerting Discipline
+
+The purpose of an alert is to notify a human that something requires action. An alert that doesn't require action is noise. Noise leads to alert fatigue. Alert fatigue leads to missed real incidents.
+
+**Alert on symptoms, not causes:**
+- Good: "Error rate > 5% for 5 minutes" — users are affected.
+- Bad: "CPU > 80%" — may or may not affect users. CPU at 80% might be perfectly normal during a batch job.
+
+**Alert tiers:**
+
+| Tier | Urgency | Response | Examples |
+|------|---------|----------|---------|
+| **Page** (P1) | Immediate | Drop everything | Service down, data loss, security breach |
+| **Urgent** (P2) | Business hours | Address today | Error rate elevated, SLO budget burning fast, disk > 90% |
+| **Warning** (P3) | This week | Investigate if it persists | Latency trending up, cert expiring in 14 days |
+| **Info** | Awareness only | Review in ops review | Deployment completed, scaling event |
+
+**Rules:**
+- Every alert must have a runbook — or at least a link to documentation. If the on-call engineer doesn't know what to do, the alert is incomplete.
+- Every alert must have an owner. Unowned alerts are ignored alerts.
+- Alert on error budget burn rate (§16.14), not individual errors. A single 500 is not an incident. Burning 10% of your monthly error budget in one hour is.
+- Use percentile-based thresholds over averages. p99 > 500ms catches tail latency; average > 500ms only fires when everything is on fire.
+- Use sustained thresholds: "Error rate > 5% for 5 minutes" prevents flapping on momentary spikes.
+- Review alerts monthly. If an alert fires regularly and nobody acts on it, fix the underlying issue or adjust the threshold.
+
+### Golden Signals Dashboards
+
+Every service should have a dashboard showing four signals (from Google's SRE book):
+
+| Signal | What it measures | Key metric |
+|--------|-----------------|------------|
+| **Latency** | How long requests take | p50, p95, p99 response time |
+| **Traffic** | How much demand the system handles | Requests per second |
+| **Errors** | How often requests fail | Error rate (%), error count by type |
+| **Saturation** | How full the system is | CPU %, memory %, disk %, queue depth, connection pool usage |
+
+**Dashboard hierarchy:**
+1. **Service overview** — golden signals per service. Start here during an incident.
+2. **Dependency view** — latency and errors for downstream dependencies. Answers "is the problem mine or downstream?"
+3. **Business metrics** — orders per minute, signups per day. Answers "is the system doing what it should?"
+4. **Infrastructure** — resource utilization, scaling events, deployment markers.
+
+**Rules:**
+- Start with the golden signals dashboard before building anything elaborate.
+- Add deployment markers — overlaying deploy events on metric graphs instantly answers "did the last deploy cause this?"
+- Keep dashboards focused. A dashboard with 50 panels is a wall of noise.
+
+### Observability Cost Management
+
+Observability data is high-volume. Unmanaged, it becomes one of the largest infrastructure line items. Treat it like any other cost (§16.4).
+
+| Data type | Cost driver |
+|-----------|------------|
+| **Metrics** | Cardinality — each unique label combination creates a time series. A metric with a `user_id` label creates a series per user. |
+| **Logs** | Volume (GB/day). Verbose logging in high-traffic services adds up fast. |
+| **Traces** | Span count. 100% trace sampling at scale generates enormous volumes. |
+
+**Cost controls:**
+- Control metric cardinality. If a label can take more than ~100 unique values, it should not be a metric label — put high-cardinality identifiers in logs and traces instead.
+- Sample traces in production. 100% sampling is rarely necessary. Capture 100% of error traces and a statistical sample of successful ones.
+- Set log levels appropriately. DEBUG in production generates 10-100x more volume than INFO.
+- Set retention policies: metrics 13 months, logs 30-90 days, traces 7-14 days.
+- Review observability spend monthly alongside infrastructure costs (§16.4).
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 This extension does not replace core guardrails — it extends them for the IaC context:
@@ -278,6 +363,7 @@ This extension does not replace core guardrails — it extends them for the IaC 
 | §4 / §8 Reliability | §16.12 Reliability engineering — fault tolerance, RTO/RPO, failure testing |
 | §0 Discovery | §16.13 Scalability awareness — load parameters, capacity planning |
 | §7 ADRs | §16.14 SLOs/SLIs — measurable reliability targets driving architecture decisions |
+| §4 Observability | §16.15 Observability as infrastructure — OTEL, alerting, dashboards, cost management |
 
 ---
 
@@ -298,11 +384,19 @@ This extension does not replace core guardrails — it extends them for the IaC 
 - [ ] Tested in non-prod environment first (for destructive or networking changes).
 - [ ] SLO impact assessed — does this change affect reliability targets? (§16.14).
 
+### Before Every Service/Feature Launch
+- [ ] Golden signals dashboard created (latency, traffic, errors, saturation) (§16.15).
+- [ ] Alerts configured for SLO-based thresholds with runbooks (§16.15).
+- [ ] Structured logging with trace ID correlation verified (§16.15).
+- [ ] Trace context propagation verified end-to-end for distributed services (§16.15).
+
 ### Periodic
 - [ ] Drift detection run against prod (weekly/nightly).
 - [ ] Orphaned resource sweep (monthly).
-- [ ] Cost review against budget (monthly).
+- [ ] Cost review against budget, including observability spend (monthly) (§16.4, §16.15).
 - [ ] Credential rotation audit (quarterly).
 - [ ] SLO review — targets still appropriate, error budgets on track (quarterly) (§16.14).
 - [ ] Capacity review — utilization vs. provisioned, right-sizing opportunities (quarterly) (§16.13).
 - [ ] Failover/restore drill — verify recovery procedures actually work (quarterly) (§16.12).
+- [ ] Alert review — silence or fix alerts that fire without action (monthly) (§16.15).
+- [ ] Metric cardinality audit — identify and reduce high-cardinality metrics (quarterly) (§16.15).

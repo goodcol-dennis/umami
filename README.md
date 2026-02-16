@@ -14,13 +14,14 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 | Extension | Covers |
 |-----------|--------|
-| [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets |
-| [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, observability, backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
-| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs |
-| [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance |
-| [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance |
-| [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline |
-| [`umami-observability.md`](umami-observability.md) | Three signals (metrics/logs/traces), OpenTelemetry, OpenMetrics, instrumentation discipline, alerting, dashboards, cost management |
+| [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets, frontend observability (RUM, error tracking) |
+| [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, data observability (pipeline tracing, structured logging), backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
+| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management) |
+| [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance, mobile observability (crash reporting, release health) |
+| [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance, production monitoring |
+| [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline, production monitoring |
+
+**Observability is a cross-cutting concern.** Rather than a separate extension, each domain extension includes its own observability guidance — what to monitor, how to alert, what to log — tailored to that domain's specific failure modes. The core template (§4) covers the foundational concepts (three signals, structured logging, instrumentation discipline).
 
 The core template is **not** tied to any specific project. You reference it (and the relevant extensions) from your project and let your AI agent adapt the guidance to your codebase.
 
@@ -39,7 +40,6 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-observability.md
 ```
 
 ### 2. Give it to your LLM agent
@@ -74,7 +74,6 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
 - Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
-- Extension — Observability: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-observability.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   any relevant extensions, then compare their recommendations against the project's current state.
@@ -110,13 +109,12 @@ Then whenever you want a gap analysis, just tell your agent: *"Audit our process
 
 | File | Sections | When to apply |
 |------|----------|---------------|
-| [`umami-web.md`](umami-web.md) | §17.1–17.7 | Project has a web frontend |
+| [`umami-web.md`](umami-web.md) | §17.1–17.8 | Project has a web frontend |
 | [`umami-data.md`](umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
-| [`umami-iac.md`](umami-iac.md) | §16.1–16.14 | Project has infrastructure-as-code or cloud provisioning |
-| [`umami-mobile.md`](umami-mobile.md) | §19.1–19.6 | Project has a native or cross-platform mobile app |
-| [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.7 | Project is built on WordPress |
-| [`umami-drupal.md`](umami-drupal.md) | §21.1–21.8 | Project is built on Drupal |
-| [`umami-observability.md`](umami-observability.md) | §22.1–22.9 | System has components running in production that need monitoring |
+| [`umami-iac.md`](umami-iac.md) | §16.1–16.15 | Project has infrastructure-as-code or cloud provisioning |
+| [`umami-mobile.md`](umami-mobile.md) | §19.1–19.7 | Project has a native or cross-platform mobile app |
+| [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress |
+| [`umami-drupal.md`](umami-drupal.md) | §21.1–21.9 | Project is built on Drupal |
 
 ## Compliance and regulated environments
 

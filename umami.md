@@ -15,7 +15,6 @@ This document is a template for establishing processes, testing strategies, and 
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
 - Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
-- Extension — Observability: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-observability.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   any relevant extensions, then compare their recommendations against the project's current state.
@@ -69,7 +68,8 @@ Most projects are not single-layer. Identify all layers that apply:
 | **Mobile app** | yes / no | Is there a native or cross-platform mobile app? (iOS, Android, React Native, Flutter) |
 | **CMS / WordPress** | yes / no | Is the project built on WordPress? (themes, plugins, site builds) |
 | **CMS / Drupal** | yes / no | Is the project built on Drupal? (modules, themes, config management) |
-| **Observability** | yes / no | Does the system need production monitoring? (metrics, logging, tracing, alerting) |
+
+**Observability is a cross-cutting concern**, not a separate layer. Every extension includes domain-specific observability guidance (what to monitor, how to alert, what to log). If the system has components running in production, observability practices apply — you don't need a separate "observability layer" in the system shape.
 
 **Why this matters:** A project with 4 layers needs a change propagation map organized per-layer, test strategies per-layer, and potentially different languages per-layer. A single-layer web app needs none of that.
 
@@ -105,7 +105,6 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | Infrastructure / IaC | §2 (specs — infra contracts), §6 (pinning), §7 (ADRs — cloud decisions), §8 (acknowledged gaps) | [umami-iac.md](umami-iac.md) | §3 visual/E2E, §4 runtime validation (use drift detection instead) |
 | CMS / WordPress | §3 (testing), §3b (TDD), §6 (consistency — coding standards), §7 (ADRs — plugin/architecture decisions), §8 (acknowledged gaps — plugin risks) | [umami-wordpress.md](umami-wordpress.md) | — |
 | CMS / Drupal | §3 (testing), §3b (TDD), §5 (state tracking — config management), §6 (coding standards), §7 (ADRs — module/architecture decisions), §8 (acknowledged gaps — module risks) | [umami-drupal.md](umami-drupal.md) | — |
-| Observability / monitoring | §3 (testing — verify instrumentation), §4 (runtime validation), §7 (ADRs — tool choices, SLO decisions), §8 (acknowledged gaps — blind spots) | [umami-observability.md](umami-observability.md) | — |
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | — | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
 | Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | — | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
@@ -426,6 +425,31 @@ The system validates structural correctness on every edit, not just before execu
 | **Info** | Logged for observability. No user action required. |
 
 Enforcement belongs in the engine, not the UI. The UI reflects validation state; it doesn't own it.
+
+### Production Observability
+
+Testing (§3) and validation (above) catch problems before and during deployment. Observability catches everything that slips through — the slow queries, the cascading failures, the silent data corruption. It's the production-time counterpart to development-time validation.
+
+**Three signals, correlated:**
+- **Metrics** tell you *something is wrong* (error rate spiked).
+- **Logs** tell you *what went wrong* (specific error with context).
+- **Traces** tell you *where it went wrong* (which service in the chain failed).
+
+These only work together if they share correlation identifiers — a trace ID in every log line, service name on every metric. Without correlation, you have three separate piles of data instead of one coherent picture.
+
+**Structured logging rules:**
+- Use structured format (JSON) in production. Human-readable format is fine for local development.
+- Include trace IDs in every log line — this is the bridge between logs and traces.
+- Use consistent log levels across services: DEBUG (never in production by default), INFO (normal operations), WARN (handled unexpected conditions), ERROR (failures needing attention).
+- **Never log sensitive data.** Passwords, tokens, PII, credit card numbers. Sanitize before logging. This is not optional.
+- Log at boundaries, not everywhere. Log when data enters or leaves your service, when operations complete or fail. Don't log inside tight loops.
+
+**Instrumentation discipline:**
+- Instrument inbound requests, outbound calls, and business-critical operations. Capture method, status, and duration.
+- Instrumentation is part of the "definition of done" — not a follow-up task. When removing a feature, remove its instrumentation too (§13).
+- Don't instrument every function call. Instrumentation has overhead. Excessive instrumentation creates noise and inflates costs.
+
+Each domain extension includes specific observability guidance for its context — what to monitor, what to alert on, and what tools to consider.
 
 ---
 
@@ -862,6 +886,8 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 - [ ] Active Change and Session Handoff blocks removed from memory.
 - [ ] Skill library updated if a new reusable agent pattern emerged (§14).
 - [ ] Skills reviewed for stale references (file paths, APIs) if codebase structure changed (§14).
+- [ ] New services/endpoints have instrumentation — inbound requests, outbound calls, business operations (§4).
+- [ ] No sensitive data in logs or telemetry — PII, passwords, tokens (§4).
 
 ---
 

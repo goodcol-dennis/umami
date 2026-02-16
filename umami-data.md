@@ -140,6 +140,37 @@ Application code has logging, metrics, and error tracking. Data pipelines need t
 
 **The key insight:** A pipeline can succeed (exit code 0) while producing completely wrong data. Row counts, null rates, and distribution checks catch the failures that exit codes miss.
 
+### Pipeline Run Tracing
+
+In application systems, distributed tracing follows a request through services. In data systems, the equivalent is tracing a pipeline run through stages — from ingestion to final output.
+
+**Every pipeline run should carry a correlation ID** (`run_id`) that appears in every log entry, every metric label, and every checkpoint record for that run. When a downstream consumer reports bad data, the `run_id` lets you trace backward through every stage to find where the problem was introduced.
+
+**Structured pipeline logging:**
+
+Every pipeline log entry should include consistent fields:
+
+| Field | Purpose | Example |
+|---|---|---|
+| `run_id` | Correlate all events for one pipeline execution | `run-2024-03-15-001` |
+| `stage` | Which pipeline step | `extract`, `transform`, `load` |
+| `source` | Data source being processed | `api-orders`, `file-inventory` |
+| `row_count` | Records processed at this point | `15234` |
+| `timestamp` | When (ISO 8601, UTC) | `2024-03-15T14:30:22Z` |
+| `duration_ms` | How long this stage took | `4200` |
+| `status` | Outcome | `success`, `partial`, `failed` |
+
+Use structured format (JSON) in production. This makes logs searchable and alertable — "show me all runs where the transform stage took >10s" becomes a query, not a grep.
+
+### Alert Thresholds
+
+Set alert thresholds based on historical baselines, not arbitrary numbers. "Row count dropped >50%" is more useful than "row count < 1000" — because the expected count changes as the business grows.
+
+**Rules:**
+- Formalize the freshness SLA from your source registry (§18.5) as a measurable target. If the SLA says "data no older than 24 hours," alert at 20 hours — not after the SLA is already breached.
+- Alert on rate-of-change, not just absolute values. A null rate that jumps from 2% to 15% in one run is a signal even if 15% is within the "acceptable" range.
+- Pipeline duration alerts should use a rolling baseline (e.g., 2x the 30-day average), not a fixed number. Pipelines slow down as data grows.
+
 ---
 
 ## 18.8 Backward/Forward Compatibility
@@ -289,6 +320,7 @@ Many systems need batch for historical analysis and stream for real-time. The di
 - [ ] Schema migration scripted and tested in non-prod (§18.3).
 - [ ] Backward/forward compatibility assessed for schema changes (§18.8).
 - [ ] Delivery guarantee documented and dedup strategy verified (§18.9).
+- [ ] Pipeline logging includes `run_id`, stage, row counts, and duration (§18.7).
 
 ### Before Every Data PR
 - [ ] Data quality tests pass on representative sample.
@@ -296,9 +328,10 @@ Many systems need batch for historical analysis and stream for real-time. The di
 - [ ] Backfill tested if pipeline logic changed (§18.6).
 - [ ] Data dictionary updated for schema changes (§18.3).
 - [ ] Source of truth identified for any new dataset; derivation path documented (§18.10).
+- [ ] Observability alerts configured for new pipeline stages — row counts, freshness, duration (§18.7).
 
 ### Periodic
-- [ ] Data observability alerts reviewed — no ignored or noisy alerts (weekly).
+- [ ] Data observability alerts reviewed — thresholds still appropriate vs. historical baselines (weekly) (§18.7).
 - [ ] Source registry reviewed — contacts current, quirks documented (quarterly).
 - [ ] Orphaned tables/views sweep — unused artifacts removed (quarterly).
 - [ ] Batch vs stream reconciliation — compare outputs if both paths exist (monthly) (§18.11).

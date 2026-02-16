@@ -432,6 +432,48 @@ drush watchdog:show          # View recent log entries
 
 ---
 
+## 21.9 Production Monitoring
+
+Drupal's built-in logging is useful for development but inadequate for production at scale. The database logging module (`dblog`) writes log entries to the database — which means every log write is a database insert, and log queries compete with content queries.
+
+### Logging Architecture
+
+**Use Syslog in production, not Database Logging.**
+
+The `syslog` core module sends Drupal log messages to the system's syslog facility instead of the database. This removes database write overhead and integrates with your server's log management.
+
+```bash
+# Enable syslog, disable dblog
+drush pm:install syslog
+drush pm:uninstall dblog
+```
+
+**For external aggregation** (recommended for any multi-server deployment):
+- Route syslog to a centralized logging service (Loki, Elasticsearch, CloudWatch Logs, Papertrail).
+- Include the site name and environment in the syslog identity to distinguish between environments.
+- Use Drupal's `watchdog` severity levels consistently — they map to standard syslog priorities.
+
+**Rules:**
+- Never leave `dblog` enabled on high-traffic production sites. It adds a database write for every logged event and makes the `watchdog` table grow unbounded.
+- Set appropriate severity thresholds. Logging DEBUG-level messages in production generates noise; INFO and above is typical.
+- Never log sensitive data — user passwords, session tokens, PII. Drupal's core logging respects this, but custom module logging may not.
+
+### Health Monitoring
+
+- **Status report as health check** — Drupal's status report (`/admin/reports/status`) checks module updates, configuration sync status, PHP requirements, and file system permissions. Automate checking this: `drush core:requirements --severity=2` returns errors that need attention.
+- **Cron monitoring** — Drupal's cron runs scheduled tasks (content indexing, cache cleanup, queue processing). Monitor that it runs on schedule. Use an external cron trigger rather than relying on Drupal's built-in poor-man's-cron: `*/5 * * * * drush cron`. Alert if cron hasn't run in >2x the expected interval.
+- **External uptime monitoring** — check the site from outside your infrastructure. A Drupal site that's down can't log that it's down.
+
+### Performance Monitoring
+
+- **Cache hit rates** — Drupal's page cache and dynamic page cache are its primary performance mechanisms. If cache hit rates are low, investigate what's setting `max-age: 0` (§21.4). Use the Webprofiler module in development to identify uncacheable responses.
+- **Slow query logging** — enable MySQL/MariaDB slow query log. Views with complex filters, entity queries without proper indexes, and contrib modules with inefficient queries are common culprits.
+- **Response time tracking** — monitor server-side response times. A gradual increase often indicates cache degradation, database growth, or a recently enabled module adding overhead.
+
+**Tooling (examples, not prescriptions):** Webprofiler module (development), Blackfire (profiling), New Relic / Datadog (APM), Prometheus + Grafana (infrastructure metrics).
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Drupal Equivalent |
@@ -447,6 +489,7 @@ drush watchdog:show          # View recent log entries
 | §11 File Size | §21.5 Template/preprocess separation, §21.6 service decomposition |
 | §12 Change Tracking | §21.7 Deployment pipeline, Drush scripted operations |
 | §13 Dead Code | §21.2 Module inventory — disabled but installed modules are dead code with attack surface |
+| §4 Observability | §21.9 Production monitoring — logging, health checks, performance |
 
 ---
 
@@ -478,4 +521,7 @@ drush watchdog:show          # View recent log entries
 - [ ] Security advisories reviewed — Drupal SA published Wednesdays (weekly) (§21.2).
 - [ ] Module inventory reviewed — abandoned or uncovered modules flagged (quarterly) (§21.2).
 - [ ] Composer patches reviewed — remove patches where upstream fix is released (quarterly) (§21.7).
-- [ ] Performance audit — cache hit rates, slow queries, uncacheable pages (quarterly) (§21.4).
+- [ ] Performance audit — cache hit rates, slow queries, uncacheable pages (quarterly) (§21.4, §21.9).
+- [ ] Cron health verified — scheduled tasks running on time (monthly) (§21.9).
+- [ ] Log review — recurring errors identified and addressed (weekly) (§21.9).
+- [ ] `drush core:requirements --severity=2` checked — no critical issues in status report (monthly) (§21.9).

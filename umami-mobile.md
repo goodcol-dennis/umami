@@ -130,6 +130,48 @@ App store rejection is a unique risk to mobile development — there is no equiv
 
 ---
 
+## 19.7 Mobile Observability
+
+You can't SSH into a user's phone. Every production issue must be diagnosed from telemetry alone — crash reports, network traces, and performance metrics sent from the device.
+
+### Crash Reporting
+
+**Crash-free rate is the primary health metric.** Track it per app version, per OS version, per device model. A crash-free rate below 99.5% for any version is a signal to investigate; below 99% is a release quality problem.
+
+**What to capture:**
+- **Crash stack traces** — symbolicated (iOS dSYMs, Android ProGuard/R8 mapping files). Unsymbolicated crashes are unreadable. Automate symbol upload in your build pipeline.
+- **Breadcrumbs** — the sequence of user actions and events leading up to the crash. "User tapped checkout → API call started → network timeout → crash" tells you more than the stack trace alone.
+- **ANR / App Hang detection** — on Android, Application Not Responding events. On iOS, watchdog kills and hang detection. These aren't crashes but feel like them to users.
+
+**Rules:**
+- Upload symbol files (dSYMs, mapping files) as part of every release build. Missing symbols make crash reports useless.
+- Group crashes by root cause, not by individual occurrence. One null pointer in a shared utility may generate thousands of reports.
+- Set up alerts on crash-free rate per version. A new release that drops below baseline within 24 hours of staged rollout should pause the rollout.
+
+### Release Health Monitoring
+
+Staged rollouts (§19.2) only protect you if you're watching the metrics during rollout.
+
+**Monitor during every staged rollout:**
+- **Crash-free rate** for the new version vs. the previous version.
+- **API error rate** from the new version's clients — a new version hitting an API differently may cause server-side errors.
+- **User-reported issues** — app store reviews and support tickets spike faster than metrics for UX-level problems.
+
+**Rule:** Define rollout gates. "Advance from 5% to 25% only if crash-free rate is within 0.1% of the previous version after 24 hours." Without explicit gates, rollouts advance on hope rather than evidence.
+
+### Network Performance from the Client
+
+Server-side metrics show how fast the API responds. Client-side network monitoring shows what the user actually experiences — including DNS resolution, TLS handshake, connection reuse, and cellular vs. WiFi differences.
+
+**What to track:**
+- API call latency and failure rate as seen from the device.
+- Timeout and retry rates — if the app retries frequently, users are waiting.
+- Payload sizes — large responses on slow connections degrade the experience.
+
+**Tooling (examples, not prescriptions):** Firebase Crashlytics, Sentry, Datadog Mobile, New Relic Mobile, Instabug.
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Mobile Equivalent |
@@ -141,6 +183,7 @@ App store rejection is a unique risk to mobile development — there is no equiv
 | §7 ADRs | Platform choices, offline strategy, minimum OS version decisions |
 | §8 Acknowledged Gaps | §19.6 App store compliance risks, untested device/OS combinations |
 | §12 Change Tracking | §19.2 Release discipline (versioning, changelogs, staged rollout) |
+| §4 Observability | §19.7 Mobile observability — crash reporting, release health, network monitoring |
 
 ---
 
@@ -157,5 +200,11 @@ App store rejection is a unique risk to mobile development — there is no equiv
 - [ ] Binary size within budget (§19.5).
 - [ ] App store compliance checklist passed (§19.6).
 - [ ] API backward compatibility verified for N-2 versions (§19.2).
-- [ ] Crash monitoring dashboard configured for the new version.
+- [ ] Crash monitoring dashboard configured for the new version (§19.7).
+- [ ] Symbol files (dSYMs, ProGuard maps) uploaded for the release build (§19.7).
 - [ ] Staged rollout configured (not 100% on day one).
+
+### During Staged Rollout
+- [ ] Crash-free rate monitored per version — no regression vs. previous release (§19.7).
+- [ ] API error rate from new version clients stable (§19.7).
+- [ ] Rollout gates defined — advance only when metrics confirm stability (§19.7).

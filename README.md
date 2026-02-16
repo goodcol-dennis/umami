@@ -49,19 +49,66 @@ Paste the core URL (and any relevant extension URLs) into a conversation with yo
 > Here are my development guardrails: [paste URL]
 >
 > Please read this document, then:
-> 1. Tell me your understanding of what it covers.
-> 2. Look at our project and do a gap analysis — where does our current process fall short of what this document recommends?
-> 3. Suggest concrete next steps to close the most impactful gaps.
+> 1. Run the project discovery questionnaire (§0) — propose answers based on exploring our codebase.
+> 2. Determine our current adoption tier (§0.6) based on what practices we already follow.
+> 3. Recommend 3-5 specific next practices from the next tier up that address problems we're currently experiencing.
 
-The agent will fetch the document, compare its guidance against your project's current state (structure, tests, docs, CI, etc.), and identify where you can improve.
+The agent will fetch the document, explore your project, and give you a focused set of recommendations — not a wall of 50 things to fix. Subsequent audits should follow the same tiered approach (§0.7), getting progressively more targeted as your process matures.
 
-### 3. Apply what makes sense, then come back later
+### 3. Start with the tier that fits, not the whole document
+
+Umami is a toolkit, not a mandate. Adopting everything at once on a new project adds process drag that outweighs the benefit. Instead, adopt in tiers — start with the foundations, then add practices when specific problems or project growth make them valuable.
+
+**Tier 1 — Foundation** (every project, from day one)
+
+These practices cost almost nothing to adopt and prevent the most common sources of waste.
+
+| Practice | Section | Why it's foundational |
+|----------|---------|----------------------|
+| Project discovery | §0 | Know what you're building before applying guardrails |
+| Predictable project structure | §1 | Agents and humans find things without searching |
+| Development discipline (TDD, systematic debugging) | §3b | Prevents "fix one thing, break another" cycles that burn tokens |
+| Security discipline (boundaries, secrets, dependencies) | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
+| Enforced consistency (types, linting, formatting) | §6 | Catches errors at build time, not in production or code review |
+| Dead code hygiene | §13 | Reduces codebase noise that confuses agents and humans |
+| Pre-commit checklist | §15 (partial) | Catches common mistakes before they compound |
+
+**Tier 2 — Structure** (adopt when the project outlives its first sprint)
+
+These practices pay off when you start maintaining what you built, onboarding contributors, or coming back to your own code after a week away.
+
+| Practice | Section | Adopt when... |
+|----------|---------|---------------|
+| Spec-first development | §2 | You're building features that take more than a session |
+| Multi-layer testing | §3 | You have more than one layer (API + UI, pipeline + warehouse) |
+| Runtime validation | §4 | Your system handles external input or runs in production |
+| Documentation / ADRs | §7 | You make a decision you'll need to explain to someone later (including future you) |
+| Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
+| File size budgets | §11 | Files are getting long enough that agents truncate or miss context |
+
+**Tier 3 — Scale** (adopt when complexity demands it)
+
+These are heavier practices that solve real problems in larger, longer-lived, or compliance-bound projects. Applying them to a prototype adds drag without payoff.
+
+| Practice | Section | Adopt when... |
+|----------|---------|---------------|
+| State tracking & recoverability | §5 | Your system manages stateful operations that need rollback |
+| Acknowledged gaps | §8 | Tech debt is accumulating and you need visibility into what's known vs. unknown |
+| Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
+| Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
+| Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
+
+**Extensions** follow the same principle: apply when the domain is present *and* the project is at least Tier 2. A WordPress site in its first week doesn't need §20.8 production monitoring — but it does need §20.2 security basics.
+
+**How to move between tiers:** Use periodic audits. When you hit a pain point (regressions, lost context between sessions, agents making the same mistakes), check whether a Tier 2 or 3 practice addresses it. Adopt that specific practice, not the whole tier.
+
+### 4. Come back to it later — don't load it every session
 
 This is **not** a document your agent should load every session. It's a process reference — use it to set up your project's guardrails, then let your project's own `CLAUDE.md` and docs carry the day-to-day instructions.
 
-Come back to it occasionally (e.g., at the start of a new phase, after a rough sprint, or when onboarding a new contributor) and ask your agent to re-read it and do a fresh gap analysis against your current state.
+Come back to it occasionally (e.g., at the start of a new phase, after a rough sprint, or when onboarding a new contributor) and ask your agent to audit against a specific tier or a specific problem area — not the whole document at once.
 
-### 4. Keep the URL in your project's `CLAUDE.md` for easy audits
+### 5. Keep the URL in your project's `CLAUDE.md` for easy audits
 
 Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the URL is always at hand when you want to run a process review:
 
@@ -76,10 +123,12 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
-  any relevant extensions, then compare their recommendations against the project's current state.
+  follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
+  then audit one tier above. Do NOT read every section or fetch every extension. Focus on
+  3-5 actionable recommendations, not comprehensive compliance.
 ```
 
-Then whenever you want a gap analysis, just tell your agent: *"Audit our process against the guardrails doc in CLAUDE.md."* It knows where to find it without you having to dig up the URL.
+Then whenever you want a gap analysis, invoke your project's `umami-audit` skill (or tell your agent: *"Audit our process against the guardrails doc in CLAUDE.md."*). The skill ensures the audit follows the tiered protocol (§0.7) consistently — same invocation, same output format, every time. See §14 in the core template for how to set up the skill.
 
 ## What the document covers
 
@@ -87,14 +136,14 @@ Then whenever you want a gap analysis, just tell your agent: *"Audit our process
 
 | Section | Topic |
 |---------|-------|
-| §0 | Project discovery — onboarding questionnaire to understand your system shape before applying guardrails |
+| §0 | Project discovery — onboarding questionnaire, adoption tiers, tiered audit protocol |
 | §1 | Project structure — predictable layouts, workspace partitioning |
 | §2 | Specification-first development — specs before code |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests |
 | §3b | Development process discipline — TDD, systematic debugging, verification |
-| §4 | Runtime validation — structural correctness on every edit |
+| §4 | Runtime validation — structural correctness, observability, security discipline |
 | §5 | State tracking & recoverability — versioned, undoable state |
-| §6 | Enforced consistency — strict types, style rules, environment isolation |
+| §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs |
 | §8 | Acknowledged gaps — transparency about what isn't automated |
 | §9 | Token efficiency — front-loaded context, persistent memory, pre-derived understanding |

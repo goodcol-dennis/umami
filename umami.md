@@ -17,7 +17,9 @@ This document is a template for establishing processes, testing strategies, and 
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
-  any relevant extensions, then compare their recommendations against the project's current state.
+  follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
+  then audit one tier above. Do NOT read every section or fetch every extension. Focus on
+  3-5 actionable recommendations, not comprehensive compliance.
 ```
 
 ---
@@ -114,7 +116,94 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 
 **Adapt the process, don't serve it.** This template is a starting point, not a compliance checklist. If a section doesn't fit your project, skip it — the "Skip or defer" column exists for this reason. If a recommended practice creates more overhead than value for your specific context, drop it and document why in an ADR (§7). The worst application of these guardrails is treating them as rules to satisfy rather than tools to use. A team that follows 8 sections well will outperform a team that mechanically follows all 15 poorly.
 
-### 0.6 Example: Onboarding a Multi-Layer System
+### 0.6 Adoption Tiers — Size the Process to the Project
+
+Not every practice is equally valuable at every stage. Adopting everything at once on a new project adds process weight that outweighs the benefit. Instead, adopt in tiers — start with the foundations, then add practices when specific problems or project growth make them valuable.
+
+**Tier 1 — Foundation** (every project, from day one)
+
+These practices cost almost nothing to adopt and prevent the most common sources of waste — regressions, lost context, and agents working against a disorganized codebase.
+
+| Practice | Section | Why it's foundational |
+|----------|---------|----------------------|
+| Project discovery | §0 | Know what you're building before applying guardrails |
+| Predictable project structure | §1 | Agents and humans find things without searching |
+| Development discipline | §3b | TDD and systematic debugging prevent "fix one, break another" cycles |
+| Security discipline | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
+| Enforced consistency | §6 | Types, linting, formatting, and dependency hygiene catch errors at build time |
+| Dead code hygiene | §13 | Less noise means better signal for agents and humans |
+| Pre-commit checklist | §15 (partial) | Catches common mistakes before they compound |
+
+**Tier 2 — Structure** (adopt when the project outlives its first sprint)
+
+These pay off when you start maintaining what you built, onboarding contributors, or returning to your own code after a break. Adopt individual practices as pain points emerge — you don't need the whole tier at once.
+
+| Practice | Section | Adopt when... |
+|----------|---------|---------------|
+| Spec-first development | §2 | Features take more than one session to build |
+| Multi-layer testing | §3 | The system has more than one layer (API + UI, pipeline + warehouse) |
+| Runtime validation | §4 | The system handles external input or runs in production |
+| Documentation / ADRs | §7 | You make a decision you'll need to explain later (including to future you) |
+| Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
+| File size budgets | §11 | Files are long enough that agents truncate or miss context |
+
+**Tier 3 — Scale** (adopt when complexity demands it)
+
+These are heavier practices that solve real problems in larger, longer-lived, or compliance-bound projects. Applying them to a prototype adds drag without payoff.
+
+| Practice | Section | Adopt when... |
+|----------|---------|---------------|
+| State tracking & recoverability | §5 | Stateful operations need rollback or audit trails |
+| Acknowledged gaps | §8 | Tech debt is accumulating faster than it's being addressed |
+| Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
+| Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
+| Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
+
+**Extensions** follow the same logic: apply when the domain is present *and* the project has reached the maturity level where that guidance adds value. A WordPress site in its first week needs §20.2 security basics, not §20.8 production monitoring.
+
+**How to move between tiers:** Don't promote the whole project at once. When you hit a specific pain point (regressions, lost context, agents repeating mistakes), check whether a Tier 2 or 3 practice addresses it. Adopt that practice. Periodic audits (§0.7) are designed to surface these moments.
+
+### 0.7 Audit Protocol — How to Review Efficiently
+
+Auditing the full document against a project is expensive — both in tokens and in time. A comprehensive audit of the core template plus extensions can consume 50,000+ tokens, most of which is wasted if the project is early-stage and only needs Tier 1 guidance. Use a tiered audit approach instead.
+
+**For AI assistants performing an audit:**
+
+1. **Determine the project's current tier.** Read the project's `CLAUDE.md`, test infrastructure, and documentation. Match the project's current state to the adoption tiers above. Most projects are between Tier 1 and Tier 2.
+
+2. **Audit one tier above current.** If the project is solidly at Tier 1, audit against Tier 2 practices. If it's at Tier 2, audit against Tier 3. Don't audit practices two tiers above — they'll create recommendations the project isn't ready to act on.
+
+3. **Focus on gaps, not compliance.** The output should be: "Here are 3-5 specific practices from the next tier that would address problems you're currently experiencing." Not: "Here are 47 recommendations across all sections."
+
+4. **Read selectively.** You do NOT need to read the entire document for every audit. Read §0 (discovery) to understand the framework, then read only the sections relevant to the tier you're auditing. The tier tables above tell you which sections to check.
+
+5. **Extensions only when relevant.** Only fetch extension files if the project has that domain layer AND is at Tier 2+. A Tier 1 web project doesn't need an audit against `umami-web.md` — it needs to get its basic testing and structure right first.
+
+**Audit output format:**
+
+```markdown
+## Process Audit — [Project Name]
+
+**Current tier:** [1/2/3] — [brief justification]
+**Auditing against:** Tier [2/3] practices
+
+### What's working well
+- [2-3 practices already solid]
+
+### Recommended next practices (priority order)
+1. [Practice] (§X) — [why this addresses a current pain point]
+2. [Practice] (§X) — [why this addresses a current pain point]
+3. [Practice] (§X) — [why this addresses a current pain point]
+
+### Not yet relevant
+- [Practices that were checked but don't apply yet, with the trigger that would make them relevant]
+```
+
+This format keeps the audit focused and actionable. A project should come away with 3-5 concrete next steps, not a wall of recommendations.
+
+**Standardize the invocation.** Create an `umami-audit` skill in your project's skill library (§14) so the audit is always triggered the same way — `/umami-audit` or equivalent — regardless of who runs it or which agent tool they use. The skill should embed the raw URLs and reference this protocol so the agent doesn't improvise the process.
+
+### 0.8 Example: Onboarding a Multi-Layer System
 
 Consider a project that has a web dashboard, but the dashboard sits on top of a data ingestion layer, a calculation pipeline, and a data warehouse. The project directory contains `lib/pipeline/` and `lib/extraction/` — not `src/components/`.
 
@@ -227,6 +316,8 @@ project-root/
 ## 2. Specification-First Development
 
 Every feature starts with a written spec, not code. Architecture documents and diagrams define system behavior, component contracts, and design constraints before implementation begins. These serve as the source of truth for all contributors.
+
+**This section establishes spec discipline, not a spec framework.** There are many spec frameworks and methodologies (RFC-style documents, Gherkin/BDD, design docs, shape-up pitches, PRDs, etc.). This template is compatible with any of them — and deliberately doesn't recommend one. The high-value practice is *having* a spec process that forces thinking before coding. Which format you use matters far less than whether you use one at all. Pick a format that fits your team and project, then apply the discipline below to it.
 
 ### What to Specify
 
@@ -451,6 +542,39 @@ These only work together if they share correlation identifiers — a trace ID in
 
 Each domain extension includes specific observability guidance for its context — what to monitor, what to alert on, and what tools to consider.
 
+### Security Discipline
+
+Security is a cross-cutting concern, like observability. Every project that accepts input, communicates over a network, or manages user data has a threat surface — whether the team thinks about it or not. The goal isn't to become a security expert; it's to build the habit of considering security as part of the development process rather than as an afterthought or a separate phase.
+
+**This section establishes security discipline, not a security framework.** Like spec-first development (§2), the high-value practice is *having* a security thought process. Which tools or frameworks you use matters less than whether you think about security at all.
+
+**Validate at system boundaries, trust internal code.**
+- Untrusted data enters at the edges — HTTP requests, file uploads, webhook payloads, user input, external API responses, CSV imports. Validate and sanitize at these entry points.
+- Once data has passed boundary validation, internal code can trust it. Don't scatter defensive validation through every function — it adds noise without adding safety.
+- Treat deserialized data as untrusted. JSON from an API, data from a queue, objects from a cache — anything that crossed a serialization boundary could have been tampered with or malformed.
+
+**Secrets management:**
+- **No secrets in code. Ever.** Not in source files, not in config files committed to git, not in comments, not in variable names that hint at the value. Use environment variables, secret stores, or encrypted config files that are excluded from version control.
+- **Scan for leaked secrets.** Use pre-commit hooks or CI checks that detect patterns like API keys, tokens, and passwords in committed code. Tools exist for every ecosystem — the specific tool matters less than having the check in place.
+- **Rotate, don't just revoke.** When a secret is exposed, rotating it (issuing a new one) is safer than just revoking the old one, because you can't be sure the old one wasn't already captured.
+
+**Authentication and authorization:**
+- If the system has users, authentication (who are you?) and authorization (what can you do?) are not optional features — they're structural requirements. Decide on the approach early and document it in an ADR (§7).
+- Apply the principle of least privilege. Users, services, and agents should have the minimum access needed for their function.
+- Don't build custom auth unless you have a specific reason. Established libraries and services exist for every platform. Custom auth implementations are a leading source of security vulnerabilities.
+
+**Dependency security:**
+- Every dependency is code you don't control. Each one expands your threat surface. Audit new dependencies before adding them — check maintenance status, known vulnerabilities, and how many transitive dependencies they introduce.
+- Run automated vulnerability scanning in CI. `npm audit`, `pip-audit`, `cargo audit`, Dependabot, Snyk — the tool matters less than the habit.
+- Don't ignore vulnerability alerts. Triage them: patch immediately (critical/high), schedule a fix (medium), or document the acceptance and rationale in acknowledged gaps (§8) if the risk is genuinely low.
+
+**For AI-assisted development:**
+- Agents generate code without a security threat model in mind. They'll use `eval()`, concatenate SQL strings, log sensitive data, and disable CORS — not maliciously, but because they optimize for "make it work" unless instructed otherwise.
+- Include security constraints in your project instruction file (CLAUDE.md or equivalent): "Never use eval. Always use parameterized queries. Never log PII." These are low-cost instructions that prevent the most common agent-generated vulnerabilities.
+- Review agent-generated code for security the same way you review it for correctness. A passing test suite doesn't mean the code is secure.
+
+Each domain extension includes specific security guidance for its context — WordPress escaping and nonces (§20.1), Drupal access control and Form API (§21.1), etc.
+
 ---
 
 ## 5. State Tracking & Recoverability
@@ -474,6 +598,16 @@ Discipline is codified, not left to individual discretion.
 - **Style rules** — all theming via variables, no hardcoded values, reuse existing patterns. Documented in an audit file with resolution tracking.
 - **Environment isolation** — fixed ports, pinned runtime versions, isolated dependency environments (virtualenvs, lockfiles).
 - **Resource guardrails** — hard timeouts, memory caps, and global kill switches on test runners and build processes.
+
+### Dependency Hygiene
+
+Every dependency is code you didn't write, don't fully understand, and can't directly control. Each one adds maintenance burden (updates, vulnerability patches, breaking changes) and expands the project's attack surface. The discipline isn't "avoid dependencies" — it's "add them deliberately and maintain them actively."
+
+- **Justify additions.** Before adding a dependency, check: does the standard library already cover this? Is the dependency actively maintained? How many transitive dependencies does it pull in? A package that adds one function but imports 40 sub-packages is a bad trade-off.
+- **Pin versions and use lockfiles.** Lockfiles (`package-lock.json`, `poetry.lock`, `Cargo.lock`, etc.) ensure reproducible builds. Commit them. Without a lockfile, the same code can produce different builds on different machines.
+- **Keep dependencies current.** Don't let them drift years behind. Set a cadence — monthly or quarterly — for reviewing and updating. Small, frequent updates are less risky than large, infrequent jumps across major versions.
+- **Audit for vulnerabilities.** Run automated scanning regularly (§4 Security Discipline covers this in more detail). Don't ignore alerts — triage and act on them.
+- **Watch for AI-introduced bloat.** Agents add packages to solve immediate problems without considering whether the project already has a similar dependency or whether the standard library suffices. Review dependency additions in PRs the same way you review code additions — if a new package appeared, ask why.
 
 ---
 
@@ -758,6 +892,8 @@ A **skill** is a reusable set of instructions for a recurring agent task. Differ
 project-root/
 ├── .ai/                          # Or .claude/, .cursor/, etc.
 │   └── skills/
+│       ├── umami-audit/
+│       │   └── instructions.md   # Tiered process audit (§0.7)
 │       ├── security-review/
 │       │   └── instructions.md   # What to check, how to report
 │       ├── pr-summary/
@@ -765,6 +901,8 @@ project-root/
 │       └── data-migration/
 │           └── instructions.md   # Pre-flight checks, rollback steps
 ```
+
+**Standard skill — `umami-audit`:** Every project using umami should have an `umami-audit` skill that fetches the core document (and relevant extensions), follows the tiered audit protocol (§0.7), and outputs the standard audit format. This ensures the audit is invoked the same way in every project — `/umami-audit` or equivalent — rather than being phrased differently each time. The skill should include the raw URLs from the project's `CLAUDE.md` so the agent doesn't need to search for them.
 
 **What makes a good skill:**
 
@@ -888,6 +1026,9 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 - [ ] Skills reviewed for stale references (file paths, APIs) if codebase structure changed (§14).
 - [ ] New services/endpoints have instrumentation — inbound requests, outbound calls, business operations (§4).
 - [ ] No sensitive data in logs or telemetry — PII, passwords, tokens (§4).
+- [ ] No hardcoded secrets — API keys, tokens, passwords, connection strings not in committed code (§4).
+- [ ] New endpoints/inputs have boundary validation — untrusted data sanitized at entry points (§4).
+- [ ] New dependencies justified — not duplicating existing packages, actively maintained, vulnerability-free (§6).
 
 ---
 

@@ -15,6 +15,7 @@ This document is a template for establishing processes, testing strategies, and 
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
 - Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+- Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
@@ -109,7 +110,7 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | CMS / Drupal | §3 (testing), §3b (TDD), §5 (state tracking — config management), §6 (coding standards), §7 (ADRs — module/architecture decisions), §8 (acknowledged gaps — module risks) | [umami-drupal.md](umami-drupal.md) | — |
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | — | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
-| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | — | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | [umami-compliance.md](umami-compliance.md) | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
 | AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
@@ -573,7 +574,7 @@ Security is a cross-cutting concern, like observability. Every project that acce
 - Include security constraints in your project instruction file (CLAUDE.md or equivalent): "Never use eval. Always use parameterized queries. Never log PII." These are low-cost instructions that prevent the most common agent-generated vulnerabilities.
 - Review agent-generated code for security the same way you review it for correctness. A passing test suite doesn't mean the code is secure.
 
-Each domain extension includes specific security guidance for its context — WordPress escaping and nonces (§20.1), Drupal access control and Form API (§21.1), etc.
+Each domain extension includes specific security guidance for its context — WordPress escaping and nonces (§20.1), Drupal access control and Form API (§21.1), etc. For projects handling regulated data (PHI, PII, payment cards), the compliance extension covers data classification, handling procedures, and audit readiness (§22.2–22.3).
 
 ---
 
@@ -587,6 +588,8 @@ Every state mutation is tracked through content-addressable hashing or equivalen
 - **Debounced persistence** — frequent edits batched to avoid write storms, with forced caps to prevent data loss.
 
 The result: every edit is recoverable, and you can always answer "what changed and when."
+
+For production systems, recoverability extends beyond code versioning to disaster recovery and incident response — RTO/RPO targets, backup verification, and restore procedures. The IaC extension covers infrastructure recovery (§16.12). The compliance extension covers the procedural layer — incident response plans, DR testing, and communication plans (§22.4).
 
 ---
 

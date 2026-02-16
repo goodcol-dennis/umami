@@ -6,6 +6,8 @@ This extension covers infrastructure-as-code (Terraform, Pulumi, CloudFormation,
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies an Infrastructure / IaC layer.
 
+**This extension establishes infrastructure discipline, not a deployment methodology.** GitOps (ArgoCD, Flux), CI/CD-driven applies, manual plan-and-apply — these are all valid approaches and this extension is compatible with any of them. The principles below (plan before apply, blast radius awareness, state hygiene, drift detection) apply regardless of whether your deployment is pull-based, push-based, or manual. The high-value practice is treating infrastructure as code with the same discipline as application code. How you deliver that code to production is a tooling decision.
+
 ---
 
 ## 16.1 Dry-Run Culture — Never Apply Blind

@@ -258,3 +258,7 @@ If you try this on your project and find gaps, patterns that don't apply, or thi
 ## Important
 
 **Do not copy `umami.md` or the extension files into your project.** Always reference them by URL so every project stays in sync with the latest version. Adapt the guidance for your specific project in that project's own docs.
+
+## License
+
+This work is licensed under [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/). You are free to share and adapt this material for any purpose, including commercial use, as long as you give appropriate credit and distribute any derivative works under the same license.

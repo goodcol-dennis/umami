@@ -113,7 +113,7 @@ dev → staging → prod
 - Environment parity: if it works in staging but breaks in prod, your environments have drifted. Fix that.
 
 **Anti-patterns:**
-- **Snowflake environments** — staging has 3 undocumented differences from prod. When something works in staging but fails in prod, the first 2 hours are spent finding the differences. Use the same modules with different variable files.
+- **One-off environments** — staging has 3 undocumented differences from prod because someone configured it manually. When something works in staging but fails in prod, the first 2 hours are spent finding the differences. Use the same modules with different variable files — environments should be reproducible from code, not unique artifacts of manual configuration.
 - **"It's a small change, deploy straight to prod"** — small changes have caused the largest outages. The promotion path exists for every change, not just the ones that feel risky.
 - **"Temporary" config overrides** — a manual change to staging "just for this test" that persists for 6 months. If it's in the environment, it should be in the code.
 

@@ -173,7 +173,7 @@ Then whenever you want a gap analysis, invoke your project's `umami-audit` skill
 | [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress |
 | [`umami-drupal.md`](umami-drupal.md) | §21.1–21.9 | Project is built on Drupal |
 | [`umami-compliance.md`](umami-compliance.md) | §22.1–22.9 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
-| [`umami-scripting.md`](umami-scripting.md) | §23.1–23.9 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
+| [`umami-scripting.md`](umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
 
 ## Compliance and regulated environments
 

@@ -282,6 +282,101 @@ Scripts grow. A 50-line deployment script becomes a 500-line deployment framewor
 
 ---
 
+## 23.10 Unattended Execution — Cron, Systemd Timers, and Scheduled Tasks
+
+A script that works interactively can fail silently when run by cron, systemd timers, Windows Task Scheduler, or a CI schedule. Unattended execution strips away everything an interactive session provides: environment variables, PATH, a terminal, and a human watching the output. The result is scripts that fail in ways nobody notices until the damage is done.
+
+**Why unattended scripts deserve their own discipline:** Every other section in this extension applies to all scripts. But scheduled scripts compound the risks — a bad exit code that a human would notice immediately goes unseen for days. An overlapping run that a human would kill manually creates data corruption at 3 AM. The gap between "works when I run it" and "works when cron runs it" is where most production scripting incidents live.
+
+**Rules:**
+
+- **Set the environment explicitly.** Cron does not source `.bashrc`, `.profile`, or `.zshrc`. The `PATH` in a cron job is typically `/usr/bin:/bin` — tools installed via `brew`, `pip`, `npm`, `snap`, or custom paths are not available. Set `PATH` and any required variables at the top of the script or in the crontab.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Explicit environment — don't rely on shell profile
+export PATH="/usr/local/bin:/usr/bin:/bin"
+export TZ="UTC"
+```
+
+For systemd timers, use the `Environment=` directive in the service unit. For Windows Task Scheduler, configure environment variables in the task's action settings.
+
+- **Prevent overlapping runs.** If a job takes longer than its schedule interval, the next invocation starts a second copy. Two copies of the same script writing to the same files, database, or API produce corrupted results. Use `flock` to enforce mutual exclusion.
+
+```bash
+# Exit immediately if another instance is already running
+exec 200>/var/lock/my-script.lock
+flock -n 200 || { echo "Already running, exiting." >&2; exit 0; }
+```
+
+For systemd timers, this is built in — set `ExecStart=` without `Type=oneshot` and systemd won't start a new instance while the previous is running. Alternatively, use `flock` in the `ExecStart` command for explicit control.
+
+- **Log to a durable destination.** Cron's default behavior is to email stdout/stderr to the local user's mailbox — which nobody reads. Redirect output to a log file, syslog, or a centralized logging system. Include timestamps.
+
+```bash
+# In crontab — redirect both stdout and stderr to a log file
+0 * * * * /opt/scripts/backup.sh >> /var/log/backup.log 2>&1
+
+# Or inside the script — structured logging with timestamps
+log() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >&2; }
+log "Starting backup..."
+```
+
+For systemd timers, `journalctl -u my-script.service` captures output automatically. Prefer systemd timers over cron when the system supports them — you get logging, dependency management, and resource controls for free.
+
+- **Alert on failure.** A scheduled script that fails silently is worse than one that doesn't run at all — at least a missing run is detectable. Implement at least one of these alerting patterns:
+
+| Pattern | How it works | Best for |
+|---|---|---|
+| Exit code monitoring | Wrapper checks exit code, sends alert on non-zero | Simple scripts, small teams |
+| Dead-man switch | Script pings a monitoring endpoint on success; missing ping triggers alert | Critical jobs that *must* run on schedule |
+| Log-based alerting | Log aggregator watches for error patterns | Teams with existing log infrastructure |
+| Systemd `OnFailure=` | Systemd triggers a notification unit when the service fails | Systems using systemd timers |
+
+Dead-man switch services (Healthchecks.io, Cronitor, PagerDuty cron monitoring) are the most reliable pattern for critical jobs — they catch both failures *and* jobs that never started.
+
+```bash
+# Dead-man switch: ping on success only
+process_data && curl -fsS --retry 3 https://hc-ping.com/your-uuid > /dev/null
+```
+
+- **Enforce timeouts.** A script that hangs indefinitely blocks the next scheduled run (if using `flock`) or causes overlapping runs (if not). Wrap long-running scripts with an explicit timeout.
+
+```bash
+# In crontab
+0 * * * * timeout 3500 /opt/scripts/hourly-job.sh >> /var/log/hourly.log 2>&1
+
+# Or with systemd timer
+# In the .service unit:
+# RuntimeMaxSec=3500
+```
+
+Set the timeout shorter than the schedule interval to leave room for cleanup and to prevent overlap.
+
+- **Test in the cron environment.** The "cron test" — run the script with a stripped environment to simulate what cron provides:
+
+```bash
+# Simulate cron's minimal environment
+env -i HOME="$HOME" /bin/bash /opt/scripts/my-script.sh
+```
+
+If the script fails under `env -i` but works normally, it has implicit environment dependencies that need to be made explicit (§23.5).
+
+- **Document the schedule and owner.** Every scheduled script should have a comment (in the crontab, systemd unit, or a companion doc) that states: what the script does, how often it runs, what to do if it fails, and who owns it. Undocumented cron jobs become organizational mysteries when the original author leaves.
+
+```
+# /etc/cron.d/backup
+# Owner: ops-team@example.com
+# Purpose: Nightly database backup to S3
+# On failure: Check /var/log/backup.log, re-run manually, alert #ops-alerts
+# See: https://wiki.internal/runbooks/db-backup
+0 2 * * * appuser /opt/scripts/backup.sh >> /var/log/backup.log 2>&1
+```
+
+---
+
 ## Common Scripting Anti-Patterns
 
 Process traps and discipline failures that turn "quick scripts" into long-term liabilities. Flag these during code review.
@@ -312,6 +407,7 @@ This extension does not replace core guardrails — it extends them for the scri
 | §6 Consistency | §23.5 Dependency management (shebangs, version pinning, environment contracts), §23.8 Cross-platform portability |
 | §11 File Size | §23.9 Script organization (when to split, the escalation ladder) |
 | §13 Dead Code | §23.9 "Not a script anymore" threshold — recognize when maintenance cost exceeds script simplicity benefit |
+| §15 Checklists | §23.10 Unattended execution — scheduled script discipline (locking, logging, alerting, timeouts) |
 
 ---
 
@@ -331,6 +427,14 @@ This extension does not replace core guardrails — it extends them for the scri
 - [ ] Environment dependencies documented — required tools, versions, and variables listed (§23.5).
 - [ ] Cross-platform behavior verified if script runs on multiple OSes (§23.8).
 - [ ] Shebang matches shell features used (§23.5, §23.8).
+
+### Before Scheduling a Script (Cron / Systemd Timer / Task Scheduler)
+- [ ] Script works under `env -i` — no implicit environment dependencies (§23.10).
+- [ ] Locking in place — overlapping runs prevented with `flock` or equivalent (§23.10).
+- [ ] Output logged to a durable destination — not relying on cron mail (§23.10).
+- [ ] Failure alerting configured — exit code monitoring, dead-man switch, or log-based alert (§23.10).
+- [ ] Timeout enforced — script cannot hang indefinitely (§23.10).
+- [ ] Schedule, owner, and failure runbook documented in crontab comment or companion doc (§23.10).
 
 ### Periodic
 - [ ] Audit scripts for growth — any script over 400 lines evaluated for splitting or rewrite (§23.9, quarterly).

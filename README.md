@@ -10,6 +10,8 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 [`umami.md`](umami.md) is a comprehensive development guardrails document designed to be consumed by both humans and LLM coding agents (like Claude Code, Cursor, Copilot, etc.). It covers project discovery, specification-first development, multi-layer testing, runtime validation, state tracking, documentation discipline, token efficiency, agent orchestration, and more.
 
+> **A note on `CLAUDE.md`:** This template references `CLAUDE.md` as the project instruction file because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
+
 **Domain-specific extensions** supplement the core with guardrails tailored to specific project types:
 
 | Extension | Covers |
@@ -139,7 +141,7 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
   3-5 actionable recommendations, not comprehensive compliance.
 ```
 
-Then whenever you want a gap analysis, invoke your project's `umami-audit` skill (or tell your agent: *"Audit our process against the guardrails doc in CLAUDE.md."*). The skill ensures the audit follows the tiered protocol (§0.7) consistently — same invocation, same output format, every time. See §14 in the core template for how to set up the skill.
+Then whenever you want a gap analysis, tell your agent: *"Audit our process against the guardrails doc."* If your tool supports reusable prompts (Claude Code skills, Cursor notepads, custom GPT instructions), create an `umami-audit` prompt that fetches the core document and follows the tiered protocol (§0.7) — same invocation, same output format, every time. See §14 in the core template for how to set up this as a reusable prompt.
 
 ## What the document covers
 

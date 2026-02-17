@@ -4,7 +4,9 @@ This document is a template for establishing processes, testing strategies, and 
 
 **This is a general-purpose template.** It must not contain references to any specific project, codebase, brand, or product. All examples should use generic descriptions. If you adapt this template for a specific project, do so in that project's own docs — not here.
 
-**This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Do NOT copy it into a project's `docs/` folder. Instead, keep the URL in each project's `CLAUDE.md` as a reference for on-demand process audits:
+**This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Do NOT copy it into a project's `docs/` folder. Instead, keep the URL in each project's `CLAUDE.md` as a reference for on-demand process audits.
+
+> **A note on `CLAUDE.md`:** This template uses `CLAUDE.md` as the instruction file name throughout because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
 
 ```markdown
 ## Process Audit Reference
@@ -258,7 +260,7 @@ A predictable structure eliminates orientation cost for every new contributor �
 
 ```
 project-root/
-├── CLAUDE.md              # AI assistant instructions (injected every session)
+├── CLAUDE.md              # AI agent instructions (or .cursorrules, AGENTS.md, etc.)
 ├── README.md              # Human onboarding
 ├── .gitignore
 │

@@ -21,6 +21,7 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance, production monitoring |
 | [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline, production monitoring |
 | [`umami-compliance.md`](umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, cyber liability insurance readiness |
+| [`umami-scripting.md`](umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
 
 **Observability is a cross-cutting concern.** Rather than a separate extension, each domain extension includes its own observability guidance — what to monitor, how to alert, what to log — tailored to that domain's specific failure modes. The core template (§4) covers the foundational concepts (three signals, structured logging, instrumentation discipline).
 
@@ -42,6 +43,7 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mob
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 ```
 
 ### 2. Give it to your LLM agent
@@ -126,6 +128,7 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
 - Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
 - Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
+- Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
@@ -170,6 +173,7 @@ Then whenever you want a gap analysis, invoke your project's `umami-audit` skill
 | [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress |
 | [`umami-drupal.md`](umami-drupal.md) | §21.1–21.9 | Project is built on Drupal |
 | [`umami-compliance.md`](umami-compliance.md) | §22.1–22.9 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
+| [`umami-scripting.md`](umami-scripting.md) | §23.1–23.9 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
 
 ## Compliance and regulated environments
 

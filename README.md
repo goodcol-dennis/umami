@@ -104,6 +104,8 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 
 **How to move between tiers:** Use periodic audits. When you hit a pain point (regressions, lost context between sessions, agents making the same mistakes), check whether a Tier 2 or 3 practice addresses it. Adopt that specific practice, not the whole tier.
 
+**Watch for onboarding anti-patterns.** The core template (§0.6) documents the five most common mistakes when adopting umami — adopting everything at once, process without product, documentation theater, cargo-culting practices, and treating the template as law. The agent is instructed to flag these during discovery and recommend mitigations.
+
 ### 4. Come back to it later — don't load it every session
 
 This is **not** a document your agent should load every session. It's a process reference — use it to set up your project's guardrails, then let your project's own `CLAUDE.md` and docs carry the day-to-day instructions.
@@ -139,7 +141,7 @@ Then whenever you want a gap analysis, invoke your project's `umami-audit` skill
 
 | Section | Topic |
 |---------|-------|
-| §0 | Project discovery — onboarding questionnaire, adoption tiers, tiered audit protocol |
+| §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol |
 | §1 | Project structure — predictable layouts, workspace partitioning |
 | §2 | Specification-first development — specs before code |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests |

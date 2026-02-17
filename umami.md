@@ -164,6 +164,20 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 
 **How to move between tiers:** Don't promote the whole project at once. When you hit a specific pain point (regressions, lost context, agents repeating mistakes), check whether a Tier 2 or 3 practice addresses it. Adopt that practice. Periodic audits (§0.7) are designed to surface these moments.
 
+### Onboarding Anti-Patterns
+
+When onboarding a project to umami — especially an existing codebase — watch for these patterns. If you identify any during discovery or an initial audit, flag them and recommend the mitigation.
+
+| Anti-pattern | How to spot it | Mitigation |
+|---|---|---|
+| **Adopting everything at once** | The agent (or team) tries to implement all 15 sections simultaneously. New projects get CLAUDE.md, change propagation maps, ADRs, multi-layer tests, and token efficiency practices before any application code exists. | Start with Tier 1 only (§0.6). Add higher-tier practices when specific pain points justify them, not preemptively. A project that doesn't ship code because it's busy setting up process has inverted its priorities. |
+| **Process without product** | Days spent building guardrail infrastructure (instruction files, documentation scaffolding, test harnesses) before writing any application code. Process exists to support delivery, not the reverse. | Build something first. Add structure as the project grows. A working prototype with no CLAUDE.md is better than a pristine process scaffold with no code. |
+| **Documentation theater** | ADRs, specs, and acknowledged gaps exist as files but no workflow references them. Decisions get re-litigated because nobody checks the ADRs. Acknowledged gaps grow but are never reviewed. | Every document should be referenced by at least one workflow. An ADR that isn't checked before making the same type of decision is overhead, not governance. If a document isn't being read, either integrate it into the workflow or delete it. |
+| **Cargo-culting practices** | Change propagation maps on a 3-file project. Formal specs for a 10-line script. Multi-layer testing on a single function. Agent orchestration for a solo developer with one assistant. | Every practice in the tier tables has an "adopt when..." trigger. If the trigger hasn't fired, the practice is premature. More process is not inherently better — only process that addresses a real problem earns its cost. |
+| **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
+
+**For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
+
 ### 0.7 Audit Protocol — How to Review Efficiently
 
 Auditing the full document against a project is expensive — both in tokens and in time. A comprehensive audit of the core template plus extensions can consume 50,000+ tokens, most of which is wasted if the project is early-stage and only needs Tier 1 guidance. Use a tiered audit approach instead.

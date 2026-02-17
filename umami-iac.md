@@ -59,6 +59,11 @@ Terraform state is the source of truth for what exists. Corrupted or mismanaged 
 - Enable state versioning (S3 bucket versioning) for recovery.
 - One state file per environment. Never share state between dev/staging/prod.
 
+**Anti-patterns:**
+- **"Let me just edit the state file"** — manual JSON edits corrupt state. Use `terraform state mv` and `terraform import` even when they feel slower.
+- **"Delete state and re-import everything"** — this is a recovery procedure, not a workflow. If you're doing this regularly, your state management has a structural problem.
+- **Running apply from a local machine against production** — CI/CD should be the only path to prod. Local applies bypass review, audit logging, and credential scoping.
+
 ---
 
 ## 16.4 Cost as a First-Class Concern
@@ -71,6 +76,11 @@ Unlike application code, every infrastructure resource has a direct, ongoing cos
 - Include cost estimates in PR descriptions for infrastructure changes — "this adds an RDS instance at ~$X/month."
 - Audit running resources periodically. Orphaned resources (unused EBS volumes, idle load balancers, forgotten dev clusters) compound silently.
 - Use `infracost` or similar tools to estimate cost impact of Terraform changes in CI.
+
+**Anti-patterns:**
+- **"We'll optimize costs later"** — costs compound daily. A forgotten dev cluster running for 3 months costs the same as the production one you carefully right-sized.
+- **Running dev/staging at production scale** — dev environments should be architecturally identical but appropriately sized. A 3-node production database doesn't need a 3-node dev replica.
+- **No tagging → no accountability** — untagged resources can't be attributed to a project, team, or environment. When no one owns a cost, no one manages it.
 
 ---
 
@@ -101,6 +111,11 @@ dev → staging → prod
 - Dev can be smaller (fewer nodes, smaller instances) but must be architecturally identical to prod.
 - Test destructive changes in dev/staging before applying to prod. Always.
 - Environment parity: if it works in staging but breaks in prod, your environments have drifted. Fix that.
+
+**Anti-patterns:**
+- **Snowflake environments** — staging has 3 undocumented differences from prod. When something works in staging but fails in prod, the first 2 hours are spent finding the differences. Use the same modules with different variable files.
+- **"It's a small change, deploy straight to prod"** — small changes have caused the largest outages. The promotion path exists for every change, not just the ones that feel risky.
+- **"Temporary" config overrides** — a manual change to staging "just for this test" that persists for 6 months. If it's in the environment, it should be in the code.
 
 ---
 
@@ -143,6 +158,11 @@ Infrastructure can change outside of Terraform — manual console clicks, anothe
 - Run `terraform plan` on a schedule (e.g., nightly) against prod to detect drift. Alert if changes are detected.
 - Establish a policy: if someone changes infrastructure manually, they must import or reconcile the change in Terraform within 24 hours. Undocumented manual changes are bugs.
 - Consider policy-as-code tools (OPA, Sentinel) that block non-Terraform changes to managed resources.
+
+**Anti-patterns:**
+- **"Quick console fix"** — a manual change that never gets reconciled in code. Within a week, the next `terraform plan` shows unexpected drift and nobody remembers why. Enforce the 24-hour reconciliation policy above.
+- **Ignoring drift alerts** — treating drift detection as noise trains the team to ignore it. If drift alerts fire regularly for expected reasons, fix the detection rules, don't mute the alerts.
+- **Manual workarounds for Terraform limitations** — if Terraform can't manage a resource, document it as an acknowledged gap (§8) and track it. Don't silently manage it in the console.
 
 ---
 
@@ -348,6 +368,120 @@ Observability data is high-volume. Unmanaged, it becomes one of the largest infr
 
 ---
 
+## 16.16 CI/CD Pipeline Discipline
+
+Every CI/CD stage either catches a real problem or slows delivery. The discipline is knowing the difference.
+
+**Design principles:**
+- **Fast feedback first.** Cheap checks (format, lint, validate) run before expensive checks (plan, security scan, integration test). A syntax error caught in 5 seconds shouldn't wait behind a 10-minute security scan.
+- **Parallelize independent stages.** Lint, security scan, and cost estimate don't depend on each other — run them simultaneously. A pipeline with 6 sequential stages that could be 3 parallel groups is wasting half its time.
+- **Keep pipelines under 15 minutes for the critical path.** Longer pipelines cause developers to batch changes, which increases blast radius per deploy. If a stage is slow, evaluate whether it's earning its time.
+- **One pipeline definition, parameterized per environment.** Don't maintain separate pipelines for dev/staging/prod. Same stages, different variables. Divergent pipelines mean divergent behavior.
+
+**Gate discipline:**
+- **Reserve manual approval for high-blast-radius changes** (§16.2). Production database modifications, networking changes, IAM changes. Not every config tweak.
+- **Auto-approve low-risk changes** — tag updates, scaling adjustments, non-destructive additions. If the plan shows only additions and in-place updates to non-critical resources, human review is overhead without safety benefit.
+- **Distinguish blocking vs. advisory checks.** High-severity security findings block merge. Medium findings warn and create a tracked issue (§8). Low findings report only. If everything blocks, developers stop reading the output.
+
+**Anti-patterns:**
+- **Gate sprawl** — 12 stages taking 45 minutes when 5 stages taking 8 minutes catch the same issues. Before adding a gate, ask: would this have been caught by an existing check if configured correctly?
+- **"Add a check for that"** — when something breaks in production, the instinct is to add a new CI gate. Often the correct fix is improving an existing check or fixing the underlying code, not adding pipeline complexity.
+- **Flaky checks blocking deploy** — a security scan that intermittently fails or a plan that times out teaches the team to re-run and ignore. Fix or replace flaky checks; don't let them erode trust in the pipeline.
+- **Pipeline as documentation** — encoding business logic and policy decisions in pipeline YAML instead of in policy-as-code or Terraform modules. Pipelines should execute checks, not define them.
+
+---
+
+## 16.17 Security Governance Without Friction
+
+Security gates that block everything eventually get bypassed. The goal is security that developers work *with*, not *around*.
+
+**Shift-left security:**
+- **Embed security checks in CI** (§16.8), not in a separate review queue. A `checkov` scan that runs automatically on every PR is more effective than a quarterly security review, and faster.
+- **Provide fix guidance, not just findings.** A scan that says "S3 bucket allows public access" is less actionable than one that says "add `block_public_access` — see the approved S3 module." When writing custom policies, include remediation guidance in the output.
+- **Pre-approved modules** — provide Terraform modules that are already security-reviewed. Teams using the approved VPC module don't need a per-project VPC security review. This is the highest-leverage security investment: shift the work from review to reuse.
+
+**Governance patterns:**
+- **Policy-as-code** (OPA, Sentinel, Kyverno) — encode security requirements as automated checks. Policies written in code are testable, version-controlled, and consistently enforced. Policies in a wiki are aspirational.
+- **Tiered review requirements** — not every change needs the same scrutiny:
+
+| Change scope | Review required |
+|---|---|
+| Uses approved modules, no IAM/networking changes | Automated checks only |
+| New resource types or modified security groups | Team peer review |
+| IAM policy changes, cross-account access, new networking | Security team review |
+| New cloud account, new region, architecture change | Architecture review + security review |
+
+- **Exception process** — when a team needs to deviate from policy, document the exception and its justification as an ADR (§7). Blanket denials push teams to work around the process entirely.
+
+**Anti-patterns:**
+- **Security as a queue** — a security team that manually reviews every infrastructure PR creates a bottleneck. Automate what you can, reserve human review for architecture changes and new patterns.
+- **Checkbox compliance** — running a scan, ignoring the output, and marking the ticket as done. If nobody acts on findings, the scan is waste that creates false confidence.
+- **Over-scoping IAM to avoid friction** — granting `AdministratorAccess` because the least-privilege policy is too annoying to maintain. Document the minimum permissions needed for each role and enforce them.
+
+---
+
+## 16.18 Platform Engineering
+
+When multiple teams share infrastructure patterns, the question shifts from "how do I provision resources?" to "how do I provide self-service infrastructure that's secure and consistent by default?"
+
+**When platform engineering matters:**
+- Multiple teams write similar Terraform for similar infrastructure.
+- Onboarding a new service requires copying and modifying another team's config.
+- Security and compliance requirements must be consistent across all services.
+- Teams spend more time on infrastructure plumbing than on their actual product.
+
+If none of these apply, skip this section. A platform for one team is over-engineering.
+
+**Shared module library:**
+- Internal Terraform modules that encode your organization's standards (networking, security, tagging, monitoring). Teams compose from these modules instead of writing from scratch.
+- Version modules semantically. Breaking changes require a major version bump and a migration guide.
+- Test modules independently (§16.8) — a broken shared module breaks every consumer.
+- Every module has a documented owner. Unowned modules decay.
+- Document inputs, outputs, and assumptions. If a team can't use your module without reading its source, the interface isn't good enough.
+
+**Golden paths:**
+- A "start here" template for common workload types (web service, batch job, data pipeline) that includes infrastructure, CI/CD, monitoring, and alerting scaffolding.
+- Golden paths are opinionated defaults, not mandates. Teams can deviate when they have a reason — but the default should be good enough that most teams don't need to.
+- Build golden paths *with* the teams that use them, not *for* them. A path that doesn't match real needs doesn't get adopted.
+
+**Self-service with guardrails:**
+- Teams provision their own infrastructure using approved modules and templates. The modules enforce policy (encryption, tagging, access controls, cost limits) so teams get compliance by default, not by effort.
+- Provide a service catalog or scaffolding tool that generates the initial Terraform for a new service using approved modules. Reduce the "blank page" problem.
+
+**Anti-patterns:**
+- **Premature platform** — building a shared platform before you have repeated patterns across multiple teams. Start with shared modules. Evolve to a platform when the repetition justifies it.
+- **Platform without adoption** — golden paths that nobody uses because they're too rigid, too complex, or don't match real team needs. Measure adoption rate and iterate.
+- **"Just use Kubernetes"** — Kubernetes solves orchestration, not infrastructure discipline. A poorly managed K8s cluster has all the same problems as poorly managed VMs, plus the complexity of Kubernetes itself. Evaluate whether managed services (RDS, Lambda, SQS, Cloud Run) are simpler and cheaper before defaulting to K8s.
+- **Central team as bottleneck** — if every module change requires the platform team, you've replaced one bottleneck (manual infrastructure) with another (the platform team's backlog). Enable teams to contribute to modules with review, not gatekeeping.
+
+---
+
+## 16.19 Common IaC Anti-Patterns
+
+Tooling misconceptions and process traps that cost time and money. When reviewing IaC or advising on infrastructure decisions, flag these if you see them.
+
+**Tooling misconceptions:**
+
+| Misconception | Reality | What to do instead |
+|---|---|---|
+| "Terraform manages everything" | Terraform manages infrastructure state. It doesn't manage application deployment, database migrations, secret rotation, or application configuration. | Use the right tool for each job. Terraform for infrastructure, application tooling for application concerns. A Terraform `null_resource` with a provisioner is usually a sign you're using the wrong tool. |
+| "We need one IaC tool for everything" | Different tools suit different layers. Terraform for cloud resources, Helm for K8s manifests, Ansible for configuration management. | Choose tools by layer, not by mandate. Forced standardization on one tool leads to workarounds that are worse than using two tools well. |
+| "Cloud-native means Kubernetes" | Managed services (RDS, Lambda, SQS, Cloud Run) are often simpler, cheaper, and more reliable than self-managed equivalents on K8s. | K8s adds value when you need orchestration, portability, or workload density. For everything else, evaluate managed services first. |
+| "Infrastructure is just like application code" | IaC shares principles with application code (version control, review, testing) but has slower feedback loops, higher blast radius per change, and state management concerns that application code doesn't have. | Apply software engineering principles *adapted* for infrastructure characteristics. Don't blindly import application development patterns. |
+| "Serverless means no infrastructure" | Serverless shifts infrastructure management, it doesn't eliminate it. You still manage IAM, networking, monitoring, cost, and deployment. | Apply the same IaC discipline to serverless resources. They're still infrastructure — they're just someone else's servers. |
+
+**Process anti-patterns:**
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **"Automate everything from day one"** | Automating a process you don't understand codifies mistakes. | Start with manual processes you understand. Automate the ones that repeat and are well-defined. |
+| **Copy-paste infrastructure** | Snippets from the internet or AI assume a different context. A security group rule that's fine for a dev blog is a vulnerability for a healthcare app. | Understand every resource you provision — what it does, what it exposes, what it costs. Review AI-generated IaC with the same scrutiny as AI-generated application code. |
+| **"We'll clean it up later"** | Orphaned resources, outdated modules, unused security groups, and stale IAM roles compound. They increase cost, attack surface, and cognitive load. | Schedule cleanup as recurring work (§16.11 periodic checklist). Treat orphaned resources as bugs, not as backlog. |
+| **Monolithic Terraform** | One state file with 500 resources means every plan takes minutes, every change risks everything, and state locking blocks the whole team. | Decompose by service, layer, or team. Smaller state files = faster plans, smaller blast radius, independent team velocity. |
+| **"The console is faster"** | It is — for the first change. Then you have untracked state, no audit trail, and drift that surprises the next `terraform plan`. | Use the console for investigation and debugging. Use Terraform for changes. If the console is genuinely faster for a recurring operation, that's a sign your IaC workflow needs improvement. |
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 This extension does not replace core guardrails — it extends them for the IaC context:
@@ -366,6 +500,10 @@ This extension does not replace core guardrails — it extends them for the IaC 
 | §0 Discovery | §16.13 Scalability awareness — load parameters, capacity planning |
 | §7 ADRs | §16.14 SLOs/SLIs — measurable reliability targets driving architecture decisions |
 | §4 Observability | §16.15 Observability as infrastructure — OTEL, alerting, dashboards, cost management |
+| §15 Checklists | §16.16 CI/CD pipeline discipline — gate design, fast feedback, pipeline anti-patterns |
+| §4 Security | §16.17 Security governance — shift-left security, policy-as-code, tiered review |
+| §1 Project Structure | §16.18 Platform engineering — shared modules, golden paths, self-service |
+| §13 Dead Code Hygiene | §16.19 Common anti-patterns — tooling misconceptions, process traps, cleanup discipline |
 
 ---
 
@@ -385,6 +523,8 @@ This extension does not replace core guardrails — it extends them for the IaC 
 - [ ] Provider/module versions pinned.
 - [ ] Tested in non-prod environment first (for destructive or networking changes).
 - [ ] SLO impact assessed — does this change affect reliability targets? (§16.14).
+- [ ] Review gate appropriate — does this change need manual approval or can it auto-merge? (§16.16).
+- [ ] Security scan findings addressed — high-severity blocked, medium tracked in acknowledged gaps (§16.17).
 
 ### Before Every Service/Feature Launch
 - [ ] Golden signals dashboard created (latency, traffic, errors, saturation) (§16.15).
@@ -402,3 +542,6 @@ This extension does not replace core guardrails — it extends them for the IaC 
 - [ ] Failover/restore drill — verify recovery procedures actually work (quarterly) (§16.12).
 - [ ] Alert review — silence or fix alerts that fire without action (monthly) (§16.15).
 - [ ] Metric cardinality audit — identify and reduce high-cardinality metrics (quarterly) (§16.15).
+- [ ] Pipeline review — stages still earning their time, no gate sprawl (quarterly) (§16.16).
+- [ ] Shared module health — all modules versioned, tested, owned, documented (quarterly) (§16.18).
+- [ ] Security policy-as-code review — policies current, exceptions documented (quarterly) (§16.17).

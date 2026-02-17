@@ -16,7 +16,7 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 |-----------|--------|
 | [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets, frontend observability (RUM, error tracking) |
 | [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, data observability (pipeline tracing, structured logging), backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
-| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management) |
+| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management), CI/CD pipeline discipline, security governance, platform engineering, common anti-patterns |
 | [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance, mobile observability (crash reporting, release health) |
 | [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance, production monitoring |
 | [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline, production monitoring |
@@ -163,7 +163,7 @@ Then whenever you want a gap analysis, invoke your project's `umami-audit` skill
 |------|----------|---------------|
 | [`umami-web.md`](umami-web.md) | §17.1–17.8 | Project has a web frontend |
 | [`umami-data.md`](umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
-| [`umami-iac.md`](umami-iac.md) | §16.1–16.15 | Project has infrastructure-as-code or cloud provisioning |
+| [`umami-iac.md`](umami-iac.md) | §16.1–16.19 | Project has infrastructure-as-code or cloud provisioning |
 | [`umami-mobile.md`](umami-mobile.md) | §19.1–19.7 | Project has a native or cross-platform mobile app |
 | [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress |
 | [`umami-drupal.md`](umami-drupal.md) | §21.1–21.9 | Project is built on Drupal |

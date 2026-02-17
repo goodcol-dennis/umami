@@ -474,6 +474,21 @@ drush pm:uninstall dblog
 
 ---
 
+## Common Drupal Anti-Patterns
+
+§21.4 and §21.6 include specific anti-patterns for caching and service architecture. These are the domain-level traps that span the platform.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **Config changes in production** | Making configuration changes directly in the production admin UI instead of in development. The next `drush config:import` deployment overwrites the production changes, or config drift makes imports fail. | All config changes happen in dev → export → commit → deploy → import (§21.3). Production admin is for content only, never configuration. |
+| **Bypassing the render system** | Echoing HTML strings from controllers or preprocess functions instead of returning render arrays. Bypasses caching, access control, alter hooks, and Twig's auto-escaping. | Always return render arrays (§21.5). Use `#theme` hooks and Twig templates. `#markup` is a last resort, and even then it participates in the render pipeline. |
+| **Over-contrib** | Adding contributed modules for things Drupal core already does. Views, Layout Builder, Media, Responsive Images, and Content Moderation are core — check before adding contrib. | Check core capabilities first (§21.2). Each contributed module adds a dependency to maintain, update, and secure. A contrib module that wraps core functionality is overhead without value. |
+| **Untargeted `composer update`** | Running `composer update` without specifying packages. Updates every dependency simultaneously, making it impossible to isolate which update caused a regression. | Use `composer update drupal/module_name --with-dependencies` for targeted updates (§21.7). Update one module at a time, test, commit, then update the next. |
+| **`max-age: 0` as a shortcut** | Setting cache max-age to 0 because "the data changes sometimes." This disables caching for the entire page (max-age bubbles up), destroying performance for all visitors. | Use cache tags instead (§21.4). When the entity changes, Drupal invalidates the cache automatically. `max-age: 0` should only be used for genuinely real-time data. |
+| **Static `\Drupal::` calls in services** | Using `\Drupal::service()` or `\Drupal::entityTypeManager()` inside service classes instead of constructor dependency injection. Makes code untestable, hides dependencies, and bypasses the container. | Use dependency injection (§21.6). Define services in `*.services.yml`, inject via constructor. `\Drupal::` is acceptable only in `.module` files and procedural hooks where DI isn't available. |
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Drupal Equivalent |

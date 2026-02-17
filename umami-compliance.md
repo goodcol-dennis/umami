@@ -277,6 +277,21 @@ For systems subject to GDPR (Article 17) or similar regulations:
 
 ---
 
+## Common Compliance Anti-Patterns
+
+When advising on compliance posture or reviewing compliance-related code and processes, flag these if you see them.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **Compliance theater** | Policies exist as documents but nobody follows them. ADRs reference compliance but decisions are made without consulting them. Checklists are checked without verification. Auditors see through this — and more importantly, it doesn't actually protect data. | Every compliance artifact must be referenced by a workflow (§0.6 onboarding anti-patterns). If a policy isn't integrated into the development process, it's overhead. Integrate or delete. |
+| **"We'll add compliance later"** | Building the architecture first, then trying to bolt on data classification, access controls, audit logging, and retention policies. These concerns affect schema design, API design, and data flow — retrofitting is 5-10x more expensive than building in. | Address compliance during discovery (§22.1). Data classification (§22.2) and data subject rights (§22.3) should inform architecture decisions, not follow them. |
+| **Copy-paste policies** | Downloading a compliance template and using it without adapting to your organization's actual systems, data, and processes. Auditors ask "how does your incident response plan work?" not "do you have an incident response plan?" | Adapt every policy to your actual context. An IR plan that references specific monitoring systems, specific contact lists, and specific recovery procedures demonstrates real preparedness. Generic plans demonstrate paperwork. |
+| **Over-documentation** | Documenting everything to prove compliance readiness, but never reviewing, updating, or acting on the documents. 500 pages of policies that haven't been reviewed since they were written are a liability, not an asset. | Keep compliance documentation concise and actionable. Map artifacts to specific controls (§22.6). Review quarterly at minimum (§22.9). Less documentation that's current and followed beats more documentation that's stale and ignored. |
+| **Treating compliance as one-time** | Getting certified or passing an insurance application, then not maintaining the controls. Compliance frameworks require continuous operation — controls that lapse between audits are gaps. | Build compliance into recurring workflows: quarterly reviews, annual testing, ongoing monitoring (§22.9). The checklists exist to prevent compliance from being a one-time exercise. |
+| **All-or-nothing classification** | Treating all data as Restricted (too expensive, slows everything down) or treating all data as Internal (fails to protect what actually matters). | Classify deliberately per the tier framework (§22.2). Most data is Internal. Some is Confidential. Very little is Restricted. The tiers exist so you can focus protection where it matters — not spread it thin across everything. |
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 This extension does not replace core guardrails — it extends them for the compliance context:

@@ -293,6 +293,21 @@ Many systems need batch for historical analysis and stream for real-time. The di
 
 ---
 
+## Common Data Pipeline Anti-Patterns
+
+Individual sections above include specific anti-patterns (§18.2 idempotency, §18.6 backfill, §18.9 delivery, §18.10 derived data). These are the domain-level traps that span multiple sections.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **Schema-on-read without validation** | Trusting that source data matches expectations. The source changes format, adds nulls, or sends duplicates — and you discover it when a dashboard shows wrong numbers, not when the data arrives. | Validate at ingestion (§18.1, §18.4). Define the contract, enforce it at the boundary. Schema-on-read is fine for exploration; it's dangerous for production pipelines. |
+| **Dashboard-driven development** | Building dashboards before understanding the data. The dashboard looks right because it shows numbers — but the numbers are wrong because the underlying pipeline has silent quality issues. | Data quality first, then dashboards. A dashboard on top of unchecked data creates false confidence. Validate completeness, uniqueness, and freshness (§18.1) before visualizing. |
+| **Over-engineering the pipeline** | Spark cluster for 10MB CSV files. Kafka for 100 events/day. Airflow DAGs for a cron job that runs one script. The overhead of distributed systems outweighs their benefit below a certain scale. | Match the tool to the data volume. A Python script with SQLite handles most early-stage data projects. Scale the tooling when the data volume demands it, not when the architecture diagram looks impressive. |
+| **"Just add another table"** | Creating denormalized tables for every new query need without tracking which is derived from what. Eventually nobody knows which table is authoritative and which is stale. | Identify source of truth for every dataset (§18.10). Every denormalized or aggregated table must have a documented derivation path and a rebuild mechanism. |
+| **No backfill strategy** | Building pipelines that can only process new data. When a bug corrupts last month's output, there's no way to reprocess without rebuilding everything from scratch. | Design every pipeline to accept a date range or batch identifier from day one (§18.6). The cost of adding backfill capability later is 10x the cost of building it in. |
+| **Mixing batch and stream without reconciliation** | Running both a batch and stream path for the same data but never comparing their outputs. They silently diverge until someone notices the real-time dashboard doesn't match the weekly report. | If you run both paths, reconcile them periodically (§18.11). Discrepancies reveal bugs in one path or the other. |
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Data Pipeline Equivalent |

@@ -377,6 +377,21 @@ define( 'WP_DEBUG_DISPLAY', false ); // Never show errors to visitors
 
 ---
 
+## Common WordPress Anti-Patterns
+
+When building or reviewing WordPress code, flag these if you see them.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **"Just install a plugin"** | Solving every requirement with a plugin instead of evaluating whether 20 lines of custom code would suffice. Each plugin adds attack surface, performance overhead, update maintenance, and conflict potential. | Evaluate before installing (§20.2). If the functionality is simple and specific to your site, a custom snippet in a site-specific plugin is often better than a 5,000-line plugin that does 50 things you don't need. |
+| **Plugin bloat** | 30+ active plugins for 10 actual features. Many plugins overlap (3 SEO plugins, 2 caching plugins), creating conflicts and performance drag. | Audit the plugin inventory quarterly (§20.2). For each plugin, ask: is it still needed? Can it be consolidated? Can it be replaced with custom code? Fewer plugins = smaller attack surface + fewer update cycles. |
+| **Editing the parent theme** | Making changes directly in a parent theme's files. The next theme update overwrites everything. | Always use a child theme (§20.3). Override only the templates and functions you need to change. |
+| **Direct database queries for things WordPress APIs handle** | Writing `$wpdb->query()` for operations that `WP_Query`, `get_posts()`, `get_option()`, or `wp_insert_post()` already handle. Bypasses caching, escaping, hooks, and access controls. | Use WordPress API functions first (§20.1, §20.5). Only use direct queries when the API genuinely can't do what you need — and always with `$wpdb->prepare()`. |
+| **Everything in functions.php** | A 2,000-line `functions.php` with custom post types, shortcodes, AJAX handlers, enqueue calls, and business logic all in one file. | Decompose into focused includes (§20.3). `functions.php` should contain only `require` statements. Each include has a single responsibility. |
+| **No staging environment** | Testing plugin updates, theme changes, and WordPress core updates directly in production. "It's just a small change" until it takes the site down. | Maintain a staging environment that mirrors production — same plugins, same data (§20.6). Test all changes there first. Every time. |
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | WordPress Equivalent |

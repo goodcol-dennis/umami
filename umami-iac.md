@@ -26,6 +26,17 @@ terraform plan → review → terraform apply
 
 **Why this matters more than in app code:** A bad deploy of application code usually means a broken page. A bad `terraform apply` can delete databases, tear down networks, or expose secrets. The blast radius is categorically larger.
 
+**Validate locally before pushing.** The same discipline applies to the checks that protect your code *before* it reaches CI. Run the local validation chain before every push:
+
+```
+terraform fmt -check -recursive   # formatting
+terraform validate                 # syntax + provider schema
+tflint                             # linting (unused vars, naming, provider rules)
+terraform plan                     # actual changes (catches runtime issues)
+```
+
+All four must pass. If any fails, fix before pushing. Each push-fail-fix round-trip through CI costs 5–10 minutes of pipeline time plus a context switch — five rounds of that turns a 10-minute fix into a 2-hour slog. CI exists to catch what you missed, not to be your first feedback loop.
+
 ---
 
 ## 16.2 Blast Radius Awareness
@@ -140,7 +151,7 @@ The testing pyramid for infrastructure looks different from application code:
 |---|---|---|---|
 | **Format** | `terraform fmt` | Style inconsistencies | Pre-commit |
 | **Validate** | `terraform validate` | Syntax errors, invalid references | Pre-commit / CI |
-| **Lint** | `tflint` | Provider-specific issues, deprecated features, naming conventions | CI on every PR |
+| **Lint** | `tflint` | Provider-specific issues, deprecated features, naming conventions | Pre-commit / CI |
 | **Security scan** | `checkov`, `tfsec` | Misconfigurations (public S3, open security groups, missing encryption) | CI on every PR |
 | **Cost estimate** | `infracost` | Unexpected cost impact | CI on every PR |
 | **Plan** | `terraform plan` | Actual changes that would be applied, dependency issues | CI on every PR |
@@ -479,6 +490,7 @@ Tooling misconceptions and process traps that cost time and money. When reviewin
 | **"We'll clean it up later"** | Orphaned resources, outdated modules, unused security groups, and stale IAM roles compound. They increase cost, attack surface, and cognitive load. | Schedule cleanup as recurring work (§16.11 periodic checklist). Treat orphaned resources as bugs, not as backlog. |
 | **Monolithic Terraform** | One state file with 500 resources means every plan takes minutes, every change risks everything, and state locking blocks the whole team. | Decompose by service, layer, or team. Smaller state files = faster plans, smaller blast radius, independent team velocity. |
 | **"The console is faster"** | It is — for the first change. Then you have untracked state, no audit trail, and drift that surprises the next `terraform plan`. | Use the console for investigation and debugging. Use Terraform for changes. If the console is genuinely faster for a recurring operation, that's a sign your IaC workflow needs improvement. |
+| **CI as your linter** | Pushing without running local checks and waiting for CI to report failures turns a 10-minute fix into a 2-hour push-fail-fix loop. Each round-trip costs 5–10 minutes of pipeline time plus a context switch, and pollutes the commit history with fix-up commits. | Run the local validation chain before every push (§16.1): fmt, validate, lint, plan. CI catches what you missed — it should not be your first feedback loop. |
 
 ---
 

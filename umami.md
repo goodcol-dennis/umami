@@ -24,7 +24,9 @@ This document is a template for establishing processes, testing strategies, and 
   When the user asks you to audit the development process, fetch the core document and
   follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
   then audit one tier above. Do NOT read every section or fetch every extension. Focus on
-  3-5 actionable recommendations, not comprehensive compliance.
+  3-5 actionable recommendations, not comprehensive compliance. Audits are READ-ONLY —
+  report findings and describe what changes each recommendation requires, but do not modify
+  code or project files until the user explicitly chooses which recommendations to apply.
 ```
 
 ---
@@ -188,6 +190,8 @@ Auditing the full document against a project is expensive — both in tokens and
 
 **For AI assistants performing an audit:**
 
+**Audits are read-only by default.** An umami audit assesses process maturity and identifies gaps — it does not modify code, configuration, or project files. Do not restructure directories, add tests, insert logging, refactor code, or apply recommendations during the audit phase. The audit produces a findings report. The user decides what to act on, when, and how. See "After the audit" below.
+
 1. **Determine the project's current tier.** Read the project's `CLAUDE.md`, test infrastructure, and documentation. Match the project's current state to the adoption tiers above. Most projects are between Tier 1 and Tier 2.
 
 2. **Audit one tier above current.** If the project is solidly at Tier 1, audit against Tier 2 practices. If it's at Tier 2, audit against Tier 3. Don't audit practices two tiers above — they'll create recommendations the project isn't ready to act on.
@@ -211,14 +215,32 @@ Auditing the full document against a project is expensive — both in tokens and
 
 ### Recommended next practices (priority order)
 1. [Practice] (§X) — [why this addresses a current pain point]
+   - **Changes required:** [which files would be created, modified, or restructured]
+   - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
 2. [Practice] (§X) — [why this addresses a current pain point]
+   - **Changes required:** [which files would be created, modified, or restructured]
+   - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
 3. [Practice] (§X) — [why this addresses a current pain point]
+   - **Changes required:** [which files would be created, modified, or restructured]
+   - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
 
 ### Not yet relevant
 - [Practices that were checked but don't apply yet, with the trigger that would make them relevant]
 ```
 
 This format keeps the audit focused and actionable. A project should come away with 3-5 concrete next steps, not a wall of recommendations.
+
+**After the audit — describe changes, then ask:**
+
+Each recommendation in the audit report must describe the specific changes it would require — which files would be created, modified, or restructured, and what the modification involves. This lets the team assess impact, spot conflicts with in-progress work, and make informed decisions before any code is touched.
+
+Once the report is complete, ask the user how they want to proceed:
+
+1. **Save to file for team review** — write the findings report to a file (e.g., `umami-audit-findings.md`) so the team can review, discuss, and prioritize together. **This is the default.** When multiple engineers are working on the codebase, uncoordinated changes create merge conflicts and break concurrent work.
+2. **Apply all recommendations** — implement all findings. Only appropriate when the user has sole ownership or has already coordinated with their team.
+3. **Selective application** — walk through recommendations one at a time, letting the user choose which to apply, skip, or defer.
+
+Default to option 1 unless the user explicitly requests otherwise. If the user chooses to apply changes (option 2 or 3), ask about active branches and in-progress work first. Use a dedicated branch for remediation. Prefer small, focused changes over sweeping refactors.
 
 **Standardize the invocation.** Create an `umami-audit` skill in your project's skill library (§14) so the audit is always triggered the same way — `/umami-audit` or equivalent — regardless of who runs it or which agent tool they use. The skill should embed the raw URLs and reference this protocol so the agent doesn't improvise the process.
 

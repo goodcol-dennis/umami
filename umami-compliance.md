@@ -10,6 +10,8 @@ This extension covers compliance, regulated data handling, and audit readiness f
 
 **Scope boundary:** This extension covers controls that intersect with the development process. Organizational controls that are purely administrative (firewall configuration, endpoint antivirus, physical security, HR procedures, corporate governance) are outside scope — they belong in an organizational security policy, not a development guardrails template. Where this extension identifies a gap that requires an organizational control, it says so explicitly.
 
+**For AI assistants — read-only audit mode:** When asked to perform a compliance audit or assessment, operate in read-only mode. Analyze the codebase, identify gaps, and produce a findings report — do not modify code, configuration, or project files unless the user explicitly requests changes. After presenting findings, ask how the user wants to proceed: apply recommendations directly, save them to a file for team review, or selectively choose which recommendations to apply. See §22.10 for the full audit workflow.
+
 ---
 
 ## 22.1 Compliance Discovery (extends §0.1)
@@ -289,6 +291,7 @@ When advising on compliance posture or reviewing compliance-related code and pro
 | **Over-documentation** | Documenting everything to prove compliance readiness, but never reviewing, updating, or acting on the documents. 500 pages of policies that haven't been reviewed since they were written are a liability, not an asset. | Keep compliance documentation concise and actionable. Map artifacts to specific controls (§22.6). Review quarterly at minimum (§22.9). Less documentation that's current and followed beats more documentation that's stale and ignored. |
 | **Treating compliance as one-time** | Getting certified or passing an insurance application, then not maintaining the controls. Compliance frameworks require continuous operation — controls that lapse between audits are gaps. | Build compliance into recurring workflows: quarterly reviews, annual testing, ongoing monitoring (§22.9). The checklists exist to prevent compliance from being a one-time exercise. |
 | **All-or-nothing classification** | Treating all data as Restricted (too expensive, slows everything down) or treating all data as Internal (fails to protect what actually matters). | Classify deliberately per the tier framework (§22.2). Most data is Internal. Some is Confidential. Very little is Restricted. The tiers exist so you can focus protection where it matters — not spread it thin across everything. |
+| **Agent-applied compliance fixes** | AI agents modify code during compliance audits without team review, creating merge conflicts and breaking other engineers' concurrent work. The agent optimizes for compliance coverage, but the team needs to coordinate timing and scope of changes. | Agents operate in read-only audit mode by default (§22.10). Findings are reported, not applied. The team decides what to change, when, and in what order — balancing compliance progress against development velocity and branch coordination. |
 
 ---
 
@@ -335,6 +338,13 @@ This extension does not replace core guardrails — it extends them for the comp
 - [ ] New data flows assessed — does new data cross a trust boundary or reach a new vendor?
 - [ ] De-identified or synthetic data used in tests — no real PHI/PII in test fixtures (§22.3).
 
+### Compliance Audit (agent-driven — §22.10)
+
+- [ ] Audit operated in read-only mode — no code modified during assessment.
+- [ ] Findings report generated with severity, affected areas, and recommendations.
+- [ ] User chose output handling — saved to file, applied selectively, or applied fully.
+- [ ] Concurrent work conflicts assessed before applying any recommendations.
+
 ### Quarterly
 
 - [ ] Vendor access review — revoke access no longer needed (§22.7).
@@ -350,3 +360,53 @@ This extension does not replace core guardrails — it extends them for the comp
 - [ ] Security assessment — comprehensive review of controls against applicable frameworks.
 - [ ] Vendor certifications verified as current (§22.7).
 - [ ] Cyber liability insurance renewal preparation — walk the audit evidence mapping (§22.6).
+
+---
+
+## 22.10 Agent-Driven Compliance Audits
+
+When an AI agent runs a compliance audit against a codebase, the default behavior must be **read-only**. Agents analyzing compliance posture should observe, assess, and report — not modify code. Unreviewed automated changes to a production codebase create risk, especially when other engineers are working concurrently.
+
+### Audit Mode: Read-Only by Default
+
+When performing a compliance assessment:
+
+- **Do not modify code, configuration, or project files.** The audit phase is observation only.
+- **Do not restructure project layout, rename files, or refactor code** to match compliance recommendations — even if the changes would be beneficial.
+- **Do not add logging, validation, encryption, or access controls** without explicit instruction. These are implementation decisions that affect architecture and must be reviewed by the team.
+
+### Findings Report
+
+Produce a structured findings report covering:
+
+| Field | Content |
+|-------|---------|
+| **Finding** | What the gap or issue is |
+| **Severity** | Critical / High / Medium / Low |
+| **Section reference** | Which §22.x section defines the relevant practice |
+| **Affected files/areas** | Specific files, modules, or architectural areas |
+| **Recommendation** | What change would address the finding |
+| **Effort estimate** | Small (single file) / Medium (multiple files) / Large (architectural) |
+| **Concurrent work risk** | Whether the change is likely to conflict with other in-progress work |
+
+### After the Audit: Ask Before Acting
+
+Once the findings report is complete, ask the user how they want to proceed:
+
+1. **Save to file for team review** — write the findings report to a file (e.g., `compliance-audit-findings.md`) so the team can review, discuss, and prioritize together. This is the safest option when multiple engineers are working on the codebase.
+2. **Apply all recommendations** — implement all findings. Only appropriate when the user has sole ownership of the codebase or has coordinated with their team.
+3. **Selective application** — walk through findings one by one, letting the user choose which to apply, skip, or defer. Good for balancing compliance progress against disruption.
+
+**Default to option 1** (save to file) unless the user explicitly requests otherwise. The cost of an unnecessary file is zero. The cost of uncoordinated code changes across a team is merge conflicts, broken features, and lost trust in the process.
+
+### Concurrent Work Awareness
+
+Compliance remediation often involves changes that touch many files — adding logging, restructuring data access patterns, introducing encryption layers. These broad changes are exactly the kind that conflict with other engineers' in-progress work.
+
+When applying compliance recommendations:
+
+- **Ask about active branches and in-progress work** before making broad changes.
+- **Use a dedicated branch** for compliance remediation, not the user's current feature branch.
+- **Prefer small, focused changes** over sweeping refactors. A single PR that touches 40 files is harder to review and more likely to conflict than four PRs that each touch 10 files.
+- **Flag high-conflict-risk changes.** If a recommendation requires modifying a file that is likely under active development (core models, shared utilities, API routes), note it in the findings report so the team can coordinate timing.
+- **Never force-apply structural changes** (file moves, directory restructuring, module reorganization) without explicit confirmation. These have the highest conflict potential and the lowest urgency.

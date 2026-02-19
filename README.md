@@ -138,7 +138,9 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
   When the user asks you to audit the development process, fetch the core document and
   follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
   then audit one tier above. Do NOT read every section or fetch every extension. Focus on
-  3-5 actionable recommendations, not comprehensive compliance.
+  3-5 actionable recommendations, not comprehensive compliance. Audits are READ-ONLY —
+  report findings and describe what changes each recommendation requires, but do not modify
+  code or project files until the user explicitly chooses which recommendations to apply.
 ```
 
 Then whenever you want a gap analysis, tell your agent: *"Audit our process against the guardrails doc."* If your tool supports reusable prompts (Claude Code skills, Cursor notepads, custom GPT instructions), create an `umami-audit` prompt that fetches the core document and follows the tiered protocol (§0.7) — same invocation, same output format, every time. See §14 in the core template for how to set up this as a reusable prompt.

@@ -20,8 +20,9 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, data observability (pipeline tracing, structured logging), backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
 | [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management), CI/CD pipeline discipline, security governance, platform engineering, common anti-patterns |
 | [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance, mobile observability (crash reporting, release health) |
-| [`umami-wordpress.md`](umami-wordpress.md) | Security (escaping, nonces, capabilities), plugin audits, theme architecture, hook discipline, wp_options performance, production monitoring |
-| [`umami-drupal.md`](umami-drupal.md) | Security (Twig escaping, access control, Form API), module audits, config management, caching architecture, Composer discipline, production monitoring |
+| [`umami-cms.md`](umami-cms.md) | Extension inventory and audits, update management, CMS security fundamentals, content/config/code separation, core integrity, theme architecture, deployment discipline, production monitoring |
+| [`cms/umami-wordpress.md`](cms/umami-wordpress.md) | WordPress-specific: escaping functions, nonces, capabilities, plugin conflicts, hook discipline, wp_options performance, WP-CLI |
+| [`cms/umami-drupal.md`](cms/umami-drupal.md) | Drupal-specific: Twig escaping, Form API, config management, caching architecture, Composer discipline, Drush, service architecture |
 | [`umami-compliance.md`](umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, cyber liability insurance readiness |
 | [`umami-scripting.md`](umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
 | [`umami-integration.md`](umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
@@ -43,8 +44,9 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-web
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-cms.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-wordpress.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-drupal.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
@@ -129,8 +131,9 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
 - Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
-- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-wordpress.md
-- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-drupal.md
+- Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-cms.md
+- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-wordpress.md
+- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-drupal.md
 - Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
 - Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 - Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
@@ -177,8 +180,9 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | [`umami-data.md`](umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
 | [`umami-iac.md`](umami-iac.md) | §16.1–16.19 | Project has infrastructure-as-code or cloud provisioning |
 | [`umami-mobile.md`](umami-mobile.md) | §19.1–19.7 | Project has a native or cross-platform mobile app |
-| [`umami-wordpress.md`](umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress |
-| [`umami-drupal.md`](umami-drupal.md) | §21.1–21.9 | Project is built on Drupal |
+| [`umami-cms.md`](umami-cms.md) | §25.1–25.9 | Project is built on any CMS |
+| [`cms/umami-wordpress.md`](cms/umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress (loads with §25) |
+| [`cms/umami-drupal.md`](cms/umami-drupal.md) | §21.1–21.9 | Project is built on Drupal (loads with §25) |
 | [`umami-compliance.md`](umami-compliance.md) | §22.1–22.9 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
 | [`umami-scripting.md`](umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
 | [`umami-integration.md`](umami-integration.md) | §24.1–24.10 | Project integrates with external services, APIs, or message-based systems |

@@ -15,8 +15,9 @@ A **process template**, not a software project. There are no tests, no builds, n
 | `umami-data.md` | Data pipelines extension — §18 |
 | `umami-iac.md` | IaC / DevOps extension — §16 |
 | `umami-mobile.md` | Mobile extension — §19 |
-| `umami-wordpress.md` | WordPress extension — §20 |
-| `umami-drupal.md` | Drupal extension — §21 |
+| `umami-cms.md` | CMS shared extension — §25 |
+| `cms/umami-wordpress.md` | WordPress extension — §20 (loads with §25) |
+| `cms/umami-drupal.md` | Drupal extension — §21 (loads with §25) |
 | `umami-compliance.md` | Compliance / regulated industries extension — §22 |
 | `umami-scripting.md` | Scripting / CLI automation extension — §23 |
 | `umami-integration.md` | Systems integration extension — §24 |

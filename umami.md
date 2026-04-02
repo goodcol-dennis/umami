@@ -116,6 +116,7 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | [umami-scripting.md](umami-scripting.md) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
 | Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | [umami-compliance.md](umami-compliance.md) | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
 | AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
@@ -613,7 +614,26 @@ Security is a cross-cutting concern, like observability. Every project that acce
 - Include security constraints in your project instruction file (CLAUDE.md or equivalent): "Never use eval. Always use parameterized queries. Never log PII." These are low-cost instructions that prevent the most common agent-generated vulnerabilities.
 - Review agent-generated code for security the same way you review it for correctness. A passing test suite doesn't mean the code is secure.
 
-Each domain extension includes specific security guidance for its context — WordPress escaping and nonces (§20.1), Drupal access control and Form API (§21.1), etc. For projects handling regulated data (PHI, PII, payment cards), the compliance extension covers data classification, handling procedures, and audit readiness (§22.2–22.3).
+**Build output hygiene:**
+
+Build processes can silently leak source code, internal architecture, and secrets into production or version control. Source maps are the highest-profile example — they expose the entire original source tree to anyone with browser devtools — but the problem is broader.
+
+| Leak vector | What it exposes | Prevention |
+|---|---|---|
+| **Source maps in production** | Full original source code, file paths, internal comments | Disable source maps in production builds, or upload them only to your error-tracking service (Sentry, Datadog) and block public access |
+| **Debug builds deployed** | Verbose error messages, stack traces, component names, internal state | Enforce `NODE_ENV=production` (or equivalent) in build pipelines; fail the build if debug flags are detected in production config |
+| **Secrets baked into client bundles** | API keys, tokens, internal URLs | Never reference secrets in client-side code; use server-side proxies or backend-for-frontend patterns; scan build output for known secret patterns |
+| **Internal comments in production** | Architecture hints, TODO notes, developer names, internal URLs | Strip comments during minification (default for most bundlers — verify it's not disabled) |
+| **Build output committed to git** | Compiled code, bundles, generated files in repo history | `.gitignore` covers `dist/`, `build/`, `out/`, `*.map`; pre-commit hook rejects commits that add files matching build output patterns |
+| **Environment files in build context** | Database credentials, API keys, service URLs | `.dockerignore` and `.gitignore` cover `.env*`; build pipelines inject secrets at runtime, not via committed files |
+
+**Rules:**
+- **`.gitignore` is your first line of defense.** At minimum: `dist/`, `build/`, `out/`, `*.map`, `.env*`, `node_modules/`, `__pycache__/`. Audit it when adding new build tools — each tool may produce output in a different directory.
+- **Scan build output before deploy.** A CI step that greps the build directory for source maps, `.env` patterns, known secret formats, or unexpectedly large files catches leaks before they reach production.
+- **Treat build output like a public artifact.** Anything in the deploy directory should be safe for anyone to read. If it wouldn't be safe on a public CDN, it shouldn't be in the build output.
+- **Pre-commit hooks for build artifacts.** Block commits that add files matching `*.map`, `dist/**`, `build/**`, or other build output patterns. Accidental commits are the most common path for build artifacts entering git history — and once in history, they persist even after deletion.
+
+Each domain extension includes specific security guidance for its context — WordPress escaping and nonces (§20.1), Drupal access control and Form API (§21.1), source map discipline for web frontends (§17.9), etc. For projects handling regulated data (PHI, PII, payment cards), the compliance extension covers data classification, handling procedures, and audit readiness (§22.2–22.3).
 
 ### Agent Runtime Security
 
@@ -1152,6 +1172,8 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 - [ ] New services/endpoints have instrumentation — inbound requests, outbound calls, business operations (§4).
 - [ ] No sensitive data in logs or telemetry — PII, passwords, tokens (§4).
 - [ ] No hardcoded secrets — API keys, tokens, passwords, connection strings not in committed code (§4).
+- [ ] No build artifacts committed — source maps, `dist/`, `build/`, compiled output not staged (§4).
+- [ ] Build output safe for public access — no source maps, debug flags, or baked-in secrets in deploy directory (§4).
 - [ ] New endpoints/inputs have boundary validation — untrusted data sanitized at entry points (§4).
 - [ ] New dependencies justified — not duplicating existing packages, actively maintained, vulnerability-free (§6).
 - [ ] New dependency names verified against official registry — exact name, publisher, download count match expectations (§6).

@@ -198,6 +198,43 @@ JavaScript errors in production are invisible unless you capture them. Users don
 
 ---
 
+## 17.9 Source Map and Build Output Discipline
+
+The core template (§4) covers build output hygiene as a general security concern. For web frontends, source maps are the highest-risk artifact — they expose the entire original source tree (file paths, comments, internal logic) to anyone who opens browser devtools.
+
+**Source map rules:**
+
+| Environment | Source map setting | Why |
+|---|---|---|
+| **Local development** | Full source maps (`eval-source-map`, `inline-source-map`, or equivalent) | You need them for debugging |
+| **CI/staging** | Full source maps, but not served publicly | Useful for debugging staging issues |
+| **Production** | No source maps, OR upload to error-tracking only | Source maps in production expose your codebase to the public |
+
+**If you need production debugging without public source maps:**
+- Upload source maps to your error-tracking service (Sentry, Datadog, Bugsnag) during the build step, then **delete them from the deploy directory** before deployment.
+- The error tracker uses them to symbolicate stack traces; users never see them.
+- Never rely on the web server to block access to `.map` files — misconfiguration or CDN caching can bypass server rules.
+
+**Build output scanning:**
+- Add a CI step that checks the deploy directory for `*.map` files, `.env*` files, and files exceeding an expected size (a 10MB JS bundle probably contains something it shouldn't).
+- Verify that `devtool` (webpack), `sourcemap` (Vite/Rollup), or the equivalent setting is disabled or set to a non-emitting value in the production build config.
+- Check that `NODE_ENV=production` (or framework equivalent) is set — many frameworks include additional debug code, component names, and verbose error messages in development mode.
+
+**`.gitignore` for web projects (minimum):**
+```
+dist/
+build/
+out/
+.next/
+*.map
+.env*
+node_modules/
+```
+
+**Anti-pattern:** Committing build output to the repo "for convenience" (e.g., committing `dist/` so it can be served directly). Build artifacts in git history persist even after deletion, and source maps, debug builds, or baked-in secrets may be recoverable from older commits.
+
+---
+
 ## Common Web Frontend Anti-Patterns
 
 When building or reviewing frontend code, flag these if you see them.
@@ -223,6 +260,7 @@ When building or reviewing frontend code, flag these if you see them.
 | §7 Documentation | §17.3 Living style audit, design system docs |
 | §11 File Size | §17.6 Performance budgets (bundle size, image weight) |
 | §4 Observability | §17.8 Frontend observability — RUM, error tracking, production performance |
+| §4 Build output hygiene | §17.9 Source map discipline — production source map policy, build scanning |
 
 ---
 
@@ -241,6 +279,8 @@ When building or reviewing frontend code, flag these if you see them.
 - [ ] Responsive behavior verified at all defined breakpoints.
 - [ ] Loading, empty, and error states verified for new components.
 - [ ] Error boundaries in place for new async components (§17.8).
+- [ ] Production build contains no source maps unless uploaded to error-tracking only (§17.9).
+- [ ] No `.env` files, debug flags, or secrets in build output directory (§17.9).
 
 ### After Deploy
 - [ ] RUM metrics checked — no Core Web Vitals regression vs. pre-deploy baseline (§17.8).

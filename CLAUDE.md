@@ -21,6 +21,7 @@ A **process template**, not a software project. There are no tests, no builds, n
 | `umami-compliance.md` | Compliance / regulated industries extension — §22 |
 | `umami-scripting.md` | Scripting / CLI automation extension — §23 |
 | `umami-integration.md` | Systems integration extension — §24 |
+| `umami-homelab.md` | Homelab infrastructure extension — §26 |
 | `README.md` | Public-facing documentation, adoption guide, comparison tables |
 | `LICENSE` | CC BY-SA 4.0 |
 

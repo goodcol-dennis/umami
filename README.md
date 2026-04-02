@@ -16,7 +16,7 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 | Extension | Covers |
 |-----------|--------|
-| [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets, frontend observability (RUM, error tracking) |
+| [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets, frontend observability (RUM, error tracking), source map and build output discipline |
 | [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, data observability (pipeline tracing, structured logging), backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
 | [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management), CI/CD pipeline discipline, security governance, platform engineering, common anti-patterns |
 | [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance, mobile observability (crash reporting, release health) |
@@ -26,6 +26,7 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | [`umami-compliance.md`](umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, agent-as-attack-surface (prompt injection, supply chain, memory poisoning), cyber liability insurance readiness |
 | [`umami-scripting.md`](umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
 | [`umami-integration.md`](umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
+| [`umami-homelab.md`](umami-homelab.md) | Living documentation, secrets discipline, script-based provisioning, snapshot culture, private DNS, VPN overlay, edge device firewalls, monitoring/alerting, incremental hardening, DHCP reservations, network segmentation, backup strategy, update management, TLS certificates, storage architecture, power management |
 
 **Observability is a cross-cutting concern.** Rather than a separate extension, each domain extension includes its own observability guidance — what to monitor, how to alert, what to log — tailored to that domain's specific failure modes. The core template (§4) covers the foundational concepts (three signals, structured logging, instrumentation discipline).
 
@@ -50,6 +51,7 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-homelab.md
 ```
 
 ### 2. Give it to your LLM agent
@@ -137,6 +139,7 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
 - Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 - Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
+- Extension — Homelab: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-homelab.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
@@ -176,7 +179,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 
 | File | Sections | When to apply |
 |------|----------|---------------|
-| [`umami-web.md`](umami-web.md) | §17.1–17.8 | Project has a web frontend |
+| [`umami-web.md`](umami-web.md) | §17.1–17.9 | Project has a web frontend |
 | [`umami-data.md`](umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
 | [`umami-iac.md`](umami-iac.md) | §16.1–16.19 | Project has infrastructure-as-code or cloud provisioning |
 | [`umami-mobile.md`](umami-mobile.md) | §19.1–19.7 | Project has a native or cross-platform mobile app |
@@ -186,6 +189,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | [`umami-compliance.md`](umami-compliance.md) | §22.1–22.11 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
 | [`umami-scripting.md`](umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
 | [`umami-integration.md`](umami-integration.md) | §24.1–24.10 | Project integrates with external services, APIs, or message-based systems |
+| [`umami-homelab.md`](umami-homelab.md) | §26.1–26.17 | Project is a homelab or small-scale self-hosted infrastructure |
 
 ## Compliance and regulated environments
 

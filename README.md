@@ -23,7 +23,7 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | [`umami-cms.md`](umami-cms.md) | Extension inventory and audits, update management, CMS security fundamentals, content/config/code separation, core integrity, theme architecture, deployment discipline, production monitoring |
 | [`cms/umami-wordpress.md`](cms/umami-wordpress.md) | WordPress-specific: escaping functions, nonces, capabilities, plugin conflicts, hook discipline, wp_options performance, WP-CLI |
 | [`cms/umami-drupal.md`](cms/umami-drupal.md) | Drupal-specific: Twig escaping, Form API, config management, caching architecture, Composer discipline, Drush, service architecture |
-| [`umami-compliance.md`](umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, cyber liability insurance readiness |
+| [`umami-compliance.md`](umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, agent-as-attack-surface (prompt injection, supply chain, memory poisoning), cyber liability insurance readiness |
 | [`umami-scripting.md`](umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
 | [`umami-integration.md`](umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
 
@@ -159,12 +159,12 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §2 | Specification-first development — specs before code |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests |
 | §3b | Development process discipline — TDD, systematic debugging, verification |
-| §4 | Runtime validation — structural correctness, observability, security discipline |
+| §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security |
 | §5 | State tracking & recoverability — versioned, undoable state |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs |
 | §8 | Acknowledged gaps — transparency about what isn't automated |
-| §9 | Token efficiency — front-loaded context, persistent memory, pre-derived understanding |
+| §9 | Token efficiency — front-loaded context, persistent memory, pre-derived understanding, context window optimization |
 | §10 | Change propagation maps — which files to touch for recurring changes |
 | §11 | File size budgets — keep files small to reduce token cost and complexity |
 | §12 | Lightweight change tracking — active change blocks, session handoffs |
@@ -183,7 +183,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | [`umami-cms.md`](umami-cms.md) | §25.1–25.9 | Project is built on any CMS |
 | [`cms/umami-wordpress.md`](cms/umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress (loads with §25) |
 | [`cms/umami-drupal.md`](cms/umami-drupal.md) | §21.1–21.9 | Project is built on Drupal (loads with §25) |
-| [`umami-compliance.md`](umami-compliance.md) | §22.1–22.9 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
+| [`umami-compliance.md`](umami-compliance.md) | §22.1–22.11 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
 | [`umami-scripting.md`](umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
 | [`umami-integration.md`](umami-integration.md) | §24.1–24.10 | Project integrates with external services, APIs, or message-based systems |
 
@@ -232,6 +232,30 @@ The key differences:
 A major motivation for umami was **token efficiency across sessions.** Regressions, tech debt, and the agent re-deriving the same understanding of your codebase every session are expensive. Umami addresses this with change propagation maps (§10), pre-derived codebase understanding (§9.3), session handoffs (§12), file size budgets (§11), and front-loaded context (§9.1) — all of which reduce the per-session cost of working with AI agents. These aren't topics Superpowers covers, because its focus is on what happens *during* a session, not what happens *between* them.
 
 **Can you use both?** Yes. Superpowers keeps the agent disciplined during execution. Umami keeps the project structured so that disciplined execution doesn't get wasted on a disorganized codebase. They address different layers of the same problem.
+
+## How is this different from Everything Claude Code?
+
+[Everything Claude Code (ECC)](https://github.com/affaan-m/everything-claude-code) is a comprehensive agent harness optimization system — a collection of agents, skills, hooks, commands, rules, and MCP configurations designed to make AI coding agents more productive and secure. It supports multiple harnesses (Claude Code, Codex, Cursor, Kiro, OpenCode, Gemini, Trae, CodeBuddy) and ships as an installable npm package with 170+ skills, 46 specialized subagents, 76 slash commands, and language-specific rules for 13+ ecosystems.
+
+Umami and ECC solve different problems at different layers. They're complementary, not competing.
+
+| | Umami | Everything Claude Code |
+|---|---|---|
+| **What it is** | A process reference template | An agent harness plugin / configuration system |
+| **What it provides** | Guardrails, practices, and checklists that shape *how* the project is structured | Agents, skills, hooks, and rules that shape *how* the agent behaves at runtime |
+| **When it loads** | On demand, for periodic audits | Bootstrap at session start; skills/agents on demand |
+| **Token cost** | Zero per session (not in context) | Ongoing (loaded skills, agent definitions, MCP tool schemas) |
+| **What it optimizes for** | Reducing waste from regressions, tech debt, and reprocessing across sessions | Maximizing agent productivity, quality, and security within a session |
+| **How it works** | Sets up project infrastructure (docs, tests, memory, maps) that persist and compound | Provides pre-built operational tooling the agent invokes during work |
+| **Platform** | Any LLM that can fetch a URL | Multi-harness (Claude Code, Codex, Cursor, Kiro, Gemini, Trae, CodeBuddy) |
+| **Scope** | Domain-agnostic process + domain-specific extensions (web, data, IaC, mobile, CMS, compliance, scripting, integration) | Language-specific rules (TypeScript, Python, Go, Rust, etc.) + workflow skills (TDD, code review, security, deployment) |
+| **License** | CC BY-SA 4.0 | MIT |
+
+**The core philosophical difference:** Umami invests in making the *project* self-explanatory so any agent (or human) works effectively from the project's own context — instruction files, codebase understanding docs, change propagation maps, session handoffs. ECC invests in making the *agent* more capable through pre-built skills, specialized subagents, and runtime automations.
+
+**Where they influenced each other:** ECC's security guide and token optimization research surfaced practices that Umami now incorporates as process-level guidance — agent runtime security (§4), context window optimization (§9.6), and agent-as-attack-surface for compliance-bound projects (§22.11). These are the *what to practice* counterparts to ECC's *how to implement* tooling.
+
+**Can you use both?** Yes. Umami structures the project so the agent starts each session with clear context and minimal re-derivation. ECC gives the agent better tools for the work it does within that session. A project with umami's guardrails and ECC's operational tooling gets both layers — the project is well-structured *and* the agent is well-equipped.
 
 ## Relationship to The Pragmatic Programmer
 

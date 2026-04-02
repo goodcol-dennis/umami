@@ -615,6 +615,43 @@ Security is a cross-cutting concern, like observability. Every project that acce
 
 Each domain extension includes specific security guidance for its context — WordPress escaping and nonces (§20.1), Drupal access control and Form API (§21.1), etc. For projects handling regulated data (PHI, PII, payment cards), the compliance extension covers data classification, handling procedures, and audit readiness (§22.2–22.3).
 
+### Agent Runtime Security
+
+The "For AI-assisted development" guidance above covers code the agent *generates*. This subsection covers risks from the agent *itself* — the runtime environment where the agent operates, the tools it can invoke, and the trust boundaries around its actions.
+
+**Why this matters:** An AI agent with shell access, network access, and filesystem access is a privileged process. If it reads hostile input (a poisoned repo, a malicious PDF, a manipulated MCP tool response), the compromise isn't theoretical — it's shell execution, secret exfiltration, or silent data modification. Treat agent security as infrastructure, not as an afterthought.
+
+**Identity isolation:**
+- Do not give agents your personal credentials. Use dedicated bot accounts, scoped tokens, and purpose-specific API keys. If the agent is compromised, the blast radius should be the agent's identity — not yours.
+- Short-lived credentials are better than long-lived ones. Prefer tokens that expire (OAuth with short TTLs, temporary STS credentials) over static API keys.
+- If the agent connects to external services (Slack, GitHub, email, databases), each connection should use a service account with minimum necessary permissions — not a developer's personal account.
+
+**Sandbox untrusted work:**
+- When reviewing untrusted repositories, processing external documents, or working with foreign content, run the agent in an isolated environment — a container, devcontainer, VM, or remote sandbox with no egress by default.
+- The principle: if the agent gets compromised, the blast radius must be small. No access to the host filesystem, no access to credentials outside the workspace, no network access unless explicitly allowed.
+
+**Tool and path restrictions:**
+- If your agent harness supports permission policies, start with deny rules for sensitive paths: `~/.ssh/`, `~/.aws/`, `**/.env*`, credential stores. Deny outbound network commands (`curl | bash`, `ssh`, `scp`, `nc`) unless the workflow explicitly requires them.
+- Restrict the agent's toolset to what the task requires. An agent performing code review doesn't need write access. An agent running tests doesn't need network egress.
+
+**Approval boundaries:**
+- The model should not be the final authority on shell execution, network egress, writes outside the workspace, secret access, or deployment. These actions need a human approval boundary — either interactive confirmation or a policy layer between the model and the action.
+- This applies especially to autonomous and unattended workflows (see §23.10 for scripting-specific guidance). The more autonomous the agent, the stricter the approval boundaries should be.
+
+**Kill switches:**
+- For long-running or autonomous agent sessions, implement a heartbeat mechanism. If the agent stops checking in, terminate the process group — not just the parent process, but all child processes.
+- Know the difference between graceful shutdown (the agent finishes its current step) and hard kill (immediate termination). Have both available. Don't rely on a potentially compromised process to stop itself.
+
+**Memory and persistence hygiene:**
+- Persistent agent memory is useful but also a vector. A payload that gets written into memory during one session can influence behavior in all future sessions.
+- Keep memory narrow — don't store secrets, don't store raw content from untrusted sources. Rotate or reset memory after sessions that involve untrusted content.
+- For compliance-bound projects, see §22.11 for additional agent-as-attack-surface guidance.
+
+**Supply chain awareness for agent tooling:**
+- Skills, hooks, MCP server configurations, and agent descriptors are supply chain artifacts. A malicious skill can contain prompt injection. A compromised MCP server can exfiltrate data while appearing to provide context.
+- Review agent tooling with the same rigor you apply to code dependencies (§6). Don't install skills, hooks, or MCP configurations from untrusted sources without inspection.
+- Agents installing software dependencies are vulnerable to typosquatting and dependency confusion — they'll install whatever a tutorial or error message suggests without verifying the package name. See §6 Supply Chain Attack Defenses for the full set of controls.
+
 ---
 
 ## 5. State Tracking & Recoverability
@@ -650,6 +687,18 @@ Every dependency is code you didn't write, don't fully understand, and can't dir
 - **Keep dependencies current.** Don't let them drift years behind. Set a cadence — monthly or quarterly — for reviewing and updating. Small, frequent updates are less risky than large, infrequent jumps across major versions.
 - **Audit for vulnerabilities.** Run automated scanning regularly (§4 Security Discipline covers this in more detail). Don't ignore alerts — triage and act on them.
 - **Watch for AI-introduced bloat.** Agents add packages to solve immediate problems without considering whether the project already has a similar dependency or whether the standard library suffices. Review dependency additions in PRs the same way you review code additions — if a new package appeared, ask why.
+
+### Supply Chain Attack Defenses
+
+Typosquatting, dependency confusion, and package compromise are real attack vectors — not theoretical risks. The Axios RAT attack distributed a remote access trojan through packages with names resembling the popular `axios` library (e.g., `axio`, `axio5`). The malicious packages included working HTTP client code so casual testing wouldn't reveal the backdoor. This class of attack exploits the gap between "the package works" and "the package is safe."
+
+- **Review lockfile diffs in PRs.** A new or changed package name in `package-lock.json`, `yarn.lock`, or equivalent is the single most visible signal that something unexpected was installed. Reviewers should verify that every new package name matches what was intended.
+- **Block install scripts by default.** Many supply chain payloads execute during `npm install` via postinstall scripts. Use `--ignore-scripts` as the default and explicitly opt in for packages that need them (native modules, build tools). Document the opt-in list so new additions require justification.
+- **Verify package identity before installing.** Check the exact package name, publisher, download count, and publication date against the official registry. Typosquats are typically low-download, recently published, and from unfamiliar publishers. A package with 200 downloads that looks like one with 45 million is not the same package.
+- **Proxy through a private registry for production projects.** Use a registry proxy (Artifactory, Verdaccio, npm Enterprise) that only allows pre-approved packages. This eliminates typosquatting entirely for the install path — if the package isn't in the allowlist, it can't be installed.
+- **Use scoped packages for internal code.** Publishing internal packages under an organization scope (`@org/package-name`) prevents dependency confusion attacks where an attacker publishes a public package with the same name as an internal one.
+
+**For AI-assisted development:** Agents are especially susceptible to supply chain attacks. They'll install whatever package a tutorial, Stack Overflow answer, or error message suggests — without verifying the package name against the official registry. Include this instruction in your project instruction file: *"Before installing any new dependency, verify the exact package name, publisher, and download count on the official registry. Do not install packages from copy-pasted commands without verification. If a package name looks like a popular package but doesn't match exactly, stop and flag it."*
 
 ---
 
@@ -767,7 +816,41 @@ Every doc the AI doesn't have to search for is tokens saved:
 - **Delegate broad searches to subagents** — use cheaper/smaller models for exploration; keep the primary context focused on implementation.
 - **Keep instruction files concise** — a 200-line memory file costs less per session than a 2000-line one. Link to detail files rather than inlining everything.
 
-### 9.6 The Math
+### 9.6 Context Window Optimization
+
+Beyond reducing per-lookup cost, there are structural strategies for getting more value from the context window itself — the finite budget of tokens the model can hold at once.
+
+**Model routing for subagents:**
+
+Not every task needs your most capable (and most expensive) model. When your tooling supports model selection for delegated tasks, match the model to the task complexity:
+
+| Task type | Model tier | Rationale |
+|-----------|-----------|-----------|
+| File search, codebase exploration | Lightweight (fast/cheap) | Pattern matching doesn't need deep reasoning |
+| Single-file edits, formatting, simple refactors | Lightweight | Clear instructions, bounded scope |
+| Multi-file implementation, feature work | Standard | Balances capability with cost for typical coding |
+| Complex architecture, cross-cutting refactors | Most capable | Needs to hold multiple subsystems in context simultaneously |
+| Security analysis, compliance review | Most capable | Can't afford to miss vulnerabilities or misinterpret requirements |
+
+Default to the standard tier for most coding. Upgrade when the first attempt fails, the task spans 5+ files, or the task involves security or architectural decisions.
+
+**Strategic compaction:**
+
+Most agent harnesses automatically compact conversation history when the context window fills. This is usually better than hitting the limit and losing context abruptly, but automatic compaction can discard context you still need. When your tooling supports it:
+
+- Compact manually at logical boundaries — after completing a feature, after exploration, before switching to a different area of the codebase. This preserves context coherence better than automatic mid-task compaction.
+- Before compacting, save important intermediate state to files (session summaries, investigation findings, partial plans). The agent can re-read these cheaply; re-deriving them is expensive.
+- If your workflow involves heavy exploration followed by focused implementation, compact between the two phases — the exploration context is no longer needed once you've captured the conclusions.
+
+**MCP and tool context costs:**
+
+External tool integrations (MCP servers, database connections, API integrations) consume context window space for their tool definitions, schemas, and response payloads. This cost is ongoing — every tool's schema is present in context even when not in use.
+
+- Prefer CLI wrappers bundled into skills over always-loaded MCP servers when the CLI is equally capable. The skill loads on demand; the MCP server's tool definitions occupy context permanently.
+- If you need many integrations, enable only the ones required for the current task. An agent doing code review doesn't need database and deployment integrations loaded.
+- Tool responses from external integrations can be verbose. When designing skills that wrap external tools, extract only the information needed rather than passing raw tool output into context.
+
+### 9.7 The Math
 
 A typical "let me find that file" cycle costs ~2,000–5,000 tokens (glob, read results, maybe grep, read file). A single line in a project instruction file pointing to the exact path costs ~20 tokens. Over a session with dozens of file lookups, front-loaded context can reduce token consumption by 30–50%.
 
@@ -1071,6 +1154,8 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 - [ ] No hardcoded secrets — API keys, tokens, passwords, connection strings not in committed code (§4).
 - [ ] New endpoints/inputs have boundary validation — untrusted data sanitized at entry points (§4).
 - [ ] New dependencies justified — not duplicating existing packages, actively maintained, vulnerability-free (§6).
+- [ ] New dependency names verified against official registry — exact name, publisher, download count match expectations (§6).
+- [ ] New agent skills, hooks, or MCP configurations reviewed for prompt injection and over-broad permissions (§4).
 
 ---
 

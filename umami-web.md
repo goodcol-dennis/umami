@@ -198,6 +198,21 @@ JavaScript errors in production are invisible unless you capture them. Users don
 
 ---
 
+## Common Web Frontend Anti-Patterns
+
+When building or reviewing frontend code, flag these if you see them.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **Testing the wrong layer** | Writing unit tests for layout bugs or visual regression tests for business logic. Each test layer has a purpose (§17.1, §17.4) — mismatched tests catch nothing and waste maintenance effort. | Visual issues → visual regression. User flows → E2E. Logic → unit tests. Match the test to the failure mode it's designed to catch. |
+| **Accessibility as afterthought** | Building the full UI then trying to retrofit accessibility. Semantic HTML, keyboard navigation, and ARIA attributes are 10x harder to add after the fact than to include from the start. | Start with semantic HTML and keyboard navigation. Add ARIA only when native semantics aren't sufficient. Run automated a11y checks from the first PR, not the last (§17.5). |
+| **Component proliferation** | 12 button variants, 8 card layouts, 5 modal patterns — each slightly different. Every new variant adds maintenance cost and visual inconsistency. | Use a design system (§17.2). When asked for a "slightly different" component, first check if an existing variant works. Add variants only when the design system genuinely needs them. |
+| **Premature performance optimization** | Code-splitting a 50KB bundle, adding a CDN for 3 images, implementing virtual scrolling for a list of 20 items. Optimization without measurement is guesswork. | Measure first (§17.6). Set budgets, monitor with RUM (§17.8), optimize the bottlenecks the data shows — not the ones you imagine. |
+| **"It works on my machine"** | Developing and testing only on a high-end MacBook with fast WiFi. Real users have mid-range phones on 3G connections. | Test on representative devices and connections. Use Chrome DevTools throttling as a minimum. Monitor Core Web Vitals by device type in production (§17.8). |
+| **Framework churn** | Rewriting to the latest framework instead of shipping features. The cost of a framework migration is paid in months; the benefit of shipping features is immediate. | Evaluate framework changes through the lens of §7 (ADRs) — document the problem the current framework can't solve, not the features the new framework offers. |
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Web Frontend Equivalent |

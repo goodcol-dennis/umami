@@ -172,6 +172,21 @@ Server-side metrics show how fast the API responds. Client-side network monitori
 
 ---
 
+## Common Mobile Anti-Patterns
+
+When building or reviewing mobile code, flag these if you see them.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **"Works on my iPhone"** | Testing only on the latest flagship device. Performance, layout, and behavior differences between a current iPhone and a 3-year-old Android mid-range phone are significant. | Test on low-end devices in your support matrix (§19.1). Profile performance on the slowest supported device, not the fastest (§19.5). |
+| **Ignoring offline until launch** | Assuming connectivity, then trying to retrofit offline support. Offline-first architecture requires fundamentally different data management — local storage, sync queues, conflict resolution — that can't be bolted on. | Decide offline strategy during discovery (§19.3). If the app needs offline support, design the data layer for it from the start. If it doesn't, document that decision explicitly. |
+| **All permissions on launch** | Requesting camera, location, contacts, and notifications the first time the user opens the app. Users deny everything by default when asked without context. iOS gives you one shot at the system prompt for many permissions. | Request permissions in context — when the user takes an action that needs the permission. Explain why before asking. Handle denial gracefully (§19.4). |
+| **Treating mobile like web** | Porting web navigation patterns, layout assumptions, and interaction models to mobile. Mobile has back buttons, gestures, system bars, safe areas, and platform-specific conventions that web doesn't. | Design for the platform. Follow iOS Human Interface Guidelines and Material Design. Use native navigation patterns (§19.4). When using cross-platform frameworks, test platform-specific behavior on both platforms. |
+| **Ship and forget** | Releasing a version and moving to the next without monitoring rollout metrics. A crash regression in the first 24 hours of a 5% staged rollout is cheap to catch; at 100% rollout it's a one-star review storm. | Monitor crash-free rate during every staged rollout (§19.7). Define explicit rollout gates — advance only when metrics confirm stability. |
+| **Ignoring binary size** | Adding libraries, assets, and embedded data without tracking binary growth. Large apps get fewer installs (especially in markets with slow connections) and users uninstall them to free storage. | Track binary size in CI (§19.5). Alert if it grows >5% between releases. Review dependencies — a 10MB analytics SDK for an app that only needs event tracking is waste. |
+
+---
+
 ## Mapping to Core Guardrail Sections
 
 | Core Section | Mobile Equivalent |

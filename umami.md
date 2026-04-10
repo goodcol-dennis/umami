@@ -21,6 +21,10 @@ This document is a template for establishing processes, testing strategies, and 
 - Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
 - Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 - Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
+- Extension — Homelab: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-homelab.md
+- Extension — Desktop (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-desktop.md
+- Extension — Desktop Linux: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/umami-linux.md
+- Extension — SPA Wrapper: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/umami-spa-wrapper.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
@@ -76,6 +80,7 @@ Most projects are not single-layer. Identify all layers that apply:
 | **External integrations** | yes / no | Does the system talk to third-party services? (SharePoint, Slack, ERP, EDI) |
 | **Infrastructure / IaC** | yes / no | Is there infrastructure-as-code? (Terraform, Pulumi, CloudFormation, CDK) |
 | **Mobile app** | yes / no | Is there a native or cross-platform mobile app? (iOS, Android, React Native, Flutter) |
+| **Desktop app** | yes / no | Is there a desktop GUI application? Which toolkit? (GTK4, egui, Qt, Electron alternative) Which platform(s)? (Linux, macOS, Windows) Is it a native app or an SPA wrapper? |
 | **CMS** | yes / no | Is the project built on a CMS? Which one? (WordPress, Drupal, other) |
 
 **Observability is a cross-cutting concern**, not a separate layer. Every extension includes domain-specific observability guidance (what to monitor, how to alert, what to log). If the system has components running in production, observability practices apply — you don't need a separate "observability layer" in the system shape.
@@ -116,6 +121,8 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | [umami-scripting.md](umami-scripting.md) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
 | Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | [umami-compliance.md](umami-compliance.md) | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| Desktop app (native) | §1 (structure), §3 (unit + E2E tests), §3b (TDD), §6 (strict types, linting), §8 (acknowledged gaps — headless testing limitations), §11 (file size budgets) | [umami-desktop.md](umami-desktop.md) + platform file ([Linux](desktop/umami-linux.md)) | §3 visual regression (use headless E2E instead) |
+| Desktop app (SPA wrapper) | §1 (structure), §4 (security — navigation policy, session persistence), §6 (consistency), §8 (acknowledged gaps) | [umami-desktop.md](umami-desktop.md) + [Linux](desktop/umami-linux.md) + [SPA Wrapper](desktop/umami-spa-wrapper.md) | §2 (specs — you don't control the web app), §3 multi-layer testing |
 | Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
 | AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
 
@@ -1028,6 +1035,64 @@ Each worker gets its own context window, a restricted toolset, and focused instr
 - The task requires **back-and-forth with the user** — delegation adds latency to every exchange.
 - The task is **trivially small** — spawning a worker for a single grep adds overhead without savings.
 - The task **depends on the lead's accumulated context** — if the worker would need the full conversation history to do its job, delegation doesn't save tokens; it duplicates them.
+
+### Model Routing — Delegate to Cheaper Models
+
+Not every sub-task requires your most capable (and most expensive) model. Model routing is the practice of matching task complexity to model cost — sending expensive reasoning to a flagship model and routine work to a cheaper, faster one.
+
+**Why this matters for token budgets:** A flagship model (Opus-class) may cost 10–15x more per token than a fast model (Haiku-class). If 60% of your agent's work is exploration, search, and boilerplate — tasks any competent model handles — you're overspending by 6–9x on that portion. Model routing isn't optimization theater; it's the single highest-leverage token cost reduction available.
+
+#### Routing Decision Table
+
+| Task type | Route to | Why |
+|-----------|----------|-----|
+| **Codebase exploration** — find files, search symbols, read and summarize code | Fast/cheap model | Read-heavy, low reasoning. The model is a search cursor, not an architect. |
+| **Boilerplate generation** — test scaffolds, repetitive CRUD, config files | Fast/cheap model | Pattern-matching, not design. A cheaper model follows a template as well as a flagship. |
+| **Lint, format, style fixes** | Fast/cheap model | Mechanical transforms with clear rules. |
+| **Code review — surface-level** — style, naming, dead code, obvious bugs | Mid-tier model | Needs some judgment but not deep architectural reasoning. |
+| **Architecture decisions** — design trade-offs, API contracts, system boundaries | Flagship model | Requires nuanced reasoning, multi-factor trade-offs, and deep context. |
+| **Complex debugging** — multi-file, multi-layer, subtle state bugs | Flagship model | Needs the full reasoning stack — hypothesis generation, evidence gathering, synthesis. |
+| **Security review** — vulnerability analysis, threat modeling | Flagship model | False negatives are expensive. Don't economize on security reasoning. |
+| **Spec writing and planning** — translating requirements into implementation plans | Flagship model | This is where reasoning quality directly affects downstream token spend. A better plan means fewer false starts. |
+
+#### Implementation Patterns
+
+**Pattern 1: Explicit sub-agent routing.** When your orchestration tool supports model selection per worker, specify the model in the delegation instruction:
+
+```
+"Explore the src/auth/ directory and summarize the authentication flow.
+ Use the fast model — this is a read-only exploration task."
+```
+
+**Pattern 2: Tiered skill definitions.** In your skill library (see below), annotate each skill with the minimum model tier required:
+
+```markdown
+## Skill: codebase-search
+Model: haiku (fast/cheap)
+Purpose: Find files, symbols, and patterns in the codebase.
+
+## Skill: security-review
+Model: opus (flagship)
+Purpose: Analyze code for security vulnerabilities and threat vectors.
+```
+
+**Pattern 3: Escalation.** Start with a cheaper model. If it returns low-confidence results or flags ambiguity, escalate to a more capable model. This is the agent equivalent of "try the easy thing first."
+
+#### What NOT to Route Cheap
+
+Some tasks look routine but have hidden complexity:
+
+- **Refactoring across module boundaries** — cheap models miss cross-file dependencies and break contracts.
+- **Error handling design** — choosing what to catch, what to propagate, and what to log requires system-level reasoning.
+- **Anything the user will directly read** — commit messages, PR descriptions, documentation. Quality of writing correlates with model capability; cheap models produce generic output.
+- **Tasks involving the user's specific project conventions** — if the model needs to internalize CLAUDE.md rules and apply them to novel situations, it needs reasoning capacity.
+
+#### Measuring Model Routing Effectiveness
+
+Track two metrics across sessions:
+
+1. **Cost per completed task** — total token cost (input + output, weighted by model price) divided by tasks completed. This should trend down as you route more work to cheaper models.
+2. **Rework rate by model tier** — how often does output from the cheap model get rejected or require the flagship to redo it? If rework exceeds ~15%, you're routing too aggressively — the savings are illusory because you're paying twice.
 
 ### Skill Libraries
 

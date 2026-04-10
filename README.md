@@ -27,6 +27,9 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | [`umami-scripting.md`](umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
 | [`umami-integration.md`](umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
 | [`umami-homelab.md`](umami-homelab.md) | Living documentation, secrets discipline, script-based provisioning, snapshot culture, private DNS, VPN overlay, edge device firewalls, monitoring/alerting, incremental hardening, DHCP reservations, network segmentation, backup strategy, update management, TLS certificates, storage architecture, power management |
+| [`umami-desktop.md`](umami-desktop.md) | GUI thread models, event loop discipline, headless E2E testing (F11/F12 protocol), single-file app discipline, app identity and packaging, data directory conventions, permission models, build/run discipline |
+| [`desktop/umami-linux.md`](desktop/umami-linux.md) | GTK4/libadwaita, egui/eframe, Wayland vs X11, XDG base directories, DBus integration (dock badges, notifications), PipeWire/ALSA audio, cage + wtype E2E toolchain, FFI patterns, Cargo workspace structure |
+| [`desktop/umami-spa-wrapper.md`](desktop/umami-spa-wrapper.md) | WebKitGTK session persistence (ITP, cookies, IndexedDB), clipboard bridge (GTK ↔ JS), notification forwarding, navigation policy (domain allow-lists), SSO/OAuth in-app handling, dock badge wiring, audio/media permissions, context menu suppression |
 
 **Observability is a cross-cutting concern.** Rather than a separate extension, each domain extension includes its own observability guidance — what to monitor, how to alert, what to log — tailored to that domain's specific failure modes. The core template (§4) covers the foundational concepts (three signals, structured logging, instrumentation discipline).
 
@@ -52,6 +55,9 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-com
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-homelab.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-desktop.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/umami-linux.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/umami-spa-wrapper.md
 ```
 
 ### 2. Give it to your LLM agent
@@ -140,6 +146,9 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
 - Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
 - Extension — Homelab: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-homelab.md
+- Extension — Desktop (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-desktop.md
+- Extension — Desktop Linux: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/umami-linux.md
+- Extension — SPA Wrapper: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/umami-spa-wrapper.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the core document and
   follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
@@ -172,7 +181,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §11 | File size budgets — keep files small to reduce token cost and complexity |
 | §12 | Lightweight change tracking — active change blocks, session handoffs |
 | §13 | Dead code hygiene — delete, don't comment out |
-| §14 | Agent orchestration — delegation, skills, parallel review, tool integration |
+| §14 | Agent orchestration — delegation, model routing (cost-based sub-agent delegation), skills, parallel review, tool integration |
 | §15 | Checklist — before starting, during dev, before commit, before merge |
 
 ### Extensions
@@ -190,6 +199,9 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | [`umami-scripting.md`](umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
 | [`umami-integration.md`](umami-integration.md) | §24.1–24.10 | Project integrates with external services, APIs, or message-based systems |
 | [`umami-homelab.md`](umami-homelab.md) | §26.1–26.17 | Project is a homelab or small-scale self-hosted infrastructure |
+| [`umami-desktop.md`](umami-desktop.md) | §27.1–27.9 | Project has a desktop GUI application |
+| [`desktop/umami-linux.md`](desktop/umami-linux.md) | §28.1–28.10 | Desktop app targets Linux (loads with §27) |
+| [`desktop/umami-spa-wrapper.md`](desktop/umami-spa-wrapper.md) | §29.1–29.12 | Desktop app wraps a web app in WebKitGTK (loads with §27 + §28) |
 
 ## Compliance and regulated environments
 

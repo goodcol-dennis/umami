@@ -22,6 +22,9 @@ A **process template**, not a software project. There are no tests, no builds, n
 | `umami-scripting.md` | Scripting / CLI automation extension — §23 |
 | `umami-integration.md` | Systems integration extension — §24 |
 | `umami-homelab.md` | Homelab infrastructure extension — §26 |
+| `umami-desktop.md` | Desktop application shared extension — §27 |
+| `desktop/umami-linux.md` | Desktop Linux extension — §28 (loads with §27) |
+| `desktop/umami-spa-wrapper.md` | SPA wrapper extension — §29 (loads with §27 + §28) |
 | `README.md` | Public-facing documentation, adoption guide, comparison tables |
 | `LICENSE` | CC BY-SA 4.0 |
 

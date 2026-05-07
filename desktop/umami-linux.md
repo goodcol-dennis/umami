@@ -2,9 +2,11 @@
 
 **Extension of [Desktop Application Guardrails](../umami-desktop.md) — §28**
 
-This extension covers Linux-specific desktop development — GTK4, egui, libadwaita, Wayland/X11 input handling, XDG compliance, DBus integration, and the Linux-specific E2E testing toolchain. It applies to both native GUI apps and SPA wrappers running on Linux.
+This extension covers Linux-specific desktop development — GTK4/libadwaita, Wayland/X11 input handling, XDG compliance, DBus integration, and the Linux-specific E2E testing toolchain. It applies to both native GUI apps and SPA wrappers running on Linux.
 
 **Apply this extension when** the project is a desktop application targeting Linux. Load it alongside the parent [umami-desktop.md](../umami-desktop.md) (§27). If the project wraps a web app in WebKitGTK, also load [umami-spa-wrapper.md](umami-spa-wrapper.md) (§29).
+
+> **Scope note:** Linux is currently the only OS-specific sub-extension under §27. That asymmetry reflects contributor experience, not a claim that Linux deserves special treatment. Projects targeting macOS or Windows should still load §27 for cross-platform desktop guardrails; OS-specific patterns for those platforms belong in new sibling sub-extensions, not in this file. PRs welcome.
 
 **Loading order:**
 1. [umami.md](../umami.md) — core guardrails
@@ -21,9 +23,8 @@ Linux desktop apps typically use one of these toolkits. The choice affects every
 | Toolkit | Language | Rendering | When to use |
 |---------|----------|-----------|-------------|
 | **GTK4 + libadwaita** | Python (PyGObject), Rust (gtk4-rs), C | Native GNOME widgets, Wayland-first | GNOME-native apps, follows HIG, deep OS integration (notifications, portals, header bars) |
-| **egui + eframe** | Rust | Immediate-mode GPU rendering | Custom UIs (synths, editors, visualizers), rapid prototyping, apps that don't need native widgets |
-| **Qt** | C++, Python (PyQt/PySide) | Native or custom widgets | Cross-platform apps, KDE integration |
-| **GtkSourceView 5** | Same as GTK4 | Text editor widget | Code/text editors — provides syntax highlighting, undo, line numbers, language detection out of the box |
+| **Qt 6** | C++, Python (PyQt/PySide) | Native or custom widgets | Cross-platform apps, KDE integration |
+| **Immediate-mode (egui, Dear ImGui)** | Rust, C++ | GPU-rendered, no retained widget tree | Custom UIs that don't fit native widgets, tools, prototypes; trades native look-and-feel for layout flexibility |
 
 **Document the choice in `CLAUDE.md`** with the exact version pins:
 
@@ -50,7 +51,7 @@ Wayland is the default on modern GNOME and KDE. X11 is the fallback. Both affect
 | **Input injection requires `wtype`** | `xdotool` doesn't work under Wayland | Use `wtype` for keyboard, `wlrctl` for mouse in E2E tests |
 | **Key repeat quirks** | Some toolkits (egui) mark the initial keypress as `repeat: true` | Deduplicate per-key per-frame; take last state |
 | **Clipboard via portals** | GNOME portal clipboard provides `application/vnd.portal.files` + `text/uri-list`, not raw `image/*` | Parse file URIs and read the actual files; don't assume image textures in clipboard |
-| **DMA-BUF renderer issues** | `WEBKIT_DISABLE_DMABUF_RENDERER=1` causes severe keyboard/rendering lag on some GPUs (e.g., Intel Arc) | Never set this env var — shader warnings are cosmetic. Document the GPU in `CLAUDE.md` so agents don't cargo-cult this workaround. |
+| **DMA-BUF renderer issues** | `WEBKIT_DISABLE_DMABUF_RENDERER=1` causes severe keyboard/rendering lag on some GPU/driver combinations | Never set this env var — shader warnings are cosmetic. Document the GPU in `CLAUDE.md` so agents don't cargo-cult this workaround. |
 
 ### X11 Fallback for Testing
 
@@ -150,7 +151,7 @@ Use `rfd` (Rust) or the GTK4 `FileDialog` API. Both respect the XDG portal on sa
 egui redraws every frame. This means:
 - **No retained widget state** — the UI is rebuilt from application state each frame
 - **Input events are per-frame** — deduplicate keypresses that span multiple frames
-- **Performance-sensitive** — debug builds may be too slow for real-time apps (audio synths, visualizers). Document `--release` requirement explicitly.
+- **Performance-sensitive** — debug builds may be too slow for real-time or graphics-heavy apps. Document a `--release` requirement explicitly when it applies.
 
 ### eframe on Linux
 
@@ -185,23 +186,21 @@ The badge count is typically parsed from the window title (many web apps set the
 
 ---
 
-## 28.7 Audio Pipeline (Linux-Specific)
+## 28.7 Audio (When Applicable)
 
-For apps with audio (synths, media players, voice):
+Most desktop apps don't need real-time audio guidance. For the minority that do (players, voice, instrument apps, DAWs), the universal Linux principles are:
 
-| Concern | Guidance |
-|---------|----------|
-| **Audio backend** | Use `cpal` (Rust) or PipeWire/PulseAudio APIs. cpal provides ALSA backend that connects through PipeWire. |
-| **Buffer size** | Default buffer sizes may be large (100ms+ latency). Fixed small buffers (256 frames) may crash on some systems. Document the trade-off in acknowledged gaps. |
-| **PipeWire quantum** | Set `PIPEWIRE_QUANTUM=256/48000` for low-latency audio if the app supports it. |
-| **Real-time thread** | Audio callback threads must not allocate, lock, or do I/O. All data arrives via lock-free ring buffers. |
-| **MIDI** | Use `midir` (Rust) for hardware MIDI. Note: SPSC ring buffers limit you to one input source. |
+- **Backend layering** — modern Linux audio is PipeWire with PulseAudio and ALSA shims underneath. Use a cross-toolkit library (e.g., `cpal` for Rust, `miniaudio` for C) rather than calling backends directly; it isolates the app from which daemon happens to be running.
+- **Real-time thread discipline** — the audio callback must not allocate, lock, or do I/O. Cross the thread boundary with lock-free queues (single-producer/single-consumer ring buffers for the common case).
+- **Buffer-size trade-off** — small buffers reduce latency but raise xrun risk; large buffers are safe but feel laggy for interactive use. Document the chosen default in acknowledged gaps (§8) and make it tunable.
+
+Apps with substantial audio surface area (multi-stream mixing, MIDI routing, plugin hosting) should consider a dedicated audio extension rather than relying on this section.
 
 ---
 
 ## 28.8 FFI and Native Library Integration
 
-Rust desktop apps often wrap C/C++ libraries via FFI (e.g., YMFM for sound chip emulation, GtkSourceView, system libraries).
+Rust desktop apps often wrap C/C++ libraries via FFI (e.g., system libraries, codec libraries, hardware SDKs, mature C++ engines without Rust equivalents).
 
 | Practice | Why |
 |----------|-----|
@@ -215,15 +214,17 @@ Rust desktop apps often wrap C/C++ libraries via FFI (e.g., YMFM for sound chip 
 
 ## 28.9 Cargo Workspace Patterns
 
-Multi-crate Rust desktop projects benefit from workspace separation:
+For multi-crate Rust desktop projects, one common shape is a core/GUI split:
 
 | Crate | Contains | Testable headless? |
 |-------|----------|-------------------|
-| `{app}-core` | Engine, algorithms, state machine, message types | Yes — no GUI dependency |
+| `{app}-core` | Domain logic, state machine, message types, anything compositor-free | Yes — no GUI dependency |
 | `{app}-gui` | Toolkit-specific UI, widgets, layout | No — requires compositor |
 | `src/main.rs` | Entry point, thread wiring, CLI args | Integration test only |
 
-**Why split:** The core crate can be tested exhaustively without a display server. Property-based tests, audio harness tests, and state machine tests all run in CI without cage or Xvfb.
+**Why split:** The core crate can be tested exhaustively without a display server. Unit tests, property-based tests, and state machine tests all run in CI without cage or Xvfb.
+
+This is one workspace shape, not the only one — small apps may stay single-crate, and apps with multiple frontends (GUI + CLI + library) may split further. The principle is: keep anything that doesn't need a display server out of the GUI crate so CI can exercise it cheaply.
 
 ### Pre-Commit Hook Pattern
 

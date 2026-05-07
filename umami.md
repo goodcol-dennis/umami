@@ -124,7 +124,7 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | Desktop app (native) | §1 (structure), §3 (unit + E2E tests), §3b (TDD), §6 (strict types, linting), §8 (acknowledged gaps — headless testing limitations), §11 (file size budgets) | [umami-desktop.md](umami-desktop.md) + platform file ([Linux](desktop/umami-linux.md)) | §3 visual regression (use headless E2E instead) |
 | Desktop app (SPA wrapper) | §1 (structure), §4 (security — navigation policy, session persistence), §6 (consistency), §8 (acknowledged gaps) | [umami-desktop.md](umami-desktop.md) + [Linux](desktop/umami-linux.md) + [SPA Wrapper](desktop/umami-spa-wrapper.md) | §2 (specs — you don't control the web app), §3 multi-layer testing |
 | Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
-| AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
+| AI-assisted development (any project using agents) | §3c (interactive decision planning when designs compound), §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
@@ -142,6 +142,7 @@ These practices cost almost nothing to adopt and prevent the most common sources
 |----------|---------|----------------------|
 | Project discovery | §0 | Know what you're building before applying guardrails |
 | Predictable project structure | §1 | Agents and humans find things without searching |
+| Phase / Session hierarchy for multi-sitting work | §1 | Gives commits, decisions, and roadmap a unit of work bigger than the commit and smaller than the milestone |
 | Development discipline | §3b | TDD and systematic debugging prevent "fix one, break another" cycles |
 | Security discipline | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
 | Enforced consistency | §6 | Types, linting, formatting, and dependency hygiene catch errors at build time |
@@ -156,9 +157,11 @@ These pay off when you start maintaining what you built, onboarding contributors
 |----------|---------|---------------|
 | Spec-first development | §2 | Features take more than one session to build |
 | Multi-layer testing | §3 | The system has more than one layer (API + UI, pipeline + warehouse) |
+| Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
 | Runtime validation | §4 | The system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain later (including to future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
+| Status block in CLAUDE.md | §9.1 | The project ships in versions and a fresh session needs to know "where are we right now" |
 | File size budgets | §11 | Files are long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -168,7 +171,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Practice | Section | Adopt when... |
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Stateful operations need rollback or audit trails |
-| Acknowledged gaps | §8 | Tech debt is accumulating faster than it's being addressed |
+| Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating faster than it's being addressed, or releases need a frozen "what was true at vX.Y" record |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -181,15 +184,20 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 
 When onboarding a project to umami — especially an existing codebase — watch for these patterns. If you identify any during discovery or an initial audit, flag them and recommend the mitigation.
 
-| Anti-pattern | How to spot it | Mitigation |
-|---|---|---|
-| **Adopting everything at once** | The agent (or team) tries to implement all 15 sections simultaneously. New projects get CLAUDE.md, change propagation maps, ADRs, multi-layer tests, and token efficiency practices before any application code exists. | Start with Tier 1 only (§0.6). Add higher-tier practices when specific pain points justify them, not preemptively. A project that doesn't ship code because it's busy setting up process has inverted its priorities. |
-| **Process without product** | Days spent building guardrail infrastructure (instruction files, documentation scaffolding, test harnesses) before writing any application code. Process exists to support delivery, not the reverse. | Build something first. Add structure as the project grows. A working prototype with no CLAUDE.md is better than a pristine process scaffold with no code. |
-| **Documentation theater** | ADRs, specs, and acknowledged gaps exist as files but no workflow references them. Decisions get re-litigated because nobody checks the ADRs. Acknowledged gaps grow but are never reviewed. | Every document should be referenced by at least one workflow. An ADR that isn't checked before making the same type of decision is overhead, not governance. If a document isn't being read, either integrate it into the workflow or delete it. |
-| **Cargo-culting practices** | Change propagation maps on a 3-file project. Formal specs for a 10-line script. Multi-layer testing on a single function. Agent orchestration for a solo developer with one assistant. | Every practice in the tier tables has an "adopt when..." trigger. If the trigger hasn't fired, the practice is premature. More process is not inherently better — only process that addresses a real problem earns its cost. |
-| **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
+**Use the "watch signal" column to convert each anti-pattern from a description into a diagnostic.** A symptom describes the steady state once the anti-pattern has set in. A watch signal is a falsifiable check — a specific event that, if it does or doesn't happen by a specific point, confirms or refutes the verdict. Without watch signals, anti-pattern audits become subjective and easy to wave away ("we're not *really* doing documentation theater"). With them, the audit can resolve.
+
+| Anti-pattern | How to spot it | Watch signal (falsifies / confirms) | Mitigation |
+|---|---|---|---|
+| **Adopting everything at once** | New project gets CLAUDE.md, change propagation maps, ADRs, multi-layer tests, and token efficiency practices before any application code exists. | Tier 2 + Tier 3 practices documented before Tier 1 has been exercised on real code. If the project is still adding process docs after session 5–10 without a runnable artifact, the verdict is confirmed. | Start with Tier 1 only (§0.6). Add higher-tier practices when specific pain points justify them, not preemptively. |
+| **Process without product** | Days spent building guardrail infrastructure (instruction files, documentation scaffolding, test harnesses) before writing any application code. | No runnable slice exists past the session count where one would normally appear (typically 3–9 sessions, project-shape-dependent). Pick the threshold up front; past it, the anti-pattern is real. | Build something first. Add structure as the project grows. A working prototype with no CLAUDE.md beats a pristine process scaffold with no code. |
+| **Documentation theater** | A heavy planning corpus exists, but subsequent sessions don't *consume* it. Decisions get re-litigated. Specs grow but aren't cited. The corpus exists; the workflow doesn't reference it. | Subsequent sessions re-derive what specs/ADRs/decisions already settle, instead of citing them. If you can't find the doc that drove the last 3 commits' decisions, it's theater. The signal is *consumption*, not volume — front-loaded planning is fine if it gets used. | Every document should be referenced by at least one workflow. Commits, PR descriptions, and session notes should cite the relevant ADR / spec / decision when one applies. If a document isn't being read, either integrate it into the workflow or delete it. |
+| **Cargo-culting practices** | Change propagation maps on a 3-file project. Formal specs for a 10-line script. Multi-layer testing on a single function. Agent orchestration for a solo developer with one assistant. | A practice was adopted because it appears in the template, not because a specific pain point surfaced. If you can't name the pain the practice addresses on this project, the trigger hasn't fired. | Every practice in the tier tables has an "adopt when..." trigger. If the trigger hasn't fired, the practice is premature. More process is not inherently better — only process that addresses a real problem earns its cost. |
+| **Made-up estimates** | The assistant offers calendar predictions ("this is ~2 weeks of work" / "10 sessions" / "we'll be done by Friday"). | Any time-based estimate appears in chat, commit messages, roadmap entries, or planning docs — sourced from the assistant. Calendar predictions are not the assistant's call. | Describe **scope**, not duration: subproblem count, relative size (S/M/L/XL vs. comparable past work), known-vs-unknown ratio. The user does velocity arithmetic — only they know their schedule, energy, and parallel commitments. Sessions are sized by goal, not by clock. |
+| **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Audit findings cite "non-conformance" with sections that don't fit the project shape, instead of recommending adapt or skip. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
+
+**When you flag a borderline case, name the watch signal explicitly.** "Borderline documentation theater: 14 specs and 8 ADRs before any application code. Watch signal: if Phase 0 stretches past 9 sessions without code progress, the anti-pattern is real." A verdict without a falsifier becomes opinion; a verdict with one becomes a checkpoint.
 
 ### 0.7 Audit Protocol — How to Review Efficiently
 
@@ -250,6 +258,18 @@ Once the report is complete, ask the user how they want to proceed:
 Default to option 1 unless the user explicitly requests otherwise. If the user chooses to apply changes (option 2 or 3), ask about active branches and in-progress work first. Use a dedicated branch for remediation. Prefer small, focused changes over sweeping refactors.
 
 **Standardize the invocation.** Create an `umami-audit` skill in your project's skill library (§14) so the audit is always triggered the same way — `/umami-audit` or equivalent — regardless of who runs it or which agent tool they use. The skill should embed the raw URLs and reference this protocol so the agent doesn't improvise the process.
+
+**Hard rules for the audit skill** — encode these as non-negotiable constraints in the skill body, not just as suggestions in the audit text. Skills drift when their constraints are advisory; they hold when constraints are stated as rules:
+
+- **Read-only.** Never modify code or docs during the audit. Even obvious cleanup belongs in a follow-up, not in the audit itself.
+- **Always fetch the spec fresh from the canonical URL** (`https://raw.githubusercontent.com/.../umami.md`). Never cache locally. The framework evolves; cached copies go stale silently.
+- **If the fetch fails, tell the user and stop.** Do not fall back to a stale local copy. An audit against three-month-old guidance is worse than no audit — it produces confident, wrong recommendations.
+- **Never recommend more than 5 things.** A wall of recommendations is not actionable. Prioritize ruthlessly.
+- **Cite a file path or doc reference for every observation.** "The project lacks ADRs" is an opinion; "no files exist under `docs/decisions/`" is a finding.
+- **Don't fetch extension files unless they apply.** A web project doesn't need an audit against `umami-data.md`. Confirm domain relevance before pulling.
+- **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
+
+When the audit flags an anti-pattern, name the watch signal that would confirm or refute the verdict (see §0.6). Verdicts without falsifiers become opinion.
 
 ### 0.8 Example: Onboarding a Multi-Layer System
 
@@ -358,6 +378,58 @@ project-root/
 - Application code never imports from the analysis partition. The analysis partition may import from application code if needed for validation.
 - Tests run independently: `pytest tests/` for the application, `cd analysis && pytest tests/` for analysis.
 - Discovery work is done when it's done. Don't restructure it retroactively to match application conventions — just wall it off.
+
+### Phase / Session Structure for Long-Running Effort
+
+Projects that outlive a single sitting need a unit-of-work hierarchy. Without one, work fragments into a stream of commits that have no narrative, scope creeps because nobody can name what was *supposed* to happen, and the assistant has no clean point to stop and re-orient. The discipline is small but pays off across weeks.
+
+```
+Project
+ └── Milestones    (semantic version bumps: v0.x → v1.0 → v2.0)
+      └── Phases   (numbered groups of related work, named by capability)
+           └── Sessions (atomic, single-goal, one-or-more-commits)
+```
+
+| Unit | What it is | Sizing | Naming |
+|------|-----------|--------|--------|
+| **Milestone** | A version boundary where the product becomes a different thing. v1.0 is feature-complete baseline; v2.0 is next-generation capability. | Set by *what shipped*, not by a calendar. Don't tag a milestone for incremental work — that's what phase boundaries are for. | Semver tag (`v0.10.0`, `v1.0`). |
+| **Phase** | A cohesive group of sessions that delivers one named capability. | Sized to fit a coherent body of work, not a target session count. A small phase is 4 sessions; a large phase is 12. Either is fine. | "Annotations & Markup", "Form Filling", "Save / Export / Reduce" — the capability, not a number alone. |
+| **Session** | The atomic unit of work — one focused sitting. Has a single goal stated in one sentence. Produces working, tested code (not scaffolding). Results in one or more commits, each addressing one concern. | Sized by goal, not by clock. "However long it takes to deliver one focused goal." | Globally numbered across phases (S1, S2, S3...) so commits can reference them in git log. "Phase 9 S5d: AcroForm AP regen". |
+
+**Why global session numbering:** a commit message like `Phase 9 S5d-2 + S5d-3: separate-widget-kid AP regen + DR-aware fonts` is searchable, traceable, and survives roadmap renumbering. Per-phase session numbers collide every time you reshuffle.
+
+**One goal per session.** If a tangent emerges, capture it as a TODO or audit gap; don't expand the session. Scope discipline at this layer is what keeps phases honest.
+
+**Sessions can have sub-sessions** when a session's single goal naturally breaks into staged sub-deliverables that share the goal. Number them `S4 Session 1`, `S4 Session 2`, `S4 Session 3a`, `S4 Session 3b`. Don't use sub-sessions to smuggle in extra goals.
+
+**Renumbering is normal, not a failure mode.** Phases get reordered when priorities shift. When you renumber:
+
+1. Document the change in a `## Renumber note (date)` block in the roadmap, explaining what moved and why.
+2. Sweep all cross-references in the roadmap for stale phase numbers.
+3. Add a decisions-log entry capturing the rationale.
+
+This audit trail is how you avoid "wait, was Phase 5 the search work or the print work?" a year later.
+
+### Multiple Surfaces, One Primitive
+
+When an application exposes multiple interfaces — a GUI, a CLI, an AI tool surface (MCP, function calling, etc.), a public API — the temptation is to implement each interface against the underlying engine independently. Don't. Force every public write operation through a single typed primitive that all surfaces build and submit.
+
+```
+GUI ─┐
+CLI ─┼──→ Patch (typed) ──→ apply_patches(engine) ──→ result
+MCP ─┘
+```
+
+**Why this matters:**
+
+- **One test surface.** Test the patch type and `apply_patches`; the surfaces become thin adapters that build patches and forward them. You don't need to re-test "does saving work" three times in three different shapes.
+- **Invariants in one place.** Validation, undo/redo, transaction boundaries, security checks live on the primitive. Surfaces can't bypass them, even by accident, because the primitive is the only path.
+- **New surfaces are cheap.** Adding a fourth interface (a webhook, a daemon, a scripting bridge) means writing a thin adapter that builds the existing patch type. The engine doesn't change.
+- **Inverse / undo for free.** If the primitive defines a forward operation and its inverse, every surface gets undo support without each one implementing it.
+
+**The discipline:** before exposing a new write capability through any surface, define it as a variant of the patch type first. The surface code should never call the engine directly; it should always go through the primitive.
+
+This generalizes beyond write operations. Read operations can also benefit from a single typed query primitive — but the cost-benefit is weaker for reads (they don't have invariants or undo). Apply this rule strictly to writes; selectively to reads when it earns its keep.
 
 ---
 
@@ -567,6 +639,65 @@ Short self-check phrases agents can apply inline without needing a full review p
 | **"Would this still make sense to a reader who doesn't have the conversation context?"** | Before writing commit messages, PR descriptions, or in-code comments that reference the current task | Task-scoped phrasing that rots as the codebase evolves |
 
 Apply these inline during work, not just at the end. Catching a violation mid-edit costs a few tokens; catching it during review costs a rewrite.
+
+---
+
+## 3c. Interactive Decision Planning
+
+When designing something with multiple load-bearing decisions, work through them **one at a time**, not in a batched response that asks the user to engage with five forks simultaneously. This is the most important process discipline for AI-assisted design work — it prevents the "the design got rubber-stamped because I couldn't engage with 7 forks at once" failure mode.
+
+Note that §3c addresses *interactive design with the user*, while §3b's "Surface Ambiguity" addresses *individual unclear requests*. Surfacing one ambiguity is a single round-trip. Stepping through a sequence of compounding decisions is a protocol.
+
+### When to use
+
+Engage the protocol when **all** of these apply:
+
+- The conversation has 3+ load-bearing decisions that compound on each other (the answer to decision 2 changes the options for decision 3).
+- Reasonable people would disagree on the answers — there isn't one obvious choice.
+- Locking the wrong choice would be expensive to undo.
+- The user signals they want care: *"step me through these one by one"*, *"plan this carefully"*, *"let's plan this"*, *"stop blasting me"*.
+
+If those don't all apply, just decide and move on. The protocol is overhead for routine work.
+
+### When NOT to use
+
+- Routine implementation choices ("what should I name this function?" — just decide).
+- Time-pressured fixes ("the build is broken, just fix it").
+- Decisions with one obviously-correct answer.
+- Decisions outside the assistant's domain (web copy, business calls, color choices).
+
+### The cycle (six steps per decision)
+
+1. **Restate the question** in plain language — the underlying choice, not the surface implementation question. ("The real question is whether undo is per-edit or per-session.")
+2. **Lay out 2–4 concrete options** — each a real position someone might defend, with what it costs and what it buys. Avoid 7 — that's a brainstorm dump, not a decision.
+3. **Recommend one option, with reasoning** — pick a defensible default. The user can override. Refusing to recommend pushes synthesis back to the user and defeats the protocol.
+4. **Surface sub-questions** — most decisions are 2–5 micro-decisions stacked. Name them so the user knows what's under the headline question.
+5. **Stop.** Wait for the user's response. Resist the urge to provide three more decisions speculatively.
+6. **When the user answers, lock cleanly** — restate the locked decision concisely (2–5 sentences), capture in the decisions log if material (§7), then move to the next decision in a *separate* turn. Don't combine "lock previous + setup next" in one beat.
+
+### Failure modes to avoid
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Gigantic batched questions | One response with 5+ headings, each forking. | Pick the next single most-blocking decision; defer the rest. |
+| Pre-deciding for the user | "Going with (b) since that's obvious." | Recommend, never act on the recommendation until explicitly locked. |
+| Skipping the recommendation | Lay out 4 options, refuse to recommend, ask "what do you think?" | Pick one. Pushing synthesis back to the user defeats the protocol. |
+| Restating without locking | Same decision laid out twice across turns without durable capture. | When the user answers, lock it (durable text) before moving on. |
+| Combining lock + next-decision setup | Response that says "OK locked sub-1; here's sub-2 with options A/B/C/D." | Separate beats. Lock first, then the next decision in a fresh turn. |
+| Made-up time estimates inside decisions | "This option is ~2 weeks of work; the other is ~4 days." | Describe scope (subproblem count, relative size, known-vs-unknown ratio); user does velocity arithmetic. See §0.6 anti-pattern table. |
+
+### Calibration heuristic
+
+You can tell whether the protocol is working from the relative length of the user's responses to yours:
+
+- If the user's previous response is **shorter than your next response by ~5x or more**, you're over-asking. Trim the next round.
+- If the user's responses **get shorter** as the conversation proceeds (`yes`, `b`, `c`, `looks good`), the protocol is working — they're trusting your recommendations and confirming with low effort.
+- If the user **pushes back on framing or recommendations** ("actually you're missing option D", "the right answer changes if X"), the protocol is *also* working — they're engaging with substance. Lean into those moments.
+- If the user says **"you're not stepping through these one by one"** or **"stop blasting me"**, you've drifted. Reset.
+
+### Why batched questions fail
+
+A response with 5 headings, each containing forking options, requires the user to load 5 unfamiliar decisions into working memory simultaneously and engage with each in depth. The cognitive cost is too high — they answer "looks good" to most and you've pseudo-decided things that should have been thought about. The slow path produces better designs *because* it forces engagement.
 
 ---
 
@@ -791,6 +922,44 @@ Transparency about what isn't automated yet is itself a guardrail. Document thes
 
 Documenting gaps prevents false confidence and makes the cost of each gap visible to decision-makers.
 
+### Living Retros vs. Gap Registry
+
+Two different documents serve two different jobs. Don't conflate them — they decay differently and answer different questions.
+
+| Document | Type | Lifecycle | Answers |
+|---------|------|-----------|---------|
+| **Gap registry** (`docs/audits/gaps.md` or similar) | Rolling state — current view of open issues. | Mutable. Entries get added, statuses change, items close (mark ~~strikethrough~~ rather than delete — closing matters as much as opening). Always current. | "What's open right now? What's the severity? Who owns it? What triggers addressing it?" |
+| **Per-release retro** (`docs/audits/v0.X.Y-retro.md` or `phase-N-retro.md`) | Point-in-time snapshot — frozen at release. | Immutable after the release ships. Never edited; new retros append, old ones stay as-shipped. | "What was true at release T? What shipped, what slipped, what was the budget actually spent on?" |
+
+The retro is what was true *at point T*; the registry is current. A retro that gets edited later loses its value as a frozen reference. A registry that's frozen loses its value as a current-state document.
+
+**Retro template** (one per release / phase / milestone, depending on cadence):
+
+```markdown
+# Retrospective — v0.X.Y (Phase N: <Capability>)
+
+**Released:** YYYY-MM-DD
+**Sessions:** S<N>–S<M>
+**Active gaps remaining:** [list with names, severity, trigger]
+
+## What shipped
+- [Concrete deliverables, ideally with file/spec references]
+
+## What slipped
+- [Things planned for this release that deferred — with new target if known]
+
+## Where the budget went
+- [Surprises, time sinks, things that took longer than expected — useful for sizing future work]
+
+## Decisions made
+- [Pointers to decisions.md entries from this release]
+
+## Followups
+- [New gaps opened, new ADRs needed, refactors to schedule]
+```
+
+The retro stays useful for years as a reference for "what was the state of the world at v0.10.0?" The registry only ever shows the current snapshot. Both are needed; neither replaces the other.
+
 ---
 
 ## 9. Token Efficiency Practices
@@ -808,6 +977,20 @@ Provide a project instruction file (e.g., `CLAUDE.md`) at the repo root. This is
 | **Project structure** (directory tree with one-line descriptions) | AI navigates directly instead of globbing |
 | **Critical rules** (non-negotiable constraints) | Stated once, followed everywhere — no re-discovery |
 | **Doc index with file paths** (topic → exact path) | AI reads the right doc on the first try instead of searching |
+| **Status block** (current version, what just shipped, active gaps with names, files over budget, next phase target) | Fresh sessions know where the work *is* — not just what the project is. Eliminates "let me read the recent commits to figure out what's going on" rounds. |
+
+**Status block specifics.** The Status block is updated *every release*, not when the project is initially set up and then forgotten. Treat it as resumable context: a fresh agent session reads CLAUDE.md and can immediately answer "what's the current version, what just shipped, what's open, where's the work going next?" Without this, every new session re-derives state from git log. Example shape:
+
+```markdown
+## Status
+
+`v0.11.0` released — Phase 10 (save / export / reduce). Active gaps: <named-gap-1>,
+<named-gap-2>. Files over the §11 budget: `<file-a>` (1002 lines), `<file-b>` (1062).
+Next phase tag: **v0.12.0 — <Capability>** (scope summary).
+See [ROADMAP.md], [v0.11.0-retro.md], [decisions.md].
+```
+
+The Status block is also where the §1 Phase / Session structure surfaces visibly — naming the current phase and the next phase tag. Update it as part of the release workflow; if you forget, the next session will tell you (it'll re-derive everything from scratch and the cost will be obvious).
 
 ### 9.2 Persistent Memory Across Sessions
 

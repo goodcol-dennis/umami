@@ -2,6 +2,8 @@
 
 **Extension of [CMS Guardrails](../umami-cms.md) (§25), which extends [Rapid Development Guardrails](../umami.md) — §21**
 
+> **Planned rollup:** §21 will be folded into the more generalized [CMS extension](../umami-cms.md) (§25) in a future release. New guidance should land in §25 where possible; Drupal-specific implementation detail will remain, but as a thinner layer rather than a standalone extension. Existing references to §21 will continue to resolve.
+
 This extension covers Drupal-specific development — custom and contributed modules, themes, configuration management, and site builds. It builds on the shared CMS guardrails (§25) with Drupal-specific implementation details. For general CMS practices (extension audits, update management, security fundamentals, deployment discipline), see §25.
 
 Drupal differs from other CMS platforms in key architectural ways: Symfony-based request handling, Twig auto-escaping, a formal configuration management system, a sophisticated caching layer, and Composer-based dependency management. These differences require distinct guardrails.

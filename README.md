@@ -28,8 +28,8 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 | [`umami-integration.md`](umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
 | [`umami-homelab.md`](umami-homelab.md) | Living documentation, secrets discipline, script-based provisioning, snapshot culture, private DNS, VPN overlay, edge device firewalls, monitoring/alerting, incremental hardening, DHCP reservations, network segmentation, backup strategy, update management, TLS certificates, storage architecture, power management |
 | [`umami-desktop.md`](umami-desktop.md) | GUI thread models, event loop discipline, headless E2E testing (F11/F12 protocol), single-file app discipline, app identity and packaging, data directory conventions, permission models, build/run discipline |
-| [`desktop/umami-linux.md`](desktop/umami-linux.md) | GTK4/libadwaita, egui/eframe, Wayland vs X11, XDG base directories, DBus integration (dock badges, notifications), PipeWire/ALSA audio, cage + wtype E2E toolchain, FFI patterns, Cargo workspace structure |
-| [`desktop/umami-spa-wrapper.md`](desktop/umami-spa-wrapper.md) | WebKitGTK session persistence (ITP, cookies, IndexedDB), clipboard bridge (GTK ↔ JS), notification forwarding, navigation policy (domain allow-lists), SSO/OAuth in-app handling, dock badge wiring, audio/media permissions, context menu suppression |
+| [`desktop/umami-linux.md`](desktop/umami-linux.md) | GTK4/libadwaita, immediate-mode toolkits, Wayland vs X11, XDG base directories, DBus integration (dock badges, notifications), cage + wtype E2E toolchain, FFI patterns, Cargo workspace shapes. Currently the only OS-specific sub-extension under §27 — see scope note. |
+| [`desktop/umami-spa-wrapper.md`](desktop/umami-spa-wrapper.md) | WebKitGTK session persistence (ITP, cookies, IndexedDB), clipboard bridge (GTK ↔ JS), notification forwarding, navigation policy (domain allow-lists), SSO/OAuth in-app handling, dock badge wiring, audio/media permissions, context menu suppression. Narrowest extension in the corpus — a worked example of §27 + §28 for one specific build pattern, not a domain peer. |
 
 **Observability is a cross-cutting concern.** Rather than a separate extension, each domain extension includes its own observability guidance — what to monitor, how to alert, what to log — tailored to that domain's specific failure modes. The core template (§4) covers the foundational concepts (three signals, structured logging, instrumentation discipline).
 
@@ -85,6 +85,7 @@ These practices cost almost nothing to adopt and prevent the most common sources
 |----------|---------|----------------------|
 | Project discovery | §0 | Know what you're building before applying guardrails |
 | Predictable project structure | §1 | Agents and humans find things without searching |
+| Phase / Session hierarchy for multi-sitting work | §1 | Gives commits, decisions, and roadmap a unit of work bigger than the commit and smaller than the milestone |
 | Development discipline (TDD, systematic debugging) | §3b | Prevents "fix one thing, break another" cycles that burn tokens |
 | Security discipline (boundaries, secrets, dependencies) | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
 | Enforced consistency (types, linting, formatting) | §6 | Catches errors at build time, not in production or code review |
@@ -99,9 +100,11 @@ These practices pay off when you start maintaining what you built, onboarding co
 |----------|---------|---------------|
 | Spec-first development | §2 | You're building features that take more than a session |
 | Multi-layer testing | §3 | You have more than one layer (API + UI, pipeline + warehouse) |
+| Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
 | Runtime validation | §4 | Your system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain to someone later (including future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
+| Status block in CLAUDE.md | §9.1 | Project ships in versions and a fresh session needs to know "where are we right now" |
 | File size budgets | §11 | Files are getting long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -111,7 +114,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Practice | Section | Adopt when... |
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Your system manages stateful operations that need rollback |
-| Acknowledged gaps | §8 | Tech debt is accumulating and you need visibility into what's known vs. unknown |
+| Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating, or releases need a frozen "what was true at vX.Y" record alongside the rolling gap registry |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -167,16 +170,17 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | Section | Topic |
 |---------|-------|
 | §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol |
-| §1 | Project structure — predictable layouts, workspace partitioning |
+| §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy for long-running work, multi-surface/one-primitive pattern |
 | §2 | Specification-first development — specs before code |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests |
 | §3b | Development process discipline — TDD, systematic debugging, verification |
+| §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions |
 | §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security |
 | §5 | State tracking & recoverability — versioned, undoable state |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs |
-| §8 | Acknowledged gaps — transparency about what isn't automated |
-| §9 | Token efficiency — front-loaded context, persistent memory, pre-derived understanding, context window optimization |
+| §8 | Acknowledged gaps — rolling gap registry plus point-in-time per-release retros |
+| §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, context window optimization |
 | §10 | Change propagation maps — which files to touch for recurring changes |
 | §11 | File size budgets — keep files small to reduce token cost and complexity |
 | §12 | Lightweight change tracking — active change blocks, session handoffs |

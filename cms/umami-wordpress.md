@@ -2,6 +2,8 @@
 
 **Extension of [CMS Guardrails](../umami-cms.md) (§25), which extends [Rapid Development Guardrails](../umami.md) — §20**
 
+> **Planned rollup:** §20 will be folded into the more generalized [CMS extension](../umami-cms.md) (§25) in a future release. New guidance should land in §25 where possible; WordPress-specific implementation detail will remain, but as a thinner layer rather than a standalone extension. Existing references to §20 will continue to resolve.
+
 This extension covers WordPress-specific development — themes, plugins, and site builds. It builds on the shared CMS guardrails (§25) with WordPress-specific implementation details. For general CMS practices (extension audits, update management, security fundamentals, deployment discipline), see §25.
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies a CMS / WordPress layer.

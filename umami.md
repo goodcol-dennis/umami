@@ -560,6 +560,15 @@ When a request is ambiguous, the wrong response is to pick an interpretation and
 
 **Why this matters for token economy:** A 200-token clarification round is cheaper than a 5,000-token misdirected implementation followed by a revert and redo. The cost asymmetry is why surfacing ambiguity early is the dominant strategy.
 
+**Make each prompt self-contained.** When the question is surfaced via an interactive dialog tool (e.g., `AskUserQuestion`-style structured prompts) rather than inline chat, the user may answer without seeing the surrounding conversation — many agent UIs render the dialog in a separate panel from the chat history. Write the question text so the user can answer cold:
+
+- State *what* is being decided in the prompt itself ("Which auth library should we use for the new login flow?"), not just "Which one?" or "What do you think?"
+- Carry the relevant context — what was already decided, what depends on this choice, what the trade-off is — into the prompt body, not into the chat that preceded it.
+- Give option labels and descriptions enough substance to stand alone. "Option A" / "Option B" forces the user back to the chat to remember what those mean; "PostgreSQL — supports JSON columns natively" / "SQLite — zero-ops, file-based" stands on its own.
+- The bar: a user opening the dialog without reading any prior message should be able to answer without re-reading anything.
+
+This applies equally to inline questions in chat — but the cost of getting it wrong is much higher when the prompt is rendered in a separate UI surface, because scroll-back may not even be available without dismissing the dialog.
+
 ### Systematic Debugging
 
 When a test fails or a bug is reported, do not guess. Follow this process:
@@ -685,6 +694,7 @@ If those don't all apply, just decide and move on. The protocol is overhead for 
 | Restating without locking | Same decision laid out twice across turns without durable capture. | When the user answers, lock it (durable text) before moving on. |
 | Combining lock + next-decision setup | Response that says "OK locked sub-1; here's sub-2 with options A/B/C/D." | Separate beats. Lock first, then the next decision in a fresh turn. |
 | Made-up time estimates inside decisions | "This option is ~2 weeks of work; the other is ~4 days." | Describe scope (subproblem count, relative size, known-vs-unknown ratio); user does velocity arithmetic. See §0.6 anti-pattern table. |
+| Prompt requires scroll-back to make sense | "Which one?" / "Option A or Option B?" rendered in a dialog UI where the user can't see preceding chat. | Make each prompt self-contained — state the decision and its options inline, not via reference to chat history. See §3b "Make each prompt self-contained." |
 
 ### Calibration heuristic
 
@@ -1130,6 +1140,17 @@ Signs a file needs splitting:
 - Merge conflicts happen frequently in the file.
 
 Splitting large files also reduces blast radius: a change to one extracted module doesn't require the AI to re-read 3,000 unrelated lines for context.
+
+### Documents whose section IDs are external contracts
+
+The 400-line budget targets *source code* — files that ship as part of an application. It also applies to most design docs, with a typical ceiling of ~800 lines (split when there are clear sub-topics). It does **not** apply to documents whose section identifiers are external contracts.
+
+A canonical example is this very document. Sections of `umami.md` are referenced as `§0.6`, `§3c`, `§9.1`, etc., from extension files, downstream consumers, agent skills, and bookmarks. Renumbering or splitting would break those references silently. The cost of preserving stable IDs outweighs the benefit of staying under a line budget.
+
+For documents in this category:
+- The budget is **suspended**, not removed. Track the size as a gap (§8) and revisit if the file grows large enough that agents truncate it on read or that humans can no longer scan it.
+- When growth becomes untenable, the right answer is usually **extraction along an orthogonal seam** — split out a coherent subsection that has minimal cross-references *into* the rest of the document. Update every cross-reference in lockstep, version-bump the corpus, and post a renumber note.
+- If a file in this category is approaching the size where action is unavoidable, document the candidate seam in the gap registry well before the split — the seam is easier to identify in advance than under pressure.
 
 ---
 

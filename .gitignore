@@ -1,0 +1,4 @@
+# Claude Code local state — settings.local.json holds per-developer permission grants
+# and other transient state that should never be shared. The shared settings.json,
+# skills/, and similar are intentionally tracked.
+.claude/settings.local.json

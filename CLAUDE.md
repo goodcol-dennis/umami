@@ -6,6 +6,16 @@ This repository contains `umami.md` (a development guardrails template) and its 
 
 A **process template**, not a software project. There are no tests, no builds, no dependencies. Quality is measured by clarity, internal consistency, and correct cross-references — not by CI passing.
 
+## Status
+
+`v2.1` is the current released tag; active work happens on `develop`. Recent additions (commit `d039c7e`) rolled in watch signals (§0.6), audit hard rules (§0.7), phase/session hierarchy and multi-surface/one-primitive (§1), interactive decision planning (§3c — new section), living retros vs. gap registry (§8), and the Status-block requirement itself (§9.1).
+
+**In-flight rollups:**
+- CMS sub-extensions §20 (WordPress) and §21 (Drupal) are marked for fold-in to §25 (general CMS) — banner notes added but rollup not yet executed.
+- §29 (SPA wrapper) repositioned as a worked example of §27 + §28, not a domain peer; content otherwise unchanged.
+
+**Next available extension section:** §30.
+
 ## Files
 
 | File | Role |
@@ -27,6 +37,7 @@ A **process template**, not a software project. There are no tests, no builds, n
 | `desktop/umami-spa-wrapper.md` | SPA wrapper extension — §29 (loads with §27 + §28) |
 | `README.md` | Public-facing documentation, adoption guide, comparison tables |
 | `LICENSE` | CC BY-SA 4.0 |
+| `audits/` | Per-release retros (`v1.0-retro.md`, `v2.1-retro.md`) and rolling [`gaps.md`](audits/gaps.md) — see §8 for the retro/registry distinction |
 
 ## Section numbering
 

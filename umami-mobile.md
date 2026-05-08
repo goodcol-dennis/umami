@@ -52,7 +52,7 @@ Mobile releases are not deploys — they're submissions to a review process you 
 
 ## 19.3 Offline-First Considerations
 
-Mobile apps lose connectivity — in elevators, on planes, in rural areas, or when the user's data plan runs out. If your app requires connectivity for everything, say so explicitly. If it should work offline, design for it.
+Declare the app's connectivity stance up front. If it requires connectivity, say so explicitly. If it should work offline, design for it — retroactive offline support is a near-rewrite.
 
 **Offline architecture decisions (capture in an ADR):**
 - What data is available offline? (All data? Recent data? User's own data only?)

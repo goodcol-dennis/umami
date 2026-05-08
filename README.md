@@ -105,6 +105,7 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Documentation / ADRs | §7 | You make a decision you'll need to explain to someone later (including future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
 | Status block in CLAUDE.md | §9.1 | Project ships in versions and a fresh session needs to know "where are we right now" |
+| Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or deterministic multi-step workflows |
 | File size budgets | §11 | Files are getting long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -115,6 +116,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Your system manages stateful operations that need rollback |
 | Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating, or releases need a frozen "what was true at vX.Y" record alongside the rolling gap registry |
+| Measuring efficiency over time (ET, run-frequency) | §9.7 | Optimizing across recurring agent workflows or model tiers; need apples-to-apples cost comparison |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -180,12 +182,12 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs |
 | §8 | Acknowledged gaps — rolling gap registry plus point-in-time per-release retros |
-| §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, context window optimization |
+| §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, progressive disclosure (lazy schema load, top-K tool retrieval, summaries-then-detail, workflow-as-code), context window optimization, effective-tokens metric |
 | §10 | Change propagation maps — which files to touch for recurring changes |
 | §11 | File size budgets — keep files small to reduce token cost and complexity |
 | §12 | Lightweight change tracking — active change blocks, session handoffs |
 | §13 | Dead code hygiene — delete, don't comment out |
-| §14 | Agent orchestration — delegation, model routing (cost-based sub-agent delegation), skills, parallel review, tool integration |
+| §14 | Agent orchestration — delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria |
 | §15 | Checklist — before starting, during dev, before commit, before merge |
 
 ### Extensions
@@ -249,8 +251,6 @@ The key differences:
 
 **The core philosophical difference:** Superpowers assumes the agent will misbehave unless actively constrained in every session. Umami assumes the agent will behave well if the project is set up with the right structure, documentation, and context — so it invests in making the project self-explanatory rather than policing the agent at runtime.
 
-A major motivation for umami was **token efficiency across sessions.** Regressions, tech debt, and the agent re-deriving the same understanding of your codebase every session are expensive. Umami addresses this with change propagation maps (§10), pre-derived codebase understanding (§9.3), session handoffs (§12), file size budgets (§11), and front-loaded context (§9.1) — all of which reduce the per-session cost of working with AI agents. These aren't topics Superpowers covers, because its focus is on what happens *during* a session, not what happens *between* them.
-
 **Can you use both?** Yes. Superpowers keeps the agent disciplined during execution. Umami keeps the project structured so that disciplined execution doesn't get wasted on a disorganized codebase. They address different layers of the same problem.
 
 ## How is this different from Everything Claude Code?
@@ -279,8 +279,6 @@ Umami and ECC solve different problems at different layers. They're complementar
 
 ## Relationship to The Pragmatic Programmer
 
-Umami operationalizes many of the principles from *The Pragmatic Programmer* by Andy Hunt and Dave Thomas. Rather than leaving those ideas as abstract advice, umami encodes them into concrete guardrails, checklists, and project structures.
-
 | Pragmatic Programmer Principle | Where Umami Operationalizes It |
 |---|---|
 | **DRY** (Don't Repeat Yourself) | Change propagation maps (§10), single-source-of-truth structure (§1) |
@@ -296,11 +294,7 @@ Umami operationalizes many of the principles from *The Pragmatic Programmer* by 
 | **Pragmatic Teams** | Agent orchestration (§14) — coordination patterns for human + AI teams |
 | **Your Knowledge Portfolio** | Token efficiency (§9) — pre-derived understanding, persistent memory, front-loaded context |
 
-The mapping isn't one-to-one — umami extends these ideas into the AI-assisted development era, where token cost, session handoffs, and agent coordination are first-class concerns that the book (written before LLMs) couldn't anticipate.
-
 ## Relationship to Designing Data-Intensive Applications
-
-The data and infrastructure extensions draw heavily from the principles in *Designing Data-Intensive Applications* by Martin Kleppmann. Where Kleppmann teaches *why* these concepts matter, umami encodes *what to do about them* in your project guardrails.
 
 | DDIA Concept | Where Umami Operationalizes It |
 |---|---|

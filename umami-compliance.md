@@ -6,7 +6,7 @@ This extension covers compliance, regulated data handling, and audit readiness f
 
 **Apply this extension when** the §0.1 project discovery questionnaire identifies compliance or regulatory requirements, or when the organization needs to complete a cyber liability insurance application.
 
-**This extension establishes compliance discipline, not a compliance framework.** HIPAA, SOC 2, PCI-DSS, and GDPR each have specific requirements. This extension provides the structure and checklists to meet them — which specific controls you implement depends on which frameworks apply to your organization. The high-value practice is having a compliance thought process integrated into your development workflow, not bolted on after the fact.
+**This extension establishes compliance discipline, not a compliance framework** (mirrors §2's framing). Which controls you implement depends on which frameworks apply (HIPAA, SOC 2, PCI-DSS, GDPR, FDA). The discipline is integrating compliance thought into your development workflow rather than bolting it on after the fact.
 
 **Scope boundary:** This extension covers controls that intersect with the development process. Organizational controls that are purely administrative (firewall configuration, endpoint antivirus, physical security, HR procedures, corporate governance) are outside scope — they belong in an organizational security policy, not a development guardrails template. Where this extension identifies a gap that requires an organizational control, it says so explicitly.
 

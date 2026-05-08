@@ -121,7 +121,7 @@ Accessibility is not a feature — it's a quality bar. Catching violations early
 
 ## 17.6 Performance Budgets
 
-Performance is a feature that degrades silently. Without budgets, bundle sizes creep, render times increase, and no single change looks like the problem — but the cumulative effect is noticeable.
+Without budgets, bundle sizes creep and render times increase. No single PR looks like the problem; the cumulative effect does. Budgets catch what code review can't.
 
 **What to budget:**
 

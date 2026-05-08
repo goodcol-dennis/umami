@@ -162,6 +162,7 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Documentation / ADRs | §7 | You make a decision you'll need to explain later (including to future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
 | Status block in CLAUDE.md | §9.1 | The project ships in versions and a fresh session needs to know "where are we right now" |
+| Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or workflows orchestrate deterministic multi-step tasks |
 | File size budgets | §11 | Files are long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -172,6 +173,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Stateful operations need rollback or audit trails |
 | Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating faster than it's being addressed, or releases need a frozen "what was true at vX.Y" record |
+| Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -194,6 +196,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Cargo-culting practices** | Change propagation maps on a 3-file project. Formal specs for a 10-line script. Multi-layer testing on a single function. Agent orchestration for a solo developer with one assistant. | A practice was adopted because it appears in the template, not because a specific pain point surfaced. If you can't name the pain the practice addresses on this project, the trigger hasn't fired. | Every practice in the tier tables has an "adopt when..." trigger. If the trigger hasn't fired, the practice is premature. More process is not inherently better — only process that addresses a real problem earns its cost. |
 | **Made-up estimates** | The assistant offers calendar predictions ("this is ~2 weeks of work" / "10 sessions" / "we'll be done by Friday"). | Any time-based estimate appears in chat, commit messages, roadmap entries, or planning docs — sourced from the assistant. Calendar predictions are not the assistant's call. | Describe **scope**, not duration: subproblem count, relative size (S/M/L/XL vs. comparable past work), known-vs-unknown ratio. The user does velocity arithmetic — only they know their schedule, energy, and parallel commitments. Sessions are sized by goal, not by clock. |
 | **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Audit findings cite "non-conformance" with sections that don't fit the project shape, instead of recommending adapt or skip. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
+| **MCP tool sprawl** | The agent has 5–10+ MCP tools loaded "just in case." Tool metadata is consuming a large fraction of every turn's context, often without the developer realizing. | Measure tool-metadata-as-percent-of-context on a representative session. If tool schemas exceed ~30% of context, the verdict is confirmed. Most projects need 1–2 core MCP servers, not 10. | Apply §9.6: prune unused tools first, prefer lazy-load architectures (§9.5b), wrap static servers behind a proxy if needed. The cheapest tool schema is the one not loaded this turn. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -437,7 +440,7 @@ This generalizes beyond write operations. Read operations can also benefit from 
 
 Every feature starts with a written spec, not code. Architecture documents and diagrams define system behavior, component contracts, and design constraints before implementation begins. These serve as the source of truth for all contributors.
 
-**This section establishes spec discipline, not a spec framework.** There are many spec frameworks and methodologies (RFC-style documents, Gherkin/BDD, design docs, shape-up pitches, PRDs, etc.). This template is compatible with any of them — and deliberately doesn't recommend one. The high-value practice is *having* a spec process that forces thinking before coding. Which format you use matters far less than whether you use one at all. Pick a format that fits your team and project, then apply the discipline below to it.
+**This section establishes spec discipline, not a spec framework.** Any format works — RFCs, design docs, shape-up pitches, PRDs, Gherkin. The discipline is *having* a spec process; the format is a team preference.
 
 ### What to Specify
 
@@ -448,7 +451,7 @@ Every feature starts with a written spec, not code. Architecture documents and d
 
 ### How Specs Prevent Waste
 
-A spec that takes 30 minutes to write prevents hours of rework. For AI contributors specifically, a spec means the AI implements to a target rather than inferring intent from context clues — fewer clarification questions, fewer wrong-direction implementations.
+For AI contributors, a written spec replaces inferred intent — fewer clarification questions, fewer wrong-direction implementations.
 
 ### When Not to Specify
 
@@ -705,9 +708,7 @@ You can tell whether the protocol is working from the relative length of the use
 - If the user **pushes back on framing or recommendations** ("actually you're missing option D", "the right answer changes if X"), the protocol is *also* working — they're engaging with substance. Lean into those moments.
 - If the user says **"you're not stepping through these one by one"** or **"stop blasting me"**, you've drifted. Reset.
 
-### Why batched questions fail
-
-A response with 5 headings, each containing forking options, requires the user to load 5 unfamiliar decisions into working memory simultaneously and engage with each in depth. The cognitive cost is too high — they answer "looks good" to most and you've pseudo-decided things that should have been thought about. The slow path produces better designs *because* it forces engagement.
+The slow path produces better designs *because* it forces engagement — the cost is overhead per decision, the benefit is decisions that were actually decided rather than rubber-stamped.
 
 ---
 
@@ -930,8 +931,6 @@ Transparency about what isn't automated yet is itself a guardrail. Document thes
 - Coverage thresholds (enforced or aspirational).
 - Known technical debt with severity and ownership.
 
-Documenting gaps prevents false confidence and makes the cost of each gap visible to decision-makers.
-
 ### Living Retros vs. Gap Registry
 
 Two different documents serve two different jobs. Don't conflate them — they decay differently and answer different questions.
@@ -975,6 +974,8 @@ The retro stays useful for years as a reference for "what was the state of the w
 ## 9. Token Efficiency Practices
 
 AI-assisted development bills by the token. Every search the AI runs, every file it reads to orient itself, every clarification question — that's spend. These practices minimize waste without reducing output quality.
+
+**The cheapest LLM call is the one you don't make.** Every practice in this section is an instance of that principle — pre-load what's known, persist what's been derived, defer what isn't yet needed, summarize what's been used, and delegate deterministic work outside the context window. When deciding whether a practice is worth its overhead, that's the test: does it eliminate a call, shrink the call, or shorten the conversation?
 
 ### 9.1 Front-Load Context via Project Instructions
 
@@ -1064,6 +1065,33 @@ Every doc the AI doesn't have to search for is tokens saved:
 - **Delegate broad searches to subagents** — use cheaper/smaller models for exploration; keep the primary context focused on implementation.
 - **Keep instruction files concise** — a 200-line memory file costs less per session than a 2000-line one. Link to detail files rather than inlining everything.
 
+### 9.5b Progressive Disclosure
+
+The most expensive context is context the agent doesn't currently need. Several practices above (front-loading, pre-derived understanding, structural habits) give the agent what it *will* need; **progressive disclosure** is the inverse — *don't load what it doesn't yet need, and let go of what it's done with.*
+
+This shows up in four domains, all instances of the same pattern:
+
+| Domain | Static (default) | Progressive disclosure |
+|---|---|---|
+| **Tool schemas** | All MCP/tool schemas live in context every turn — measured at 40–80% of context cost on tool-heavy setups | `search` → `describe` → `execute` pattern: cheap meta-tool to discover what's available, on-demand schema load for the chosen tool, then call it |
+| **Tool inventory** | Every available tool's full description is exposed up front | Top-K retrieval over the toolset; load the 3–5 most relevant tools for this turn's task |
+| **Data** | Fetch full records, full diffs, full logs into context | Fetch summaries / IDs / row counts first; pull the full record only when the agent needs the detail; summarize what's been used rather than carrying it forward |
+| **Workflow** | LLM orchestrates each step in natural language; intermediate state lives in context | Pre-agent CLI work for known-deterministic data gathering; LLM emits code that runs the workflow elsewhere; only the final result returns to context |
+
+**The trade-off.** Progressive disclosure usually costs more *round-trips* (extra search/describe calls, multi-step retrieval) in exchange for fewer *tokens per turn*, and constant — rather than linear — context cost as the toolset grows. On interactive sessions the round-trip cost shows up as latency, often ~50% slower than a static loadout. For high-frequency or large-toolset work, the token reduction is dramatic enough to justify the wait — observed input-token reductions of 90%+ are real once toolsets pass a few dozen tools.
+
+**When to apply:**
+- **Tool schemas:** when MCP/tool count exceeds ~10, any single tool's schema exceeds ~1 KB, or measured tool metadata exceeds ~30% of context.
+- **Data:** always — preferring summaries-then-detail is rarely wrong, even at small scale.
+- **Workflow:** when the workflow is deterministic (no per-step LLM judgment needed) and the intermediate state is large.
+
+**When *not* to apply:**
+- One- or two-tool setups where lazy loading adds round-trips without saving meaningful tokens.
+- Latency-critical interactive work where the extra round-trips hurt UX more than the tokens cost.
+- Workflows where the LLM legitimately needs to see intermediate state to make the next decision.
+
+**Conversation cache as ally.** When a tool's schema has already been loaded earlier in the conversation, the harness's prompt cache typically holds it cheaply for the rest of the session. Lazy loading isn't lazy *forever* — it's lazy on first use, then cached. Design the discovery flow so frequently-used tools end up loaded once and reused.
+
 ### 9.6 Context Window Optimization
 
 Beyond reducing per-lookup cost, there are structural strategies for getting more value from the context window itself — the finite budget of tokens the model can hold at once.
@@ -1092,15 +1120,35 @@ Most agent harnesses automatically compact conversation history when the context
 
 **MCP and tool context costs:**
 
-External tool integrations (MCP servers, database connections, API integrations) consume context window space for their tool definitions, schemas, and response payloads. This cost is ongoing — every tool's schema is present in context even when not in use.
+External tool integrations (MCP servers, database connections, API integrations) consume context window space for their tool definitions, schemas, and response payloads. This cost is ongoing — every tool's schema is present in context even when not in use, and **measured at scale, tool metadata routinely accounts for 40–80% of total context cost** depending on toolset size. It's the largest single dimension to leave unmanaged.
 
-- Prefer CLI wrappers bundled into skills over always-loaded MCP servers when the CLI is equally capable. The skill loads on demand; the MCP server's tool definitions occupy context permanently.
-- If you need many integrations, enable only the ones required for the current task. An agent doing code review doesn't need database and deployment integrations loaded.
-- Tool responses from external integrations can be verbose. When designing skills that wrap external tools, extract only the information needed rather than passing raw tool output into context.
+Three layers of mitigation:
 
-### 9.7 The Math
+1. **Prune what you don't need.** Enable only the tools required for the current task. An agent doing code review doesn't need database and deployment integrations loaded. Audit the tool list periodically — a single unused tool can account for the majority of tool-call traffic in a workflow.
+2. **Lazy-load what you do need.** Prefer MCP servers that follow a `search` → `describe` → `execute` pattern (or equivalent dynamic-toolset architecture) — schemas load on demand rather than at session start. With a dynamic toolset, context cost stays roughly constant in the number of tools available; with a static one, it grows linearly. See §9.5b for the broader principle.
+3. **Wrap when you can't redesign.** When the underlying server is static and you can't change it, wrap it: route through a thin proxy, expose only the subset of tools you actually use, or substitute a CLI wrapper bundled into a skill. The skill loads on demand; the MCP server's tool definitions occupy context permanently.
 
-A typical "let me find that file" cycle costs ~2,000–5,000 tokens (glob, read results, maybe grep, read file). A single line in a project instruction file pointing to the exact path costs ~20 tokens. Over a session with dozens of file lookups, front-loaded context can reduce token consumption by 30–50%.
+**On tool *design* (when you're building, not consuming):** tools designed for agentic workflows look different from API wrappers. They're single-purpose at the workflow level (one tool per task the agent actually needs to do, not one tool per HTTP endpoint), have clear and constrained inputs, return only what's needed, and bundle related operations (a `manage_X` tool that handles common workflows usually beats separate `create` / `update` / `delete` tools). API wrappers that mirror every endpoint produce the bloat this section is trying to mitigate.
+
+**Tool responses are also progressive.** When a tool's natural response is a large object (a full PR diff, a long log, a complete record), prefer returning a summary or set of IDs by default with a follow-up call for detail. Carrying the full object forward in context every turn is the equivalent of a static schema for response data.
+
+### 9.7 Measuring Efficiency Over Time
+
+Raw token counts mislead when models or workloads shift. Two metrics give you a stable view of efficiency across model tiers and run frequencies.
+
+**Effective Tokens (ET).** Apply model-cost multipliers and token-type weights so a "10% savings" means the same thing regardless of which model ran it:
+
+```
+ET = m × (1.0 × input + 0.1 × cache_read + 4.0 × output)
+```
+
+Approximate model multipliers (set yours from current pricing): Haiku-class ≈ 0.25×, Sonnet-class ≈ 1.0×, Opus-class ≈ 5.0×. Cache-read tokens are weighted at ~0.1× because they cost roughly an order of magnitude less than fresh inputs. Output tokens are weighted at ~4× because they cost several times more per token than inputs.
+
+A 10% ET reduction means a genuine 10% cost reduction, regardless of the model mix that produced it. A 10% raw-token reduction can be illusion (you switched a workload from Opus to Haiku) or worse-than-it-looks (you switched the other way).
+
+**Weight by run frequency.** When prioritizing efficiency work across multiple recurring agent workflows (CI runs, scheduled audits, daily summaries), multiply the per-run ET savings by run frequency. A 60% reduction on a workflow that runs 7 times per day compounds to far more aggregate savings than the same reduction on a once-weekly task. Optimize the high-frequency runs first.
+
+**Together,** ET-per-run × run-frequency gives a comparable cost number across workflows that use different models and run on different schedules. Without both adjustments, optimization work is hard to prioritize honestly.
 
 ---
 
@@ -1213,8 +1261,6 @@ Blocked: Any blockers, or "None"
 Test status: Which layers have been run, which haven't
 ```
 
-The next session reads this and resumes in ~200 tokens instead of spending 5,000+ tokens re-orienting through git log, git diff, and file reads.
-
 Remove the handoff block once the next session has picked up the work.
 
 ---
@@ -1276,6 +1322,8 @@ Each worker gets its own context window, a restricted toolset, and focused instr
 - The task requires **back-and-forth with the user** — delegation adds latency to every exchange.
 - The task is **trivially small** — spawning a worker for a single grep adds overhead without savings.
 - The task **depends on the lead's accumulated context** — if the worker would need the full conversation history to do its job, delegation doesn't save tokens; it duplicates them.
+
+**Delegation as a token-cost lever.** Beyond context cleanliness, scoping toolsets per specialized subagent is a measurable cost reduction in its own right. A monolithic agent with every tool loaded pays for every tool's schema on every turn; specialized subagents with tool subsets pay only for the tools relevant to their task. Observed token-overhead reductions of ~50–60% are common when a single fat agent is split into purpose-scoped workers. This compounds with the orchestration benefits — it's not a separate technique.
 
 ### Model Routing — Delegate to Cheaper Models
 
@@ -1395,6 +1443,15 @@ Most AI development tools support connecting agents to external services — iss
 | **Error monitoring** | Agent queries recent errors to prioritize bugs instead of you describing symptoms |
 | **Database schema** | Agent queries schema directly instead of you describing table structures |
 | **CI/CD pipeline** | Agent reads build logs and test results instead of you pasting terminal output |
+
+**Selecting MCP servers and tool integrations.** Not all integrations carry the same context cost (see §9.6 — tool metadata is 40–80% of context cost on tool-heavy setups). When choosing between equivalent options, prefer ones that:
+
+- Use a **dynamic toolset architecture** (`search` → `describe` → `execute` or equivalent) so schemas load on demand. See §9.5b for the broader principle.
+- Expose **purpose-scoped tools** rather than mirroring every API endpoint. One tool per workflow task beats one tool per HTTP endpoint.
+- Return **summaries or IDs** by default with detail-on-request, rather than always returning full payloads.
+- **Externalize cross-cutting concerns** (auth, rate limiting, error handling, governance) into the runtime/gateway layer rather than embedding them in every tool's response.
+
+When you're *building* an MCP server (rather than consuming one), apply §9.6's tool-design principles: single workflow purpose, lazy schema loading, clear and constrained inputs, bundle related operations into higher-level tools rather than mirroring CRUD.
 
 **Configuration scope matters:**
 

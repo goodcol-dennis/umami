@@ -56,7 +56,7 @@ When you make changes to this repo, multiple files often need coordinating updat
 | **Rename or re-describe a section** | 1. `umami.md` → 2. `README.md` section description tables → 3. Any extension files that cross-reference the renamed section |
 | **Add cross-references between core and extensions** | 1. Source file (the one adding the reference) → 2. Target file (add reciprocal "see also" if appropriate) |
 | **Update adoption tiers** | 1. `umami.md` §0.6 → 2. `README.md` tier tables — these must mirror each other exactly |
-| **Update §0.7 (audit) or §0.7b (init) protocol** | 1. `umami.md` (the spec section) → 2. `.claude/skills/umami-audit.md` or `umami-init.md` (mirror the change, bump `**Last synced:**` to today's date) → 3. `README.md` "Get started" section if the bootstrap one-liner or invocation language changes |
+| **Update §0.7 (audit), §0.7b (init), or §3d (code review) protocol** | 1. `umami.md` (the spec section) → 2. corresponding skill template in `.claude/skills/` (`umami-audit.md` / `umami-init.md` / `umami-omnibus-reviewer.md`) — mirror the change and bump `**Last synced:**` to today's date → 3. `README.md` "Get started" section if the bootstrap one-liner or invocation language changes |
 
 ## Writing conventions
 

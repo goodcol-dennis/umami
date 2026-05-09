@@ -124,7 +124,7 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | Desktop app (native) | §1 (structure), §3 (unit + E2E tests), §3b (TDD), §6 (strict types, linting), §8 (acknowledged gaps — headless testing limitations), §11 (file size budgets) | [umami-desktop.md](umami-desktop.md) + platform file ([Linux](desktop/umami-linux.md)) | §3 visual regression (use headless E2E instead) |
 | Desktop app (SPA wrapper) | §1 (structure), §4 (security — navigation policy, session persistence), §6 (consistency), §8 (acknowledged gaps) | [umami-desktop.md](umami-desktop.md) + [Linux](desktop/umami-linux.md) + [SPA Wrapper](desktop/umami-spa-wrapper.md) | §2 (specs — you don't control the web app), §3 multi-layer testing |
 | Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
-| AI-assisted development (any project using agents) | §3c (interactive decision planning when designs compound), §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
+| AI-assisted development (any project using agents) | §3c (interactive decision planning when designs compound), §3d (code review at agentic velocity), §9 (token efficiency), §14 (agent orchestration — delegation, modes of AI use, skills, parallel review, tool integration) | — | — |
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
@@ -174,6 +174,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | State tracking & recoverability | §5 | Stateful operations need rollback or audit trails |
 | Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating faster than it's being addressed, or releases need a frozen "what was true at vX.Y" record |
 | Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
+| Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -636,6 +637,12 @@ When a request is ambiguous, the wrong response is to pick an interpretation and
 
 This applies equally to inline questions in chat — but the cost of getting it wrong is much higher when the prompt is rendered in a separate UI surface, because scroll-back may not even be available without dismissing the dialog.
 
+### Map before proposing changes (brownfield)
+
+When working on existing systems — especially legacy code or systems older than the current contributors — don't let the AI greenfield a brownfield problem. The first step on any non-trivial change in an established codebase is *mapping*: ask the AI to summarize how the affected layer currently works (what calls what, what state lives where, what invariants hold) before proposing what to change. A proposal grounded in actual current behavior is far more useful than a proposal grounded in a generic "what should this look like."
+
+This applies broadly: refactors, migrations, integrations with existing systems, debugging in unfamiliar code. The cost of one mapping pass is small; the cost of a proposal that doesn't account for what's already there is usually a discarded implementation.
+
 ### Systematic Debugging
 
 When a test fails or a bug is reported, do not guess. Follow this process:
@@ -773,6 +780,115 @@ You can tell whether the protocol is working from the relative length of the use
 - If the user says **"you're not stepping through these one by one"** or **"stop blasting me"**, you've drifted. Reset.
 
 The slow path produces better designs *because* it forces engagement — the cost is overhead per decision, the benefit is decisions that were actually decided rather than rubber-stamped.
+
+### Output format discipline
+
+State the output format you want before asking for the answer — markdown decision matrix, ADR-shaped doc, JSON, prose with section headers, table with specific columns. LLMs guess the format if you don't, and often guess wrong. Applies to both interactive decisions (text in chat) and structured-output prompts (a file or artifact). One sentence in the prompt prevents an output-shape rework round-trip.
+
+---
+
+## 3d. Code Review Discipline
+
+In agentic coding, code generation often outpaces human review capacity. The traditional model — humans reading every diff — degrades silently as velocity rises: it either becomes rubber-stamping ("LGTM, didn't really read it") or the bottleneck that defeats the velocity gains. §3d frames code review as **attention management**: a three-layer system that lets mechanical gates and AI pre-screening handle most changes, focusing human attention only where it's earned.
+
+§3d operationalizes the **reviewing mode** of AI use (see §14). The reviewer agents in this system are reviewing-mode agents — read-only critics that produce structured findings, not approval/rejection.
+
+### The three-layer model
+
+| Layer | What it does | When it runs | Decision criterion |
+|---|---|---|---|
+| **1. Mechanical** | Linters, formatters, type checkers, tests, coverage delta, diff-complexity heuristics | Every change, automatically | Pass / fail gates |
+| **2. AI pre-screen** | Reviewer agents that produce a structured **flags document** (non-blocking) | Every change that passes Layer 1 | Output is findings, not approval |
+| **3. Risk-classified human focus** | Human review on changes meeting risk classification OR flagged High by Layer 2 | Only changes that match dimension/signal triggers OR omnibus flagged High | Human reads flags doc + diff |
+
+### Risk classification
+
+Layer 3 routes only the changes that warrant it to humans. Classification has two parts: the *dimensions* of risk (the why) and the *signal categories* that detect them (the how).
+
+**Dimensions** — three universal ones, plus project-specific ones to extend with:
+
+| Dimension | Coverage |
+|---|---|
+| **Security** | Auth, authorization, secrets, crypto, attack surface |
+| **Data integrity** | Database writes, schema changes, financial calc, state transitions |
+| **Contract integrity** | Public APIs, breaking changes, exported interfaces |
+
+Most projects also need to extend with *some* of: dependencies (supply chain), infrastructure (CI/build/deploy), observability (logging/metrics), compliance (audit-trail requirements), latency (real-time apps), accessibility, internationalization. Projects with regulated data or unusual constraints often have dimensions that don't appear here at all. The list above is a starting kit, not a fixed schema.
+
+**Signal categories** — universal across projects:
+
+| Signal type | What it matches |
+|---|---|
+| **Path patterns** | Files / directories that historically map to a risk dimension (`auth/`, `db/migrations/`, `*.sql`, `Dockerfile`) |
+| **Diff content** | Strings, identifiers, or patterns within the change (references to `password`/`token`/`secret`, modifications to exported function signatures, new dependency entries) |
+| **Change type** | Kind of edit (new dependency added, file deleted, schema migration created, new public method exported) |
+
+A project's risk classification is the mapping between dimensions it cares about and signals that detect them — typically a small table maintained alongside the change-propagation map (§10).
+
+### Reviewer agent pattern
+
+The **omnibus reviewer** is the foundation. It's invoked on every change after Layer 1 passes, does a broad sweep across the project's risk dimensions, and produces the flags document. One skill template lives in this repo (`.claude/skills/umami-omnibus-reviewer.md`); each project derives its own with project-specific risk dimensions and paths.
+
+**Specialized reviewers** are an *optional escalation* for projects where scale demands it. A separate skill per dimension (security, performance, contract integrity, error-handling) can come off the bench when the omnibus flags High in that dimension, producing deeper analysis. Most projects don't need specialized reviewers until repeated High flags on the same dimension justify the focused mandate. Per §14, scoped specialized agents are a measurable cost lever, but only useful when there's enough flagged volume to justify them.
+
+### Flags document
+
+The flags document routes human attention. Qualities of a good one:
+
+- **Scannable in ~30 seconds** — a human reading it should know within seconds whether to look closer
+- **Prioritized** into 2–3 risk levels (HIGH / MEDIUM / LOW, or equivalent)
+- **`file:line` citation on every item** — no "the auth code has issues"; always the specific location
+- **Dimension tag on every item** — security / data / contract / etc., so a human can route to the right specialized reviewer if needed
+- **One-line concern per item** — the human drills into the diff if they need detail
+
+Worked example (one project's shape):
+
+```markdown
+## Review flags — PR #1234
+
+### HIGH (need eyes)
+- security: src/api/orders.ts:142 — new validation skips length check (potential XSS via order notes field)
+- data: src/db/migrations/0042.sql — adding NOT NULL without backfill (table size 50M rows)
+
+### MEDIUM (consider)
+- resilience: src/utils/retry.ts:8 — retry budget not propagated to caller
+- observability: src/services/auth.ts — debug log statement includes token
+
+### LOW (note)
+- 12 test files updated; no production-code test coverage added for the new branch in orders.ts:142
+```
+
+The exact shape (HIGH/MEDIUM/LOW vs. red/yellow/green vs. priority numbers) is a project taste call. The qualities are universal.
+
+### Spot-check sampling — load-bearing
+
+Without random human spot-checks of "low-risk" changes (the ones that don't trigger any human-review signal), the risk classification rots silently. Paths get added without updating the classification map; the omnibus reviewer drifts and flags less; real issues bypass human eyes forever.
+
+**Sample 5–15% of low-risk changes randomly. Tune to taste.** Lower bound (5%) is meaningful without being disruptive. Upper bound (15%) is heavy enough to keep reviewers calibrated. The exact rate is project-specific — the watch signal below tells you whether you're sampling enough.
+
+If serious issues turn up in spot-checks, the classification is wrong. Fix the *classification* (add the missing path glob, refine the signal rule), not just the one change.
+
+### Watch signals
+
+Three signals detect when the review system is degrading:
+
+| Watch signal | Healthy range | What it catches |
+|---|---|---|
+| **Spot-check finding rate** (real issues per sampled change) | < 2% | If higher, risk classification is wrong; serious changes are bypassing the human gate. |
+| **Omnibus reviewer flag rate** (% of changes flagged at any level) | 5–25% | < 2% → reviewer is missing real issues (false confidence). > 25% → noisy / alert fatigue. |
+| **Merge-rate ÷ human-engagement-rate** | < 5× | If merges run more than 5× faster than humans engage with flags docs, the human-attention layer is rubber-stamping. |
+
+Treat watch signals as the diagnostic. The system doesn't fix itself — investigate and adjust the classification, the reviewer's prompt, or the team's process when a signal trips.
+
+### Failure modes
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Rubber-stamping | Humans approve flags docs without engaging; merge rate vastly exceeds engagement rate | Watch signal #3 catches this. Fix is process — slow merge velocity, require evidence of engagement, pair-review high-volume work |
+| Classification rot | Risky changes bypass the human gate because path globs are stale | Spot-check sampling catches this if you actually do it. Fix the classification map, not the one change |
+| Reviewer agent drift | Same code reviewed at different times produces inconsistent flags | Drift detection per §0.7 hard rules; re-derive the reviewer skill from current §3d |
+| Reviewer over-confidence | Reviewer flags a tiny fraction; humans trust it; real issues slip through | Watch signal #2 (flag rate) catches this. Recalibrate the reviewer's prompt or scope |
+| Skill rot | Reviewer agents reference deprecated paths or APIs | Periodic skill review per §14; update the canonical template in this repo |
 
 ---
 
@@ -982,6 +1098,12 @@ For every non-obvious choice, document:
 - **Consequences** — what this decision makes easier and harder.
 
 This prevents re-litigation of settled decisions by future contributors (including AI).
+
+### Audience targeting
+
+Different docs serve different audiences — senior engineers (deep technical context, library names, version pins), executives or stakeholders (decisions and tradeoffs without jargon), operations / SRE (runbooks, recovery steps, signals), end users (task-oriented guides), AI agents (prescriptive ground truth without ambiguity). Specify the audience in the doc's frontmatter or opening line. Audience determines technical depth, jargon density, and what context the reader is assumed to already have.
+
+When asking the AI to *generate* documentation, name the audience in the prompt — *"target a senior engineering audience"* changes the output significantly from *"write for an executive stakeholder"*. Mode-specific (§14): doc generation is implementation mode; audience is one of the inputs.
 
 ---
 
@@ -1370,6 +1492,26 @@ Human
 
 Each worker gets its own context window, a restricted toolset, and focused instructions. Results are summarized back to the lead. The lead's context stays clean — it never sees the 50 files Worker A read during exploration, only the 3-sentence conclusion.
 
+### Modes of AI Use — Implementation, Thinking, Reviewing
+
+When working with AI agents, distinguish three modes. They have different prompt patterns, different output formats, and different success criteria. Most projects implicitly default to implementation mode; the other two are equally important and often under-used.
+
+| Mode | What you're asking for | Output shape | Examples |
+|---|---|---|---|
+| **Implementation** | Working code, executed action | Diff, file edits, completed task | "Write the auth middleware", "Fix this bug", "Refactor X" |
+| **Thinking** | Clear reasoning, alternatives, tradeoffs | Document, decision matrix, recommendation with rationale | "Help me reason through this design", "Compare these approaches", "What are the tradeoffs of X vs Y?" |
+| **Reviewing** | Critique, structured findings, attention routing | Findings report, prioritized callouts, file:line citations | "Audit this for security issues", "Review this PR", "Where does this break the contract?" |
+
+**Implementation mode** is what most of umami covers — working-code outputs. The agent acts.
+
+**Thinking mode** is the agent as thinking partner. The output is *reasoning made visible* — alternatives laid out, tradeoffs named, recommendations with reasoning. The §3c interactive decision planning protocol operationalizes this mode.
+
+**Reviewing mode** is the agent as critic. Output is structured findings, not approval/rejection. The agent surfaces issues; humans decide what to act on. The §0.7 audit protocol and §3d code review operationalize this mode.
+
+**Why this matters:** the three modes have different prompt patterns. An implementation prompt that works ("write a login form using these libraries") often fails in thinking mode — a different shape is needed ("walk me through the tradeoffs of OAuth vs. password-based auth for this app, with at least two recommendations and reasoning"). Specifying mode up-front in the prompt or skill is part of getting good output. Combined with the output-format discipline from §3c, this gives the agent a clear target instead of letting it guess.
+
+**Mode in skills.** The skill library below contains skills in all three modes. Implementation-mode skills (codebase-search, refactor-helper) act. Thinking-mode skills (`/architectural-tradeoff`, `/migration-path-analysis`) elicit structured reasoning visible in the output. Reviewing-mode skills (`/umami-audit`, `/umami-omnibus-reviewer`) produce structured findings.
+
 ### Delegation Principles
 
 **Delegate when:**
@@ -1451,19 +1593,22 @@ A **skill** is a reusable set of instructions for a recurring agent task. Differ
 
 ```
 project-root/
-├── .ai/                          # Or .claude/, .cursor/, etc.
+├── .ai/                              # Or .claude/, .cursor/, etc.
 │   └── skills/
-│       ├── umami-audit/
-│       │   └── instructions.md   # Tiered process audit (§0.7)
-│       ├── security-review/
-│       │   └── instructions.md   # What to check, how to report
-│       ├── pr-summary/
-│       │   └── instructions.md   # How to summarize a PR
-│       └── data-migration/
-│           └── instructions.md   # Pre-flight checks, rollback steps
+│       ├── umami-audit/              # Reviewing mode (§0.7) — process audit
+│       ├── umami-init/               # Reviewing mode (§0.7b) — first-time setup
+│       ├── umami-omnibus-reviewer/   # Reviewing mode (§3d) — code review pre-screen
+│       ├── architectural-tradeoff/   # Thinking mode — compare design options
+│       ├── migration-path-analysis/  # Thinking mode — map legacy before changes
+│       ├── codebase-search/          # Implementation mode — find files/symbols
+│       ├── security-review/          # Reviewing mode — vulnerability analysis
+│       ├── pr-summary/               # Implementation mode — summarize a PR
+│       └── data-migration/           # Implementation mode — pre-flight + rollback
 ```
 
-**Standard skill — `umami-audit`:** Every project using umami should have an `umami-audit` skill that fetches the core document (and relevant extensions), follows the tiered audit protocol (§0.7), and outputs the standard audit format. This ensures the audit is invoked the same way in every project — `/umami-audit` or equivalent — rather than being phrased differently each time. The skill should include the raw URLs from the project's `CLAUDE.md` so the agent doesn't need to search for them.
+Skills come in all three modes from "Modes of AI Use" above. Implementation-mode skills act (write code, make changes, summarize). Thinking-mode skills produce *reasoning visible in output* (alternatives, tradeoffs, recommendations with rationale). Reviewing-mode skills produce *structured findings* (audits, code review flags documents). Tag each skill with its mode so the harness invokes it with the right expectations.
+
+**Standard skills — `umami-audit`, `umami-init`, `umami-omnibus-reviewer`:** Every project using umami should have these three reviewing-mode skills (§0.7, §0.7b, §3d). They share the same architecture: fetch the canonical spec fresh, follow the protocol, output structured findings. Each skill includes the raw URL of the umami spec so the agent doesn't search for it. See `.claude/skills/` in the umami repo for the canonical templates.
 
 **What makes a good skill:**
 

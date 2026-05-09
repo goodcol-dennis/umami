@@ -132,6 +132,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | State tracking & recoverability | §5 | Your system manages stateful operations that need rollback |
 | Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating, or releases need a frozen "what was true at vX.Y" record alongside the rolling gap registry |
 | Measuring efficiency over time (ET, run-frequency) | §9.7 | Optimizing across recurring agent workflows or model tiers; need apples-to-apples cost comparison |
+| Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review; team is rubber-stamping or bottlenecking on review |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -190,19 +191,20 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy for long-running work, multi-surface/one-primitive pattern |
 | §2 | Specification-first development — specs before code |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests |
-| §3b | Development process discipline — TDD, systematic debugging, verification |
-| §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions |
+| §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes |
+| §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline |
+| §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); flags-document format; spot-check sampling; watch signals |
 | §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security |
 | §5 | State tracking & recoverability — versioned, undoable state |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
-| §7 | Documentation as constraint — living audits, ADRs |
+| §7 | Documentation as constraint — living audits, ADRs, audience targeting |
 | §8 | Acknowledged gaps — rolling gap registry plus point-in-time per-release retros |
 | §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, progressive disclosure (lazy schema load, top-K tool retrieval, summaries-then-detail, workflow-as-code), context window optimization, effective-tokens metric |
 | §10 | Change propagation maps — which files to touch for recurring changes |
 | §11 | File size budgets — keep files small to reduce token cost and complexity |
 | §12 | Lightweight change tracking — active change blocks, session handoffs |
 | §13 | Dead code hygiene — delete, don't comment out |
-| §14 | Agent orchestration — delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria |
+| §14 | Agent orchestration — modes of AI use (implementation / thinking / reviewing), delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria |
 | §15 | Checklist — before starting, during dev, before commit, before merge |
 
 ### Extensions

@@ -125,6 +125,7 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | Desktop app (SPA wrapper) | §1 (structure), §4 (security — navigation policy, session persistence), §6 (consistency), §8 (acknowledged gaps) | [umami-desktop.md](umami-desktop.md) + [Linux](desktop/umami-linux.md) + [SPA Wrapper](desktop/umami-spa-wrapper.md) | §2 (specs — you don't control the web app), §3 multi-layer testing |
 | Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
 | AI-assisted development (any project using agents) | §3c (interactive decision planning when designs compound), §3d (code review at agentic velocity), §9 (token efficiency), §14 (agent orchestration — delegation, modes of AI use, skills, parallel review, tool integration) | — | — |
+| LLM-feature product (ships features that ingest external content via LLMs) | §4 (untrusted-content boundaries — typed wrapper, provenance, per-provider spotlighting, audit-on-add), §3d (add an "untrusted-content-surface" project-specific risk dimension), §9.6 (MCP and tool context costs apply to product-side LLM features), §14 (modes of AI use — products typically span all three) | — | §15 visual regression unless the product also has a UI |
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
@@ -175,6 +176,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating faster than it's being addressed, or releases need a frozen "what was true at vX.Y" record |
 | Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
+| Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -198,6 +200,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Made-up estimates** | The assistant offers calendar predictions ("this is ~2 weeks of work" / "10 sessions" / "we'll be done by Friday"). | Any time-based estimate appears in chat, commit messages, roadmap entries, or planning docs — sourced from the assistant. Calendar predictions are not the assistant's call. | Describe **scope**, not duration: subproblem count, relative size (S/M/L/XL vs. comparable past work), known-vs-unknown ratio. The user does velocity arithmetic — only they know their schedule, energy, and parallel commitments. Sessions are sized by goal, not by clock. |
 | **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Audit findings cite "non-conformance" with sections that don't fit the project shape, instead of recommending adapt or skip. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
 | **MCP tool sprawl** | The agent has 5–10+ MCP tools loaded "just in case." Tool metadata is consuming a large fraction of every turn's context, often without the developer realizing. | Measure tool-metadata-as-percent-of-context on a representative session. If tool schemas exceed ~30% of context, the verdict is confirmed. Most projects need 1–2 core MCP servers, not 10. | Apply §9.6: prune unused tools first, prefer lazy-load architectures (§9.5b), wrap static servers behind a proxy if needed. The cheapest tool schema is the one not loaded this turn. |
+| **Treats untrusted content as plain strings** | LLM-feature product reads external content (web pages, user messages, tool outputs, file contents) into untyped strings that flow directly to the model. New code paths frequently forget to sanitize; sanitize-on-read is scattered across the codebase. | If functions consuming external content take plain `String` parameters (rather than a typed `UntrustedContent<T>` wrapper), the verdict is confirmed. Audit-on-add doesn't catch it; the type system needs to make it uncompileable. | Apply §4 untrusted-content-boundary discipline: typed wrapper at every boundary, provenance tagging, per-provider spotlighting, audit-on-add at code review. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1028,6 +1031,42 @@ The "For AI-assisted development" guidance above covers code the agent *generate
 - Skills, hooks, MCP server configurations, and agent descriptors are supply chain artifacts. A malicious skill can contain prompt injection. A compromised MCP server can exfiltrate data while appearing to provide context.
 - Review agent tooling with the same rigor you apply to code dependencies (§6). Don't install skills, hooks, or MCP configurations from untrusted sources without inspection.
 - Agents installing software dependencies are vulnerable to typosquatting and dependency confusion — they'll install whatever a tutorial or error message suggests without verifying the package name. See §6 Supply Chain Attack Defenses for the full set of controls.
+
+### Untrusted Content Boundaries and Prompt-Injection Hardening
+
+For products with LLM features that ingest external content (web fetches, user messages, tool outputs, file contents, sub-agent outputs), prompt injection is a real attack surface. The model can't tell instructions from content unless you signal the boundary. Treat anything that crossed a trust boundary as untrusted — wrap it explicitly, tag its origin, and mark the boundary visibly to the model.
+
+The discipline has four parts:
+
+**1. Untrusted-content wrapper.** A typed wrapper (e.g., `UntrustedContent<T>`) around anything from outside the trust boundary. The wrapper makes it *impossible* for untrusted content to reach the model without going through the wrap path — the type system enforces what discipline alone won't. If untrusted content can be plain `String` in your codebase, the type system can't help you.
+
+**2. Provenance tagging.** Every wrapped piece carries a structured tag identifying where it came from — `WebFetch`, `UserMessage`, `ToolOutput`, `SubAgentResult`, `FileRead`, `MCPResponse`, etc. Provenance is an enum or tagged union, not free-text. The tag travels with the content; downstream consumers can apply per-source policy without re-deriving origin.
+
+**3. Per-provider spotlighting.** Different LLM providers respond best to different markers for untrusted content — XML-style tags, fenced blocks, explicit prefix conventions, role-tagged messages. Pick a strategy per provider and apply it consistently. The model needs a *visible* signal that a section is untrusted content rather than instructions; "the system prompt mentions it" isn't enough.
+
+**4. Wrap sites at every boundary.** There should be exactly one entrypoint that produces wrapped content per source (one for tool outputs, one for user input, one for sub-agent results, etc.). New tool surfaces require *audit-on-add* — if a new tool returns externally-sourced content, it must wrap before the result enters the model's context. Project §3d code-review classifications should add an "audit-on-add for untrusted-content surfaces" project-specific dimension.
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Plain-string content from outside the trust boundary reaching the model | Wrap-site missing |
+| Spotlighting markers appearing verbatim in model output | Model treating untrusted content as instructions; spotlighting strategy needs strengthening |
+| Successful prompt injection in a planted-injection regression test | The specific wrap site or spotlighting strategy that the injection bypassed |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| "Just sanitize the strings" | Codebase has scattered sanitize-on-read calls; new code path forgets one | Sanitization is whack-a-mole. Replace with `UntrustedContent<T>` typed boundary; sanitization (if any) lives at unwrap, not at every read site |
+| "We'll wrap later" | Untrusted content flows as plain strings while shipping the feature; wrapping retroactively touches every callsite | Wrap before shipping. Once untrusted content is loose in the codebase, retrofitting is expensive and incomplete |
+| "Every developer remembers to wrap" | New tool surface ships, doesn't wrap, model gets prompt-injected | The type system should make plain-string-from-untrusted-source uncompileable. Discipline alone is insufficient at agentic velocity |
+| "Spotlighting will catch it all" | Strategy works for known injection patterns; novel injection bypasses | Defense-in-depth — spotlighting is the third layer, not the first. Wrapper + provenance + spotlighting + audit-on-add together |
+
+**Cross-references:**
+- §4 "Validate at system boundaries" (above) — this is the LLM-content equivalent for products processing external content via agents
+- §3d code review — new tool surfaces should be flagged for "audit-on-add" classification under a project-specific dimension
+- §0.6 anti-pattern table — "Treats untrusted content as plain strings"
 
 ---
 

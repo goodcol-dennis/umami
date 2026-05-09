@@ -248,17 +248,24 @@ Auditing the full document against a project is expensive — both in tokens and
 
 This format keeps the audit focused and actionable. A project should come away with 3-5 concrete next steps, not a wall of recommendations.
 
-**After the audit — describe changes, then ask:**
+**After the audit — describe changes, then present a four-option dialog:**
 
 Each recommendation in the audit report must describe the specific changes it would require — which files would be created, modified, or restructured, and what the modification involves. This lets the team assess impact, spot conflicts with in-progress work, and make informed decisions before any code is touched.
 
-Once the report is complete, ask the user how they want to proceed:
+Once the report is complete, present a structured dialog asking how to proceed. Use the harness's structured-prompt mechanism (e.g., `AskUserQuestion` or equivalent) so the question is self-contained in its UI surface without requiring chat scroll-back — see §3b "Make each prompt self-contained."
 
-1. **Save to file for team review** — write the findings report to a file (e.g., `umami-audit-findings.md`) so the team can review, discuss, and prioritize together. **This is the default.** When multiple engineers are working on the codebase, uncoordinated changes create merge conflicts and break concurrent work.
-2. **Apply all recommendations** — implement all findings. Only appropriate when the user has sole ownership or has already coordinated with their team.
-3. **Selective application** — walk through recommendations one at a time, letting the user choose which to apply, skip, or defer.
+| Option | What happens |
+|---|---|
+| **Apply all recommendations** | Execute every finding without further dialog. Appropriate when the user has sole ownership or has coordinated with their team. |
+| **Selective walkthrough** | Step through each finding one at a time per §3c (Interactive Decision Planning). For each: present the recommendation, let the user choose apply / skip / defer / modify, lock the disposition before moving on. |
+| **Do something else** (free-text prompt) | The user describes a different action — save findings to a file for team review, branch and apply, escalate to a teammate, defer to a specific date, narrow the scope, etc. The catch-all when none of the structured options fit. |
+| **Skip** | Discard the findings without action. The audit was informational. |
 
-Default to option 1 unless the user explicitly requests otherwise. If the user chooses to apply changes (option 2 or 3), ask about active branches and in-progress work first. Use a dedicated branch for remediation. Prefer small, focused changes over sweeping refactors.
+The four options compose: *all / selective / other / none*. They cover the full disposition space without forcing a default the audit cannot know is right — *"save findings to a file"* is now an instance of "do something else," not a built-in default, because the right disposition depends on the user's situation (solo vs. team, urgency, branch state, coordination needs).
+
+If the user chooses **Apply all** or **Selective walkthrough**, ask about active branches and in-progress work first. Use a dedicated branch for remediation. Prefer small, focused changes over sweeping refactors.
+
+**This dialog pattern applies beyond audits.** Any workflow that produces a list of recommendations (code review, security review, pruning passes, dependency audits) should end with the same four-option dialog. The pattern is the standard disposition affordance for "here are N findings" reports.
 
 **Standardize the invocation.** Create an `umami-audit` skill in your project's skill library (§14) so the audit is always triggered the same way — `/umami-audit` or equivalent — regardless of who runs it or which agent tool they use. The skill should embed the raw URLs and reference this protocol so the agent doesn't improvise the process.
 
@@ -656,7 +663,7 @@ Apply these inline during work, not just at the end. Catching a violation mid-ed
 
 ## 3c. Interactive Decision Planning
 
-When designing something with multiple load-bearing decisions, work through them **one at a time**, not in a batched response that asks the user to engage with five forks simultaneously. This is the most important process discipline for AI-assisted design work — it prevents the "the design got rubber-stamped because I couldn't engage with 7 forks at once" failure mode.
+When designing something with multiple load-bearing decisions, work through them **one at a time**, not in a batched response that asks the user to engage with five forks simultaneously. This prevents the "design got rubber-stamped because I couldn't engage with 7 forks at once" failure mode.
 
 Note that §3c addresses *interactive design with the user*, while §3b's "Surface Ambiguity" addresses *individual unclear requests*. Surfacing one ambiguity is a single round-trip. Stepping through a sequence of compounding decisions is a protocol.
 
@@ -1148,13 +1155,11 @@ A 10% ET reduction means a genuine 10% cost reduction, regardless of the model m
 
 **Weight by run frequency.** When prioritizing efficiency work across multiple recurring agent workflows (CI runs, scheduled audits, daily summaries), multiply the per-run ET savings by run frequency. A 60% reduction on a workflow that runs 7 times per day compounds to far more aggregate savings than the same reduction on a once-weekly task. Optimize the high-frequency runs first.
 
-**Together,** ET-per-run × run-frequency gives a comparable cost number across workflows that use different models and run on different schedules. Without both adjustments, optimization work is hard to prioritize honestly.
-
 ---
 
 ## 10. Change Propagation Maps
 
-For every recurring change type, document which files must be updated and in what order. This is the single highest-value token optimization: without it, the AI rediscovers the dependency chain every session through grep and file reads (~15,000 tokens). With it, zero search cost.
+For every recurring change type, document which files must be updated and in what order. This is the single highest-value token optimization: without it, the AI rediscovers the dependency chain every session through grep and file reads. With it, zero search cost.
 
 ```
 | Change type         | Files touched (in order)                              |

@@ -83,12 +83,14 @@ Cite §0.6's onboarding anti-patterns. Name a watch signal for each flagged item
 Practices checked but not yet applicable, with the trigger that would make them relevant.
 
 ### After the audit
-Read-only by default. Present three options:
-1. Save findings to file (default).
-2. Apply all recommendations.
-3. Selective walkthrough.
+Read-only. Present a four-option dialog using `AskUserQuestion` (or equivalent structured prompt) so the choice is self-contained in the UI:
+
+1. **Apply all recommendations** — execute every finding.
+2. **Selective walkthrough** — one at a time per §3c.
+3. **Do something else** (free-text prompt) — save to file, branch first, defer, narrow scope, etc.
+4. **Skip** — discard without action.
 ```
 
-## After the audit — describe changes, then ask
+## After the audit — describe changes, then present the four-option dialog
 
-Each recommendation must describe the specific changes it would require — which files would be created, modified, or restructured. Then ask whether to save to file (default), apply all, or walk through selectively. Default to save-to-file unless the user explicitly requests otherwise.
+Each recommendation must describe the specific changes it would require — which files would be created, modified, or restructured. Then present the four-option dialog (apply all / selective / other / skip). No default — the right disposition depends on the user's situation, not the audit's. *"Save findings to a file"* is one example of an "Other" action, not a built-in default.

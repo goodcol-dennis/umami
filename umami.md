@@ -269,6 +269,17 @@ If the user chooses **Apply all** or **Selective walkthrough**, ask about active
 
 **Standardize the invocation.** Create an `umami-audit` skill in your project's skill library (§14) so the audit is always triggered the same way — `/umami-audit` or equivalent — regardless of who runs it or which agent tool they use. The skill should embed the raw URLs and reference this protocol so the agent doesn't improvise the process.
 
+**Skill drift detection.** The audit skill is a snapshot of this protocol frozen at skill-creation time; the canonical source is whatever §0.7 says when freshly fetched. To prevent silent drift between snapshot and source, every audit run performs two checks before finalizing the report:
+
+- **Structural drift.** Compare the skill's embedded bootstrap against the freshly-fetched §0.7. Specifically: number of disposition options in the four-option dialog, number of hard rules, shape of the output-format block. If any differ, structural drift is present — the skill is mechanically out of sync with the published protocol.
+- **Calendar drift.** Skill bodies should include a `**Last synced:** YYYY-MM-DD` line near the top, recording when the skill was last derived from §0.7. If that date is older than ~3 months, calendar drift is present — the skill may be substantively current, but the date warrants a sync check.
+
+When either check trips, append a single non-blocking line to the audit report under a `### Skill drift` heading:
+
+> *"Audit skill body diverges from §0.7 ({structural / calendar / both}). Re-sync recommended — derive a fresh `umami-audit.md` from the current §0.7."*
+
+This callout sits **outside** the priority-ordered recommendations list and does **not** count against the ≤5 recommendations rule. It's a maintenance signal about the audit infrastructure itself, separate from process findings about the project.
+
 **Hard rules for the audit skill** — encode these as non-negotiable constraints in the skill body, not just as suggestions in the audit text. Skills drift when their constraints are advisory; they hold when constraints are stated as rules:
 
 - **Read-only.** Never modify code or docs during the audit. Even obvious cleanup belongs in a follow-up, not in the audit itself.
@@ -280,6 +291,50 @@ If the user chooses **Apply all** or **Selective walkthrough**, ask about active
 - **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
 
 When the audit flags an anti-pattern, name the watch signal that would confirm or refute the verdict (see §0.6). Verdicts without falsifiers become opinion.
+
+### 0.7b Initialization Protocol — Bootstrapping Umami in a New Project
+
+§0.7 covers recurring audits. This section covers the first-time setup — bringing umami into a project that doesn't yet reference it, or upgrading a partial setup.
+
+**Bootstrap entrypoint (self-installing).** A project with no umami presence pastes one instruction into their agent:
+
+> *"Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md and follow §0.7b."*
+
+The agent fetches the spec, follows this section, and during the apply phase installs `umami-init` and `umami-audit` skills locally. Subsequent runs use slash commands.
+
+**What gets stored locally vs. fetched fresh:**
+
+- **Stored locally:** URL *references* to the canonical umami spec (in instruction files like `CLAUDE.md`) and *skill files* (`.claude/skills/umami-init.md`, `.claude/skills/umami-audit.md`) that describe *how to invoke* the protocol.
+- **Never stored locally:** the umami spec itself. Always fetched fresh from the canonical URL on every audit/init run.
+
+Skill files are invocation aids — they encode procedure shape, hard rules, and bootstrap text so the harness recognizes `/umami-init` and `/umami-audit` as commands. They do **not** contain a copy of umami.md. Drift between an installed skill and the canonical spec is detected per §0.7 (structural + calendar drift checks).
+
+**Procedure for AI assistants performing initialization:**
+
+1. **Detect current state.** Grep instruction file(s) (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.) for umami URLs. Determine starting state:
+   - **None** — first-time setup.
+   - **Partial** — some umami URLs present; missing relevant extensions, or referencing extensions for layers the project doesn't have.
+   - **Complete** — references match the project shape; recommend `/umami-audit` instead.
+
+2. **Run §0.1–§0.4 discovery** interactively, one decision at a time per §3c when answers compound.
+
+3. **Derive recommended core + extension set** via §0.5 mapping.
+
+4. **Compute the diff:** adds (extensions to add to URL list), removes (rare; usually flag-only), and skill installations (`.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md`, each with `**Last synced:** YYYY-MM-DD` set to today).
+
+5. **Present the four-option dialog** (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
+
+6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first.
+
+7. **Hand off:** *"Init complete. Run `/umami-audit` for a first process audit."*
+
+**Hard rules** mirror §0.7:
+
+- Read-only by default. The four-option dialog gates every write; no destructive changes without explicit approval.
+- Always fetch the spec fresh from the canonical URL. Never cache locally.
+- If the fetch fails, tell the user and stop. Don't fall back to a stale local copy.
+- Cite a file path or doc reference for every observation.
+- Drift detection applies to installed skills (see §0.7).
 
 ### 0.8 Example: Onboarding a Multi-Layer System
 

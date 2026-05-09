@@ -5,6 +5,8 @@ description: Periodic process audit against the Umami framework. Read-only — p
 
 # umami-audit — Process audit against the Umami framework
 
+**Last synced:** 2026-05-09 from §0.7. Re-derive this skill from the current §0.7 when this date is >3 months old or when an audit reports structural drift.
+
 ## What this skill does
 
 Audits the project's development PROCESS against the Umami framework — testing discipline, ADR/spec hygiene, change tracking, dead-code budgets, security habits, agent orchestration practices. **Not a code-quality audit. Process maturity only.**
@@ -30,6 +32,7 @@ Audits the project's development PROCESS against the Umami framework — testing
 4. **Produce 3–5 actionable recommendations** — never more — using the §0.7 output format.
 5. **Name watch signals** for any flagged anti-patterns. Verdicts without falsifiers become opinion.
 6. **Audit is read-only** — do not modify code or docs during the audit phase.
+7. **Check for skill drift before finalizing.** Compare this skill's embedded shape against the freshly-fetched §0.7: count of disposition options in the four-option dialog, count of hard rules below, shape of the output-format block. Also check the `**Last synced:**` header against today. If structural drift OR `Last synced` is >3 months old, append a non-blocking `### Skill drift` callout to the report (one line, doesn't count toward the ≤5 limit).
 
 ## Hard rules (non-negotiable)
 
@@ -81,6 +84,9 @@ Cite §0.6's onboarding anti-patterns. Name a watch signal for each flagged item
 
 ### Not yet relevant
 Practices checked but not yet applicable, with the trigger that would make them relevant.
+
+### Skill drift (only if detected)
+*One line, non-blocking, outside the priority list.*
 
 ### After the audit
 Read-only. Present a four-option dialog using `AskUserQuestion` (or equivalent structured prompt) so the choice is self-contained in the UI:

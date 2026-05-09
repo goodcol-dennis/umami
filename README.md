@@ -35,9 +35,24 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 The core template is **not** tied to any specific project. You reference it (and the relevant extensions) from your project and let your AI agent adapt the guidance to your codebase.
 
-## How to use it
+## Get started — one-liner bootstrap
 
-### 1. Copy the raw URLs
+Paste this into your AI assistant (Claude Code, Cursor, Copilot, etc.):
+
+> **Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md and follow §0.7b.**
+
+The agent fetches the spec, runs §0 discovery interactively (asking which kind of project this is, whether you have a data layer, frontend, mobile app, etc.), and proposes the right core + extension set per §0.5. With your approval — via a four-option dialog (apply all / selective walkthrough / do something else / skip) — it updates your project's instruction file(s) and installs `/umami-init` and `/umami-audit` slash commands locally.
+
+**The umami spec itself is never stored locally.** Init writes only URL references and skill files (which describe *how to invoke* the protocol). The spec is fetched fresh on every audit/init run from the canonical URL — this is a hard rule (§0.7) so the framework's evolution always reaches every project.
+
+After init, ongoing use:
+
+- **`/umami-init`** — re-run when project shape changes (added a frontend, became multi-layer, added compliance requirements).
+- **`/umami-audit`** — periodic process review.
+
+### Manual setup (fallback)
+
+If your harness can't write files, or you prefer manual control, paste this URL list into your project's `CLAUDE.md` (or equivalent) — keeping only the extensions that match your project shape (see §0.5 for the mapping):
 
 ```
 # Core guardrails (always)
@@ -60,9 +75,7 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/u
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/desktop/umami-spa-wrapper.md
 ```
 
-### 2. Give it to your LLM agent
-
-Paste the core URL (and any relevant extension URLs) into a conversation with your AI coding assistant and ask something like:
+Then ask the agent:
 
 > Here are my development guardrails: [paste URL]
 >
@@ -71,9 +84,9 @@ Paste the core URL (and any relevant extension URLs) into a conversation with yo
 > 2. Determine our current adoption tier (§0.6) based on what practices we already follow.
 > 3. Recommend 3-5 specific next practices from the next tier up that address problems we're currently experiencing.
 
-The agent will fetch the document, explore your project, and give you a focused set of recommendations — not a wall of 50 things to fix. Subsequent audits should follow the same tiered approach (§0.7), getting progressively more targeted as your process matures.
+The agent will explore your project and give you a focused set of recommendations — not a wall of 50 things to fix. Subsequent audits should follow the same tiered approach (§0.7), getting progressively more targeted as your process matures.
 
-### 3. Start with the tier that fits, not the whole document
+## Start with the tier that fits, not the whole document
 
 Umami is a toolkit, not a mandate. Adopting everything at once on a new project adds process drag that outweighs the benefit. Instead, adopt in tiers — start with the foundations, then add practices when specific problems or project growth make them valuable.
 

@@ -13,7 +13,9 @@ Bootstrap or upgrade umami in a project. Three jobs:
 
 1. Discover the project's shape (run §0.1–§0.4 from the canonical spec).
 2. Propose the right core + extension set per §0.5 mapping.
-3. Apply changes (with explicit user approval) — update instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.) and install the `umami-init` and `umami-audit` skills locally.
+3. Apply changes (with explicit user approval, after showing the diff) — update instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.) and install the `umami-init` and `umami-audit` skills locally.
+
+**This is a lightweight setup, not a framework install.** Only URL references and invocation-aid skill files are written. No framework copy, no runtime dependency. The umami spec itself stays at its canonical URL and is fetched fresh on every run; the local artifacts make access to umami consistent and harness-recognized as commands.
 
 **Not an audit. Not a code-quality review.** For ongoing process review use `/umami-audit`.
 
@@ -49,7 +51,7 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
    - **Removes:** extensions referenced but not relevant (rare; usually keep, just flag).
    - **Skill installations:** `.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md` with `**Last synced:** YYYY-MM-DD` set to today.
 
-5. **Present the four-option dialog** (apply all / selective walkthrough / do something else / skip) per §0.7. Use the harness's structured-prompt mechanism so the question is self-contained per §3b.
+5. **Show the user the proposed changes, then present the four-option dialog.** Enumerate every file that would be modified or created — paths, line counts, the exact URL block that would land in each instruction file, which skill files would be created or updated and at what `Last synced:` date. The user must be able to read the diff before deciding. Then surface the dialog (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
 
 6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first; if the existing skill has a newer or different `Last synced` date, surface the conflict before resolving.
 

@@ -41,9 +41,11 @@ Paste this into your AI assistant (Claude Code, Cursor, Copilot, etc.):
 
 > **Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md and follow §0.7b.**
 
-The agent fetches the spec, runs §0 discovery interactively (asking which kind of project this is, whether you have a data layer, frontend, mobile app, etc.), and proposes the right core + extension set per §0.5. With your approval — via a four-option dialog (apply all / selective walkthrough / do something else / skip) — it updates your project's instruction file(s) and installs `/umami-init` and `/umami-audit` slash commands locally.
+The agent fetches the spec, runs §0 discovery interactively (asking which kind of project this is, whether you have a data layer, frontend, mobile app, etc.), and proposes the right core + extension set per §0.5.
 
-**The umami spec itself is never stored locally.** Init writes only URL references and skill files (which describe *how to invoke* the protocol). The spec is fetched fresh on every audit/init run from the canonical URL — this is a hard rule (§0.7) so the framework's evolution always reaches every project.
+**Before any file is written, you'll see exactly what's changing** — every file touched, the URL block that would land in your instruction files, and any skill files that would be created. With your approval — via a four-option dialog (apply all / selective walkthrough / do something else / skip) — the changes are applied. Nothing happens to your project until you say so.
+
+**This is a lightweight setup, not a framework install.** Init writes only URL references (so your agent knows where to fetch the spec) and small skill files (so the harness recognizes `/umami-init` and `/umami-audit` as commands). The umami spec itself is never stored locally — it's fetched fresh on every audit/init run from the canonical URL, which is a hard rule (§0.7) so the framework's evolution always reaches every project. There's no dependency to maintain, no library to upgrade.
 
 After init, ongoing use:
 

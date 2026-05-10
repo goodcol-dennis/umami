@@ -159,6 +159,7 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Spec-first development | §2 | Features take more than one session to build |
 | Multi-layer testing | §3 | The system has more than one layer (API + UI, pipeline + warehouse) |
 | Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
+| Refactoring discipline | §3e | Project has agents refactoring code at velocity, or refactoring is bundled with feature work creating reviewability problems |
 | Runtime validation | §4 | The system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain later (including to future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
@@ -181,6 +182,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
+| Architectural fitness functions | §3 | Project has clear architectural boundaries that linter rules can't express; team has been bitten by boundary violations |
 | Agent log discipline (5-layer log + retention + review cadence) | §4 | Project has agents taking consequential actions in production where audit trail matters for incident response, compliance, or operational debugging |
 | Cross-implementation research before foundational ADRs | §7 | Project is committing to a foundational architectural approach with meaningful trade-offs (agent loop, edit format, sub-agent model, auth framework, state-management pattern, etc.) |
 | Cost caps and budget gates (per-task / per-session / per-day with force-over-cap typed-confirm) | §9.7 | Project runs agents at scale and cost predictability matters; per-task or per-day spend has surprised the team |
@@ -215,6 +217,8 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Agent logs without review** | Project ships agent activity logs to a sink (disk, observability platform, S3) but nobody actually reads them. The retention policy looks compliance-shaped; nothing ever gets queried. | Ask when the agent log was last queried for anything other than incident response. If "never" or "I don't know," the log is write-only. If retention is set in months but no review cadence is documented, the log exists for paperwork, not for audit. | Apply §4 "Agent Log Discipline" review-cadence guidance: weekly tool-call scan, per-release error-layer review, per-incident forensic reconstruction, quarterly field-utility review. If review doesn't happen, drop the logging cost. |
 | **ADR alternatives without research depth** | ADR has an "alternatives considered" section that names 1–3 alternatives in 1–2 sentences each. Reader can't tell what kind of audit went into the rejection — was it a deep read, a README skim, or just the assistant's training-data summary? | If an ADR doesn't cite a research doc, ask the author when the alternatives were last deep-read and what concrete dimensions were compared. If the answer is "we just knew" or "it's industry consensus," the audit didn't happen. | Apply §7 "Cross-Implementation Research": pair foundational ADRs with a dated research doc, comparison matrix, and tiered steal-list. The research doc gives the ADR's rejection reasoning auditable depth. |
 | **Cost caps in policy doc but not in code** | Project documentation states "max $X per day for agent operations" but no enforcement exists in the harness configuration. Cost overruns happen and post-hoc retros say "well we have a policy" — but the policy never blocked anything. | Search the harness configuration (`settings.json`, hook configurations, etc.) for cap enforcement. If the doc says max $X but no hook / setting / runtime check enforces it, the verdict is confirmed. Cap-without-enforcement is aspiration. | Apply §9.7 "Cost Caps and Budget Gates": enforce caps in the harness layer (hooks, settings constraints, runtime checks). Document the policy AND the enforcement, with the audit-trail entry recorded when a cap fires. |
+| **Fitness functions as documentation** | Architectural fitness functions exist in the test suite, but they assert constraints that are always trivially true. They never fail. They're aspirational descriptions of architecture, not active gates. | Run the fitness function suite in a deliberately broken state (introduce a known violation). If the suite still passes, the constraint is too loose or the test isn't actually checking what it claims. Functions that have never failed in their lifetime are also a sign — either the codebase has perfect compliance (unlikely) or the test is documentation. | Apply §3 "Architectural Fitness Functions": each function should be specific enough to fail when its invariant is violated. If you can't construct a violation case, the test is documentation, not a fitness function. |
+| **Refactoring without tests** | Code restructured "for clarity" without tests covering the affected behavior. Either no tests exist, or the tests were added/changed as part of the refactor commit. Behavior may have changed silently. | If a "refactor" commit also modifies tests in ways that aren't pure rename / move, it's not a refactor — it's a rewrite. If the codebase has refactor-style commits but the test suite doesn't run reliably, the safety net is missing. | Apply §3e "Refactoring Discipline": tests as the safety net are non-negotiable. If behavior isn't covered, write the test first; then refactor. If you can't write the test, you're not refactoring — you're rewriting. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -636,6 +640,67 @@ Common failure categories:
 
 **The fix is always the same:** make the boundary contract explicit. Specify column lists, validate types before crossing, and test with real data samples — not just the happy path.
 
+### Architectural Fitness Functions
+
+§3 above covers tests at unit / integration / E2E / property / boundary layers. **Architectural fitness functions** are a distinct test layer: automated tests that verify *architectural invariants* — the "is the architecture still healthy?" question that unit tests and linters don't answer.
+
+| Test layer | Verifies | Example |
+|---|---|---|
+| **Unit** | One function's correctness | `add(2, 3) == 5` |
+| **Integration** | Components compose correctly | API endpoint returns expected schema |
+| **E2E** | Whole user flow works | User logs in, performs action, sees result |
+| **Property-based** | Invariants hold across input space | `reverse(reverse(xs)) == xs` |
+| **Linter / type checker** | Code style / type correctness | No unused imports; types align |
+| **Architectural fitness function** | Architecture invariants hold | No module imports from a layer above its own; service-to-service P99 latency < 200ms |
+
+Distinguishing feature: fitness functions test *structural and quality properties of the architecture itself*, not the behavior of any individual component. Originated in *Building Evolutionary Architectures*; developed further in *Software Architecture: The Hard Parts*.
+
+**Categories:**
+
+| Category | What it tests | Common implementations |
+|---|---|---|
+| **Structural** | Module / layer boundaries, dependency direction, naming conventions, file location rules | ArchUnit (Java), ts-arch (TypeScript), import-linter (Python), custom AST-walking scripts |
+| **Performance** | Latency budgets, memory limits, throughput targets | Benchmark-as-test in CI; alert if P99 > X |
+| **Security** | Absence of known anti-patterns (untrusted-content reaching model without wrap, secrets in logs) | Static analysis with custom rules; per-PR security checks |
+| **Operational** | Observable signals (every endpoint emits a metric, every error has a trace ID) | Test that probes the running app for required signals |
+
+**Fitness functions vs. other gates umami already covers:**
+
+| Compared to | What fitness functions add | What stays distinct |
+|---|---|---|
+| §0.6 watch signals | Code-level architecture checks | Watch signals detect anti-patterns in *process*; fitness functions detect violations in *architecture* |
+| §3d code review Layer 1 (mechanical) | Architecture-specific tests, not just lint / format / test | Layer 1 covers correctness; fitness functions cover architecture |
+| §4 untrusted-content audit-on-add | Architectural pattern enforcement in CI | Audit-on-add is a process gate at code review; fitness functions are a code gate in CI |
+
+**When to introduce them:**
+
+- The project has clear architectural boundaries (modules / layers / services) you don't want violated
+- Linter rules can't express the constraint (most architectural rules can't)
+- The team has been bitten before by boundary violations
+- The codebase is large enough that humans can't catch all violations in review
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Fitness function added but never fails | Either the constraint is too loose, or the codebase already complies and the test is documenting rather than verifying |
+| Fitness function disabled "we'll fix it later" | Constraint isn't being upheld; technical debt accumulating invisibly |
+| Fitness functions only added after incidents | Reactive coverage; team isn't proactively encoding constraints |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Fitness functions as documentation | Test exists, asserts something always true; never fails | Change the constraint to actually catch something, or delete the test |
+| Linter rules dressed up as fitness functions | The check is "no unused imports" — that's a linter | Reserve the term for genuine architecture constraints; keep style checks in linters |
+| Fitness functions blocking CI for unrelated work | A change in module A breaks a coarse fitness function | Scope fitness functions to specific layers / concerns; multiple narrow functions beat one big one |
+| Fitness functions never updated | Architecture evolved but tests still encode the old shape; tests pass but mean nothing | Update fitness functions when architecture changes; treat them as architecture documentation |
+
+**Cross-references:**
+- §3 above — fitness functions are a test layer alongside unit, integration, E2E, property-based, behavioral
+- §6 enforced consistency — fitness functions enforce structural / dependency rules that linters can't express
+- §15 pre-commit checklist — fitness functions run in CI as part of the gate
+
 ### Multi-Provider Behavioral Testing
 
 For LLM-feature products whose correctness depends on the model's behavior — tool-calling shape, structured-output adherence, instruction-following, refusal behavior — test across the providers you actually serve in production. A test that passes only on one provider is silent regression risk for the product's other code paths.
@@ -981,6 +1046,72 @@ Treat watch signals as the diagnostic. The system doesn't fix itself — investi
 | Reviewer agent drift | Same code reviewed at different times produces inconsistent flags | Drift detection per §0.7 hard rules; re-derive the reviewer skill from current §3d |
 | Reviewer over-confidence | Reviewer flags a tiny fraction; humans trust it; real issues slip through | Watch signal #2 (flag rate) catches this. Recalibrate the reviewer's prompt or scope |
 | Skill rot | Reviewer agents reference deprecated paths or APIs | Periodic skill review per §14; update the canonical template in this repo |
+
+---
+
+## 3e. Refactoring Discipline
+
+§3, §3b, §3c, §3d cover testing, dev process, decision protocol, and code review. §3e covers **refactoring as its own discipline** — the practice of restructuring code without changing behavior, applied at agentic velocity where agents do most of the refactoring and where their patterns differ from human refactoring patterns.
+
+Refactoring is distinct from:
+- New feature work (changes behavior)
+- Bug fixes (changes behavior to be correct)
+- Architectural changes (changes structure at a level that breaks contracts)
+
+§3e is the middle ground — code transformations that preserve behavior and make subsequent work easier.
+
+### The four parts
+
+**1. Tests as the safety net.** Refactoring without tests is rewriting. Either:
+- The behavior is already covered by tests; refactoring is safe
+- The behavior is not covered; *write the test first* before refactoring
+
+Per Fowler's *Refactoring*, "if the tests don't pass, you're not refactoring; you're changing behavior." This is non-negotiable.
+
+**2. Named transformations.** Use the established refactoring catalog (Extract Method, Inline Variable, Move Method, Replace Conditional with Polymorphism, etc.) rather than ad-hoc rewrites. Named transformations are smaller, more reviewable, and more auditable. Agents can describe what they're doing in vocabulary humans recognize, which makes review tractable at scale.
+
+**3. Small atomic commits.** Each refactoring is its own commit, named for the transformation applied. Don't bundle refactorings with feature work — the diff becomes hard to review and bisect, and reverting a feature drags the unrelated cleanup with it.
+
+**4. Distinguish refactoring from cleanup.** "I noticed this while I was here" is not a refactoring opportunity — it's scope creep. Per §3b, incidental findings get noted but not edited in the same change. Refactoring is opportunistic improvement of code *the change requires touching*; cleanup is opportunistic improvement of unrelated code.
+
+### Agentic-velocity refactoring patterns
+
+Agents tend toward different refactoring patterns than humans, often in ways that look like good practice but aren't:
+
+| Agent tendency | Risk |
+|---|---|
+| Aggressive Extract Method | Over-extracts; produces tiny files with single 3-line methods that hide rather than reveal logic |
+| Cross-file rewrites | Ignores cohesion; spreads concerns thinly across many files |
+| "Removing duplication while I'm here" | Premature abstraction; creates the wrong shared code; violates §3b incidental-findings rule |
+| Renaming to match training-data conventions | "More idiomatic" name doesn't match project conventions |
+| Applying every refactoring in the catalog | Mistakes "I know how to do this transformation" for "this transformation is needed" |
+
+The §3d code-review three-layer model (mechanical / AI pre-screen / human focus) catches some of these — a "refactoring-only" change with a behavior-test diff is a HIGH flag for the human reviewer.
+
+### Watch signals
+
+| Signal | What it catches |
+|---|---|
+| Refactoring commits routinely touch >5 files | Refactorings have grown into rewrites; should have been broken into smaller transformations |
+| Refactoring commits include "while I was here" changes | §3b incidental-findings rule violated; scope creep into cleanup territory |
+| Tests had to be updated alongside the refactoring | Refactoring changed behavior, not just structure. Either it's not a refactoring, or the tests were too coupled to implementation |
+| Same refactoring done multiple times across sessions | The pattern isn't being captured in change-propagation maps (§10) or codebase understanding (§9.3) |
+
+### Failure modes
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Refactoring without tests | Behavior changes silently; bugs emerge later | Write the test first; that's the prerequisite. If you can't write a test for the behavior, you can't refactor — you're rewriting |
+| Bundling refactoring with feature work | Diff is too large to review; hard to bisect; PR description becomes "refactor X and add Y" | Two commits, two PRs. Refactoring first (no behavior change), feature on top |
+| Refactoring as scope creep | Agent "improves" code unrelated to the task; PR description doesn't mention the change | Per §3b, incidental findings get reported, not edited. Refactor only code the task requires touching |
+| Premature abstraction during refactoring | Three usages of similar code → extract a base class with hooks → next usage doesn't fit the abstraction | Wait until the third usage shows the pattern. Until then, three similar lines is better than a wrong abstraction |
+| Refactoring breaking change-propagation maps | Module renamed; §10 propagation map references the old name; subsequent sessions miss the dependency | Update propagation maps in lockstep with the refactoring. CLAUDE.md change-propagation map gets a row for "rename module" |
+
+### Cross-references
+- §3b — Test-first discipline applies to refactoring; "scope creep" rule applies (incidental findings get reported, not edited)
+- §3c — Multi-decision refactorings should use the §3c protocol (don't batch refactoring decisions)
+- §3d code review — Refactoring commits should be flagged for "behavior unchanged" verification
+- §10 change propagation — Refactoring that renames or moves things must update the propagation map in lockstep
 
 ---
 

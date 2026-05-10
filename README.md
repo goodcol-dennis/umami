@@ -116,6 +116,7 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Spec-first development | §2 | You're building features that take more than a session |
 | Multi-layer testing | §3 | You have more than one layer (API + UI, pipeline + warehouse) |
 | Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
+| Refactoring discipline | §3e | Agents refactor at velocity, or refactoring bundled with feature work hurts reviewability |
 | Runtime validation | §4 | Your system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain to someone later (including future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
@@ -138,6 +139,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review; team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior |
+| Architectural fitness functions | §3 | Project has clear architectural boundaries linter rules can't express; team has been bitten by boundary violations |
 | Agent log discipline (layers / retention / review cadence) | §4 | Agents take consequential actions in production; audit trail matters for incident response, compliance, or debugging |
 | Cross-implementation research before foundational ADRs | §7 | Committing to a foundational architectural approach with meaningful trade-offs |
 | Cost caps and budget gates (3-layer + force-over-cap typed-confirm) | §9.7 | Project runs agents at scale; cost predictability matters; spend has surprised the team |
@@ -198,10 +200,11 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol |
 | §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy for long-running work, multi-surface/one-primitive pattern |
 | §2 | Specification-first development — specs before code; relationship to Spec-Driven Development (SDD) as the closest movement |
-| §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products |
+| §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline |
 | §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); flags-document format; spot-check sampling; watch signals |
+| §3e | Refactoring discipline — tests as safety net (non-negotiable); named transformations; small atomic commits; refactoring vs. cleanup distinction; agentic-velocity refactoring patterns |
 | §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence) |
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
@@ -356,6 +359,21 @@ Umami is the **opinionated process layer above the tool**. The official docs ans
 | **Data Quality & Validation** | Data quality testing (§18.1) — completeness, uniqueness, freshness, referential integrity |
 
 Kleppmann's book focuses on *understanding* distributed systems. Umami translates that understanding into checklists, rules, and review practices that prevent the failure modes the book describes.
+
+## Relationship to Software Architecture: The Hard Parts
+
+| The Hard Parts Concept | Where Umami Operationalizes It |
+|---|---|
+| **Trade-off analysis as discipline** | Interactive decision planning (§3c) — six-step protocol with explicit alternatives, recommendations, and rationale |
+| **Architectural fitness functions** | Fitness functions as a test layer (§3) — automated tests that verify architecture invariants, distinct from unit / integration / linter / behavioral tests |
+| **Architecture quanta and bounded contexts** | Workspace partitioning (§1) — partition by lifecycle, not by language; quanta are the lifecycle units |
+| **Service granularity decisions** | Multiple surfaces, one primitive (§1) — single typed primitive forces consistency across granularity choices |
+| **Decomposition decisions (monolith vs. services)** | Interactive decision planning (§3c) + cross-implementation research (§7) — pair decomposition decisions with research docs and the §3c protocol |
+| **Distributed-system contracts** | Systems integration extension (§24) — circuit breakers, retries, contract testing, rate limiting, idempotency keys |
+| **Data ownership and sovereignty** | Data extension (§18) — derived data discipline, source-of-truth contracts, schema evolution per §18.3 / §18.8 |
+| **The First Law of Software Architecture** ("everything is a trade-off") | §3c failure mode "skipping the recommendation" + the entire interactive-decision protocol — explicit trade-off framing is the work, not a side concern |
+
+The Hard Parts focuses on *the analytic discipline* of architectural trade-offs in distributed systems. Umami operationalizes that discipline at the project-process layer: when to apply it (§3c triggers), how to capture the analysis (§7 research docs paired with ADRs), and how to verify the architectural invariants survive in code (§3 fitness functions).
 
 ## Contributing
 

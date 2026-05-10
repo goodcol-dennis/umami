@@ -181,6 +181,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
+| Agent log discipline (5-layer log + retention + review cadence) | §4 | Project has agents taking consequential actions in production where audit trail matters for incident response, compliance, or operational debugging |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -209,6 +210,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Runbooks-as-aspiration** | Per-stateful-surface runbooks exist on disk, but RTO/RPO targets are vague ("soon", "minimal") or restore steps haven't been exercised in >6 months. The runbook reads as policy, not procedure. | Pick the longest-untested runbook and run a recovery drill cold (without coaching). If it fails, the runbook is aspiration. RTO/RPO sections without numbers (just adjectives) are also a confirmed signal. | Apply §5 "Recovery Runbooks per Stateful Surface": numbered restore steps with prerequisites, concrete RTO/RPO numbers, quarterly drills rotating across surfaces. |
 | **"From now on when X" without a hook** | Project documents an automated behavior ("we always log Y", "we never let the agent touch Z") in CLAUDE.md or process docs but no hook implements it. The agent doesn't perform the behavior; humans assume it's being done. | Search the project's harness configuration (`settings.json` or equivalent) for the corresponding event and predicate. If the doc says "always do X" but no PreToolUse / PostToolUse / SessionStart / Stop hook fires X, the verdict is confirmed. | Apply §14 "Lifecycle Hooks": wire automated behaviors through the harness's hook layer. Doc-only "always do X" rules are aspiration unless they're hook-implemented. |
 | **Single-provider testing for multi-provider product** | LLM-feature product serves multiple providers (Anthropic / OpenAI / Gemini / etc.) but the behavioral bench / E2E suite runs against only one. Production paths through other providers ship without behavioral verification. | Count the providers the product serves vs. the providers covered in the bench matrix. If serves > covered, the gap is silent regression risk. Often surfaces post-incident: "we shipped a tool-schema change; it works on Anthropic but Gemini rejects it because we never tested." | Apply §3 "Multi-Provider Behavioral Testing": matrix of providers × substrate tiers; gate critical cells per commit; full matrix nightly or per-release. Real-provider RTT, not just mocks. |
+| **Agent logs without review** | Project ships agent activity logs to a sink (disk, observability platform, S3) but nobody actually reads them. The retention policy looks compliance-shaped; nothing ever gets queried. | Ask when the agent log was last queried for anything other than incident response. If "never" or "I don't know," the log is write-only. If retention is set in months but no review cadence is documented, the log exists for paperwork, not for audit. | Apply §4 "Agent Log Discipline" review-cadence guidance: weekly tool-call scan, per-release error-layer review, per-incident forensic reconstruction, quarterly field-utility review. If review doesn't happen, drop the logging cost. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1126,6 +1128,71 @@ The discipline has four parts:
 - §4 "Validate at system boundaries" (above) — this is the LLM-content equivalent for products processing external content via agents
 - §3d code review — new tool surfaces should be flagged for "audit-on-add" classification under a project-specific dimension
 - §0.6 anti-pattern table — "Treats untrusted content as plain strings"
+
+### Agent Log Discipline
+
+For projects where agents take consequential actions, the agent's activity log is the only durable record of what happened. The discipline isn't *log everything* — it's logging the right things at the right granularity, with retention and review baked in. A log that nobody reads is a write-only buffer, not an audit trail.
+
+§4 above covers observability from the production-systems perspective; this sub-section covers the agent-specific log shape that enables incident response, compliance, and operational debugging when the agent does something surprising.
+
+**The five log layers:**
+
+| Layer | What gets logged | Why |
+|---|---|---|
+| **Tool calls** | Every tool invocation: tool name, args (redacted), result summary, duration, model, cost | Reconstruct what the agent tried; correlate with outcomes |
+| **Decisions** | Every gate decision (per §14 HARD-gate response): action, severity, user choice, timestamp, scope | Audit trail for compliance; pattern analysis ("how often is the user approving X?") |
+| **Compaction events** | When context compacted; what was preserved vs. dropped (per §9.6 strategic compaction) | Debug "the agent forgot something" reports |
+| **Errors** | Tool failures, model errors, retry chains, fallback paths | Find brittle patterns; track provider reliability |
+| **Sub-agent dispatches** | Dispatch ID, scope, behavior outcome, cost, parent linkage | Trace cross-agent work; debug recursive loops |
+
+Each layer has its own retention and review cadence. Don't conflate them — a single "agent log" file is hard to review at any one of the relevant granularities.
+
+**Retention discipline:**
+
+| Layer | Typical retention |
+|---|---|
+| Tool calls | Until session deleted |
+| Decisions / grants | Persistent until user clears |
+| Compaction events | Until session deleted (debug-grade) |
+| Errors | At least until next release; longer for compliance-bound projects |
+| Sub-agent dispatches | Per dispatch-archive policy (often age-encrypted long-term) |
+
+Pin retention with explicit numbers in the project's recovery runbooks (§5). "Permanent" and "indefinite" aren't retention policies — they're handwaves. Concrete numbers force the conversation about acceptable storage cost vs. audit utility.
+
+**Redact at write, not at read.** Secrets, PII, and tokens must never reach the log file in the first place. Redaction lives at log-emit, not log-read. Once unredacted content hits disk, you've created a different problem (encrypted-at-rest concerns, secret-rotation triggers, log-shipping caveats). The cheapest sensitive-data leak is the one not written.
+
+**Review cadence — load-bearing.** A log nobody reads is a write-only buffer. Schedule periodic review:
+
+- **Weekly:** scan tool-call patterns for anomalies (loop-stuck retries, tool-call-count spikes)
+- **Per-release:** review error layer for drift (new failure modes, increased provider errors)
+- **Per-incident:** pull the relevant time window across all five layers for forensic reconstruction
+- **Quarterly:** review whether logged-but-never-queried fields earn their cost
+
+If review never happens, either remove the logging cost or make review part of process.
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Log silence (agent active but no log entries) | Emitter broken or downstream sink failing; nobody notices because the log is consulted reactively |
+| Log volume spike (sustained N× normal rate) | Loop detected, retry storm, runaway sub-agent dispatch — symptom of a substrate issue |
+| Logged-but-never-queried fields | Costs storage and write latency without producing audit value. Either start querying or stop logging |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Log-everything | Every step at full token-grain; haystack obscures needles | Log per-decision and per-tool-call, not per-message-token. Granularity is the work |
+| Wrong grain for the layer | Tool calls logged at message-token grain; sub-agent dispatches logged as flat blob | Each layer has its own natural unit. Per-tool-call for tools, per-dispatch for sub-agents, per-error for errors. Don't flatten |
+| Debug logs in production retention | DEBUG-level logs accumulate to permanent retention; storage cost balloons; sensitive intermediate state persists | Debug retention ≤ 7 days; promote to longer retention only with explicit justification |
+| Retention without review | Logs roll off after N days but no one ever read them; sized for compliance, not used for it | Schedule the review cadence above; if review doesn't happen, drop the retention cost |
+
+**Cross-references:**
+- §14 Agent Approval Gates — gate decisions feed the decisions layer; gate table audit-trail column points at this log
+- §5 Recovery runbooks — runbook detection signatures should map to log-line patterns; if you can't write the detection from the log, the log is missing the field
+- §9.6 strategic compaction — compaction events are a layer worth logging
+- §22 compliance — agent logs are evidence-pack components; retention policy must align with regulatory requirements
+- §0.6 anti-pattern table — "Agent logs without review"
 
 ---
 

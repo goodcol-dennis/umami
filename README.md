@@ -138,6 +138,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review; team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior |
+| Agent log discipline (layers / retention / review cadence) | §4 | Agents take consequential actions in production; audit trail matters for incident response, compliance, or debugging |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -199,7 +200,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline |
 | §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); flags-document format; spot-check sampling; watch signals |
-| §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products) |
+| §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence) |
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs, audience targeting |

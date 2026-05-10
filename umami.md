@@ -1320,6 +1320,8 @@ See [ROADMAP.md], [v0.11.0-retro.md], [decisions.md].
 
 The Status block is also where the §1 Phase / Session structure surfaces visibly — naming the current phase and the next phase tag. Update it as part of the release workflow; if you forget, the next session will tell you (it'll re-derive everything from scratch and the cost will be obvious).
 
+**Per-send re-walk.** When instruction files (CLAUDE.md / AGENTS.md / skills) can change *during* a session — the team edits CLAUDE.md mid-session, a skill gets updated, AGENTS.md gets refined as you work — re-walk per *send* rather than per *session start*. Loading once at session start means the agent runs against stale instructions for the rest of the conversation, which becomes a real problem when those files are actively maintained. SessionStart hooks (§14) fire only at session start; per-send re-walk is the live-edit alternative. The cost is small (a few hundred tokens per re-walk for short files); the benefit is that edits land instantly without restart. Harness-dependent: support varies. When the harness supports per-send re-walk, prefer it for projects under active CLAUDE.md / skills development.
+
 ### 9.2 Persistent Memory Across Sessions
 
 Maintain a memory file that carries learnings between conversations:
@@ -1879,7 +1881,7 @@ The four canonical events most harnesses converge on:
 |---|---|---|
 | **PreToolUse** | Any tool call about to execute | Block tool calls based on user-defined predicates (deny lists, allow lists, content checks); add custom approval gates beyond the harness's defaults; redact arguments before the call |
 | **PostToolUse** | After any tool call completes | Log / audit, redact sensitive results before they reach the model, trigger downstream behavior (notifications, metrics, dispatch chains) |
-| **SessionStart** | Chat session begins (or resumes) | Re-walk instruction files (CLAUDE.md / AGENTS.md / skills), refresh project memory, run pre-flight checks |
+| **SessionStart** | Chat session begins (or resumes) | Re-walk instruction files (CLAUDE.md / AGENTS.md / skills), refresh project memory, run pre-flight checks. For projects under active instruction-file development, see also §9.1 per-send re-walk |
 | **Stop** | Agent loop terminates | Cleanup, summary generation, archival, write-back of session state |
 
 Different harnesses use different names — `before_tool` / `after_tool`, `BeforeRequest` / `AfterRequest`, etc. — but the structural shape is the same: well-known points where user-supplied code runs. Names matter less than the discipline of using them.

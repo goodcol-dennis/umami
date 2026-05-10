@@ -956,7 +956,7 @@ In agentic coding, code generation often outpaces human review capacity. The tra
 |---|---|---|---|
 | **1. Mechanical** | Linters, formatters, type checkers, tests, coverage delta, diff-complexity heuristics | Every change, automatically | Pass / fail gates |
 | **2. AI pre-screen** | Reviewer agents that produce a structured **flags document** (non-blocking) | Every change that passes Layer 1 | Output is findings, not approval |
-| **3. Risk-classified human focus** | Human review on changes meeting risk classification OR flagged High by Layer 2 | Only changes that match dimension/signal triggers OR omnibus flagged High | Human reads flags doc + diff |
+| **3. Risk-classified human focus** | Human review on changes meeting risk classification OR flagged High by Layer 2 | Only changes that match dimension/signal triggers OR auto-review flagged High | Human reads flags doc + diff |
 
 ### Risk classification
 
@@ -984,9 +984,9 @@ A project's risk classification is the mapping between dimensions it cares about
 
 ### Reviewer agent pattern
 
-The **omnibus reviewer** is the foundation. It's invoked on every change after Layer 1 passes, does a broad sweep across the project's risk dimensions, and produces the flags document. One skill template lives in this repo (`.claude/skills/umami-omnibus-reviewer.md`); each project derives its own with project-specific risk dimensions and paths.
+The **auto-review** skill is the foundation. It's invoked on every change after Layer 1 passes, does a broad sweep across the project's risk dimensions, and produces the flags document. One skill template lives in this repo (`.claude/skills/umami-auto-review.md`); each project derives its own with project-specific risk dimensions and paths.
 
-**Specialized reviewers** are an *optional escalation* for projects where scale demands it. A separate skill per dimension (security, performance, contract integrity, error-handling) can come off the bench when the omnibus flags High in that dimension, producing deeper analysis. Most projects don't need specialized reviewers until repeated High flags on the same dimension justify the focused mandate. Per §14, scoped specialized agents are a measurable cost lever, but only useful when there's enough flagged volume to justify them.
+**Specialized reviewers** are an *optional escalation* for projects where scale demands it. A separate skill per dimension (security, performance, contract integrity, error-handling) can come off the bench when auto-review flags High in that dimension, producing deeper analysis. Most projects don't need specialized reviewers until repeated High flags on the same dimension justify the focused mandate. Per §14, scoped specialized agents are a measurable cost lever, but only useful when there's enough flagged volume to justify them.
 
 ### Flags document
 
@@ -1019,7 +1019,7 @@ The exact shape (HIGH/MEDIUM/LOW vs. red/yellow/green vs. priority numbers) is a
 
 ### Spot-check sampling — load-bearing
 
-Without random human spot-checks of "low-risk" changes (the ones that don't trigger any human-review signal), the risk classification rots silently. Paths get added without updating the classification map; the omnibus reviewer drifts and flags less; real issues bypass human eyes forever.
+Without random human spot-checks of "low-risk" changes (the ones that don't trigger any human-review signal), the risk classification rots silently. Paths get added without updating the classification map; the auto-review skill drifts and flags less; real issues bypass human eyes forever.
 
 **Sample 5–15% of low-risk changes randomly. Tune to taste.** Lower bound (5%) is meaningful without being disruptive. Upper bound (15%) is heavy enough to keep reviewers calibrated. The exact rate is project-specific — the watch signal below tells you whether you're sampling enough.
 
@@ -1032,7 +1032,7 @@ Three signals detect when the review system is degrading:
 | Watch signal | Healthy range | What it catches |
 |---|---|---|
 | **Spot-check finding rate** (real issues per sampled change) | < 2% | If higher, risk classification is wrong; serious changes are bypassing the human gate. |
-| **Omnibus reviewer flag rate** (% of changes flagged at any level) | 5–25% | < 2% → reviewer is missing real issues (false confidence). > 25% → noisy / alert fatigue. |
+| **Auto-review flag rate** (% of changes flagged at any level) | 5–25% | < 2% → reviewer is missing real issues (false confidence). > 25% → noisy / alert fatigue. |
 | **Merge-rate ÷ human-engagement-rate** | < 5× | If merges run more than 5× faster than humans engage with flags docs, the human-attention layer is rubber-stamping. |
 
 Treat watch signals as the diagnostic. The system doesn't fix itself — investigate and adjust the classification, the reviewer's prompt, or the team's process when a signal trips.
@@ -2014,7 +2014,7 @@ When working with AI agents, distinguish three modes. They have different prompt
 
 **Why this matters:** the three modes have different prompt patterns. An implementation prompt that works ("write a login form using these libraries") often fails in thinking mode — a different shape is needed ("walk me through the tradeoffs of OAuth vs. password-based auth for this app, with at least two recommendations and reasoning"). Specifying mode up-front in the prompt or skill is part of getting good output. Combined with the output-format discipline from §3c, this gives the agent a clear target instead of letting it guess.
 
-**Mode in skills.** The skill library below contains skills in all three modes. Implementation-mode skills (codebase-search, refactor-helper) act. Thinking-mode skills (`/architectural-tradeoff`, `/migration-path-analysis`) elicit structured reasoning visible in the output. Reviewing-mode skills (`/umami-audit`, `/umami-omnibus-reviewer`) produce structured findings.
+**Mode in skills.** The skill library below contains skills in all three modes. Implementation-mode skills (codebase-search, refactor-helper) act. Thinking-mode skills (`/architectural-tradeoff`, `/migration-path-analysis`) elicit structured reasoning visible in the output. Reviewing-mode skills (`/umami-audit`, `/umami-auto-review`) produce structured findings.
 
 ### Delegation Principles
 
@@ -2101,7 +2101,7 @@ project-root/
 │   └── skills/
 │       ├── umami-audit/              # Reviewing mode (§0.7) — process audit
 │       ├── umami-init/               # Reviewing mode (§0.7b) — first-time setup
-│       ├── umami-omnibus-reviewer/   # Reviewing mode (§3d) — code review pre-screen
+│       ├── umami-auto-review/   # Reviewing mode (§3d) — code review pre-screen
 │       ├── architectural-tradeoff/   # Thinking mode — compare design options
 │       ├── migration-path-analysis/  # Thinking mode — map legacy before changes
 │       ├── codebase-search/          # Implementation mode — find files/symbols
@@ -2112,7 +2112,7 @@ project-root/
 
 Skills come in all three modes from "Modes of AI Use" above. Implementation-mode skills act (write code, make changes, summarize). Thinking-mode skills produce *reasoning visible in output* (alternatives, tradeoffs, recommendations with rationale). Reviewing-mode skills produce *structured findings* (audits, code review flags documents). Tag each skill with its mode so the harness invokes it with the right expectations.
 
-**Standard skills — `umami-audit`, `umami-init`, `umami-omnibus-reviewer`:** Every project using umami should have these three reviewing-mode skills (§0.7, §0.7b, §3d). They share the same architecture: fetch the canonical spec fresh, follow the protocol, output structured findings. Each skill includes the raw URL of the umami spec so the agent doesn't search for it. See `.claude/skills/` in the umami repo for the canonical templates.
+**Standard skills — `umami-audit`, `umami-init`, `umami-auto-review`:** Every project using umami should have these three reviewing-mode skills (§0.7, §0.7b, §3d). They share the same architecture: fetch the canonical spec fresh, follow the protocol, output structured findings. Each skill includes the raw URL of the umami spec so the agent doesn't search for it. See `.claude/skills/` in the umami repo for the canonical templates.
 
 **What makes a good skill:**
 

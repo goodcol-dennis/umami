@@ -1,18 +1,18 @@
 ---
-name: umami-omnibus-reviewer
+name: umami-auto-review
 description: Pre-screen reviewer agent for code changes. Reviewing mode — produces a structured flags document, not approval/rejection. Single-pass sweep across the project's risk dimensions; output routes human attention.
 ---
 
-# umami-omnibus-reviewer — Pre-screen reviewer agent
+# umami-auto-review — Auto-review pre-screen agent
 
-**Last synced:** 2026-05-09 from §3d. Re-derive this skill from the current §3d when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-10 from §3d. Re-derive this skill from the current §3d when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
 Reviews a code change and produces a **flags document** that routes human attention. This is the Layer 2 (AI pre-screen) of the §3d three-layer model:
 
 - **Layer 1 (mechanical)** — linters / types / tests — runs before this skill is invoked
-- **Layer 2 (this skill)** — the omnibus reviewer; broad sweep across risk dimensions
+- **Layer 2 (this skill)** — auto-review; broad sweep across risk dimensions
 - **Layer 3 (human focus)** — humans review changes flagged High here, plus changes that match the project's "always human" risk classification
 
 **Reviewing mode (§14):** the output is *structured findings*, not approval/rejection. The agent surfaces issues; humans decide what to act on.
@@ -76,11 +76,11 @@ Projects can adapt the shape (HIGH/MEDIUM/LOW vs. red/yellow/green vs. priority 
 
 ## Specialized reviewer escalation
 
-If a HIGH finding warrants depth that an omnibus sweep can't give, recommend the matching specialized reviewer. Example escalation lines (appended after the flags doc):
+If a HIGH finding warrants depth that an auto-review sweep can't give, recommend the matching specialized reviewer. Example escalation lines (appended after the flags doc):
 
 > **Recommended escalation:** `/security-review` for the HIGH finding in `src/auth/middleware.ts:42` — auth boundary work benefits from a dedicated security-mode review.
 
-The omnibus reviewer never invokes specialized reviewers itself; it surfaces the recommendation, the human decides.
+Auto-review never invokes specialized reviewers itself; it surfaces the recommendation, the human decides.
 
 ## What this skill is NOT
 

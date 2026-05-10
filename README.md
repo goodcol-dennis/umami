@@ -121,6 +121,7 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
 | Status block in CLAUDE.md | §9.1 | Project ships in versions and a fresh session needs to know "where are we right now" |
 | Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or deterministic multi-step workflows |
+| Agent approval gate table | §14 | Project has agents taking consequential actions (write files, run commands, network, sub-agent dispatch) |
 | File size budgets | §11 | Files are getting long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -205,7 +206,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §11 | File size budgets — keep files small to reduce token cost and complexity |
 | §12 | Lightweight change tracking — active change blocks, session handoffs |
 | §13 | Dead code hygiene — delete, don't comment out |
-| §14 | Agent orchestration — modes of AI use (implementation / thinking / reviewing), delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria |
+| §14 | Agent orchestration — modes of AI use (implementation / thinking / reviewing), delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria, agent approval gate tables (HARD/SOFT/NONE severity model, autonomy boundaries) |
 | §15 | Checklist — before starting, during dev, before commit, before merge |
 
 ### Extensions

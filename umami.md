@@ -164,6 +164,7 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
 | Status block in CLAUDE.md | §9.1 | The project ships in versions and a fresh session needs to know "where are we right now" |
 | Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or workflows orchestrate deterministic multi-step tasks |
+| Agent approval gate table | §14 | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) |
 | File size budgets | §11 | Files are long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -201,6 +202,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Audit findings cite "non-conformance" with sections that don't fit the project shape, instead of recommending adapt or skip. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
 | **MCP tool sprawl** | The agent has 5–10+ MCP tools loaded "just in case." Tool metadata is consuming a large fraction of every turn's context, often without the developer realizing. | Measure tool-metadata-as-percent-of-context on a representative session. If tool schemas exceed ~30% of context, the verdict is confirmed. Most projects need 1–2 core MCP servers, not 10. | Apply §9.6: prune unused tools first, prefer lazy-load architectures (§9.5b), wrap static servers behind a proxy if needed. The cheapest tool schema is the one not loaded this turn. |
 | **Treats untrusted content as plain strings** | LLM-feature product reads external content (web pages, user messages, tool outputs, file contents) into untyped strings that flow directly to the model. New code paths frequently forget to sanitize; sanitize-on-read is scattered across the codebase. | If functions consuming external content take plain `String` parameters (rather than a typed `UntrustedContent<T>` wrapper), the verdict is confirmed. Audit-on-add doesn't catch it; the type system needs to make it uncompileable. | Apply §4 untrusted-content-boundary discipline: typed wrapper at every boundary, provenance tagging, per-provider spotlighting, audit-on-add at code review. |
+| **No agent-approval gate table** | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) but no single document codifying which actions are gated, at what severity, with what audit trail. New contributors discover gates by tripping them. | If the project has consequential agent actions but no `docs/agent-approval-gates.md` (or equivalent), the gates are implicit. Even one HARD action without a tabulated gate is a sign. | Maintain a gate table per §14 "Agent Approval Gates": HARD/SOFT/NONE severity, action class, user-visible surface, audit trail location, implementation pointer. Group by category. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1703,6 +1705,79 @@ When you're *building* an MCP server (rather than consuming one), apply §9.6's 
 
 - **Personal** — your credentials, your preferences. Not committed to the repo.
 - **Project** — shared team integrations. Committed to the repo (without secrets) so every team member's agents have the same access.
+
+### Agent Approval Gates
+
+For projects where agents take consequential actions (write files, run commands, reach the network, dispatch sub-agents, modify shared state), formalize *which actions need human approval, what gets logged, and which actions are explicitly autonomy-boundary*. Without this, the harness's defaults silently determine your security posture.
+
+§14 above describes how agents work; this sub-section describes how to gate what they do.
+
+**Severity model:**
+
+| Severity | Meaning |
+|---|---|
+| **HARD** | Blocks until approved. Agent cannot proceed without explicit user confirmation. |
+| **SOFT** | Informs and proceeds unless the user countermands. Default-allow with visibility. |
+| **NONE** | No live gate; the action is *structurally restricted* (sandbox path-jail, network namespace, type-system constraint). Free to execute within the structural boundary. |
+
+Three severities are enough. NONE matters: it's the explicit acknowledgment that not every gate needs a live prompt — sometimes structural restriction is stronger than a prompt users will fatigue-approve.
+
+**Gate table — template shape (one row per action class):**
+
+| Column | What it captures |
+|---|---|
+| **Action** | The action class (e.g., "Read file outside project root", "git push to main") |
+| **Gate severity** | HARD / SOFT / NONE |
+| **User-visible surface** | Where the user sees the gate (grant prompt, Apply button, decision card, none) |
+| **Audit trail location** | Where the disposition is recorded (tool-call log, grants registry, commit log, hooks log) |
+| **Implementation pointer** | File path or module implementing the gate |
+
+Group rows by category — filesystem ops, network ops, code-modifying ops, sub-agent dispatch, tool-output handling, hooks layer. Project-specific categories extend (e.g., "telemetry emissions" for products with metrics that include user data, "migration ops" for schema-bearing changes).
+
+**Autonomy boundaries — always HARD regardless of session mode:**
+
+Some actions are HARD-blocked regardless of whether the agent is interactive, scheduled, or autonomous. Policy commitments that don't soften under "trust the agent more in autonomous mode":
+
+- Deploys to production
+- `git push --force` to `main` / `master`
+- Dependency changes (new package additions)
+- Public-API breaking changes
+- Access-scope expansion (broader sandbox grants than current)
+
+Document these explicitly in the gate table with a note that the severity is HARD-mode-independent.
+
+**Logging summary — companion table:**
+
+| Log | Location | Retention |
+|---|---|---|
+| Tool-call log (per-message) | Project-specific (chat sessions storage, etc.) | Until session deleted |
+| Grant decisions | Grants registry | Persistent until user clears |
+| Commit log (agent-driven commits) | Standard `git log` | Permanent |
+| Hook execution log | User-controlled | User-controlled |
+
+Without retention info, "we have an audit trail" means nothing under compliance review (§22).
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Gate-table drift (action exists in code but not in table) | New action class shipped without gate-table update; the gate may be implicit or missing |
+| Audit-trail gap (action happens but no log location) | Consequential action runs without leaving evidence — the gate may be there but the audit isn't |
+| HARD-soften creep (action moves HARD → SOFT silently) | Approval friction is being eroded; a gate is being weakened without explicit decision |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| "We have a gate" without a table | Gates are scattered across code; no single source of truth; new contributors don't know what's gated | Maintain the gate table as source of truth; cite implementation files from the table |
+| All-HARD or all-SOFT | Every action is HARD (approval fatigue) or every action is SOFT (no real gate). Neither shape works at scale | The discipline of choosing per-action is the work; uniform severity is a refusal to think |
+| Audit trails for "compliance" but no review | Every action is logged to a file nobody reads | If no one reviews the log, the log isn't an audit trail; it's a write-only buffer. Either make review part of process or remove the logging cost |
+| Autonomy boundaries that aren't enforced | Doc says "no force-push to main" but the agent has the credentials to do it | Enforce in code where possible (pre-push hook, branch protection); doc-only autonomy boundaries are aspiration, not policy |
+
+**Cross-references:**
+- §22 compliance — audit trails feed compliance reviews; gate tables are evidence-pack components
+- §3d code review — new tool surfaces should be flagged for "gate-table update" review
+- §0.6 anti-pattern table — "No agent-approval gate table"
 
 ### Agent Orchestration Anti-Patterns
 

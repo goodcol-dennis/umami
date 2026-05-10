@@ -166,6 +166,7 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or workflows orchestrate deterministic multi-step tasks |
 | Agent approval gate table | §14 | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) |
 | Recovery runbooks per stateful surface | §5 | Project has any persistent state surface that would be hard to reconstruct from scratch (config, credentials, sessions, working trees, indexed memory, etc.) |
+| Lifecycle hooks for automated behaviors | §14 | Project has any "from now on when X, do Y" rules that need to fire automatically (memory and process docs cannot enforce these — only hooks can) |
 | File size budgets | §11 | Files are long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -205,6 +206,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Treats untrusted content as plain strings** | LLM-feature product reads external content (web pages, user messages, tool outputs, file contents) into untyped strings that flow directly to the model. New code paths frequently forget to sanitize; sanitize-on-read is scattered across the codebase. | If functions consuming external content take plain `String` parameters (rather than a typed `UntrustedContent<T>` wrapper), the verdict is confirmed. Audit-on-add doesn't catch it; the type system needs to make it uncompileable. | Apply §4 untrusted-content-boundary discipline: typed wrapper at every boundary, provenance tagging, per-provider spotlighting, audit-on-add at code review. |
 | **No agent-approval gate table** | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) but no single document codifying which actions are gated, at what severity, with what audit trail. New contributors discover gates by tripping them. | If the project has consequential agent actions but no `docs/agent-approval-gates.md` (or equivalent), the gates are implicit. Even one HARD action without a tabulated gate is a sign. | Maintain a gate table per §14 "Agent Approval Gates": HARD/SOFT/NONE severity, action class, user-visible surface, audit trail location, implementation pointer. Group by category. |
 | **Runbooks-as-aspiration** | Per-stateful-surface runbooks exist on disk, but RTO/RPO targets are vague ("soon", "minimal") or restore steps haven't been exercised in >6 months. The runbook reads as policy, not procedure. | Pick the longest-untested runbook and run a recovery drill cold (without coaching). If it fails, the runbook is aspiration. RTO/RPO sections without numbers (just adjectives) are also a confirmed signal. | Apply §5 "Recovery Runbooks per Stateful Surface": numbered restore steps with prerequisites, concrete RTO/RPO numbers, quarterly drills rotating across surfaces. |
+| **"From now on when X" without a hook** | Project documents an automated behavior ("we always log Y", "we never let the agent touch Z") in CLAUDE.md or process docs but no hook implements it. The agent doesn't perform the behavior; humans assume it's being done. | Search the project's harness configuration (`settings.json` or equivalent) for the corresponding event and predicate. If the doc says "always do X" but no PreToolUse / PostToolUse / SessionStart / Stop hook fires X, the verdict is confirmed. | Apply §14 "Lifecycle Hooks": wire automated behaviors through the harness's hook layer. Doc-only "always do X" rules are aspiration unless they're hook-implemented. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1866,6 +1868,47 @@ Without retention info, "we have an audit trail" means nothing under compliance 
 - §22 compliance — audit trails feed compliance reviews; gate tables are evidence-pack components
 - §3d code review — new tool surfaces should be flagged for "gate-table update" review
 - §0.6 anti-pattern table — "No agent-approval gate table"
+
+### Lifecycle Hooks
+
+Most agentic harnesses expose **lifecycle hooks** — user-controlled extension points where a project can insert custom behavior at well-defined moments in the agent's execution. Hooks are how you implement automated behaviors that aren't in the harness's defaults, without modifying harness code, without losing the change on the next harness update.
+
+The four canonical events most harnesses converge on:
+
+| Event | Triggered before | Common uses |
+|---|---|---|
+| **PreToolUse** | Any tool call about to execute | Block tool calls based on user-defined predicates (deny lists, allow lists, content checks); add custom approval gates beyond the harness's defaults; redact arguments before the call |
+| **PostToolUse** | After any tool call completes | Log / audit, redact sensitive results before they reach the model, trigger downstream behavior (notifications, metrics, dispatch chains) |
+| **SessionStart** | Chat session begins (or resumes) | Re-walk instruction files (CLAUDE.md / AGENTS.md / skills), refresh project memory, run pre-flight checks |
+| **Stop** | Agent loop terminates | Cleanup, summary generation, archival, write-back of session state |
+
+Different harnesses use different names — `before_tool` / `after_tool`, `BeforeRequest` / `AfterRequest`, etc. — but the structural shape is the same: well-known points where user-supplied code runs. Names matter less than the discipline of using them.
+
+**The "from now on when X" insight.** Any automated behavior of the form *"from now on, every time Y happens, do Z"* requires a hook. Memory and process documentation cannot fulfill these — the agent is not the runtime, the harness is. If a user says "remember to log every git push" or "block tool calls that touch /etc," that's a hook configuration, not a memory entry. Process docs that say "we always do X" are aspiration unless wired through hooks.
+
+**Configuration shape.** Hooks are user-controlled — configured via the harness's settings (e.g., `settings.json`, `.claude/settings.json`, per-project YAML). The harness ships sensible defaults; project-specific or developer-specific hooks layer on top. Project hooks live in the repo (committed, shared); personal hooks live in user-scope settings (uncommitted).
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Hooks-as-aspiration (configured but never fire) | The hook is mis-targeted — its predicate doesn't match what actually runs, or it's registered for an event the agent doesn't reach |
+| Hook drift (rule references deprecated tool, path, or behavior) | Codebase moved on; hook didn't. First incident discovers the gap |
+| Hook overhead (slow hook delays every tool call) | Hook is doing too much — fast-path the common case, or move work to PostToolUse where latency is cheaper |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Process doc says "always do X"; no hook implements it | Documentation describes a behavior the agent doesn't perform; humans assume the agent is doing it | Wire X through a hook. If it can't be wired (the behavior depends on human judgment), update the doc to match reality |
+| Hook silently swallows errors | A failing hook doesn't fire its intended action; nobody notices because the failure logs at debug level | Hook errors should be loud (write to a known location, surface in agent's session log). Silent failure is worse than no hook |
+| Per-developer hooks committed to the repo | Personal preferences end up in the project's shared settings, affecting everyone | Personal hooks in user-scope settings (uncommitted); project hooks in repo-scope settings (committed). The split matters for team coordination |
+| Hook proliferation (15+ hooks doing similar things) | Hard to reason about what fires when; rules conflict; debugging "why did this happen?" is expensive | Periodic hook review: consolidate similar predicates, remove dead hooks, document each remaining hook's purpose |
+
+**Cross-references:**
+- §14 Agent Approval Gates (above) — hooks are the user-controlled extension point for adding gates beyond what the harness ships. PreToolUse hooks implement custom HARD/SOFT gates
+- §0.7 / §0.7b audit and init protocols — skills are SessionStart-time loaded; hooks fire on session start to refresh them
+- §9.1 front-load context — SessionStart hooks can re-walk instruction files per session start
 
 ### Agent Orchestration Anti-Patterns
 

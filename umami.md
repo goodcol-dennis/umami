@@ -524,7 +524,27 @@ Every feature starts with a written spec, not code. Architecture documents and d
 
 **This section establishes spec discipline, not a spec framework.** Any format works — RFCs, design docs, shape-up pitches, PRDs, Gherkin. The discipline is *having* a spec process; the format is a team preference.
 
-**Relationship to Spec-Driven Development (SDD).** SDD is an emerging movement that pushes spec-first further — specs are written to be *executable* by AI agents, with machine-checkable contracts the agent works against rather than human-readable documents alone. §2 is compatible with SDD: SDD-style specs are one valid format, and the discipline of *having a spec before coding* is the shared foundation. Where they differ: SDD is opinionated about format (executable / machine-checkable); umami is format-agnostic. Teams already going SDD don't need to choose — §2 is the broader process discipline around the practice SDD codifies.
+**Spec-Driven Development (SDD) frameworks worth considering.** SDD is an emerging movement around making specs executable or machine-checkable contracts the AI agent works against. Umami doesn't try to invent an SDD methodology — it points at existing ones and provides the process-discipline wrapper around whichever you pick.
+
+Categories of compatible approaches:
+
+| Approach | Category |
+|---|---|
+| **[GitHub Spec Kit](https://github.com/github/spec-kit)** | Open-source CLI methodology for spec-driven workflows |
+| **[Kiro](https://kiro.dev/)** | IDE with a built-in spec workflow |
+| **PRD / RFC / design-doc conventions** | Free-form structured docs your team already uses |
+| **Gherkin / BDD scenarios** | Given-When-Then scenarios; predates AI but works as agent input |
+| **Umami §2 (this section)** | Format-agnostic discipline around *having* a spec process |
+
+The SDD landscape evolves fast — check the current documentation for any framework before adopting. The references above are pointers to investigate, not endorsements of specific feature sets.
+
+**Choosing:**
+
+- **Already using an SDD framework?** Keep it. §2's discipline wraps around your chosen framework — there's no conflict.
+- **Want a structured methodology?** Look at the framework names above and evaluate against your project's needs (cross-harness vs. IDE-integrated, CLI vs. embedded, open-source vs. vendor).
+- **Want maximum flexibility?** §2 is format-agnostic by design. Pick the format that fits your team — what matters is *having* the spec discipline, not which framework codifies it.
+
+§2 doesn't prescribe a specific format because tying umami to one SDD methodology would couple the framework to that methodology's lifecycle. Pick what fits; umami's job is the process discipline around the practice, not the format itself.
 
 ### What to Specify
 

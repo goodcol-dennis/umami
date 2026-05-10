@@ -165,6 +165,7 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Status block in CLAUDE.md | §9.1 | The project ships in versions and a fresh session needs to know "where are we right now" |
 | Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or workflows orchestrate deterministic multi-step tasks |
 | Agent approval gate table | §14 | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) |
+| Recovery runbooks per stateful surface | §5 | Project has any persistent state surface that would be hard to reconstruct from scratch (config, credentials, sessions, working trees, indexed memory, etc.) |
 | File size budgets | §11 | Files are long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -203,6 +204,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **MCP tool sprawl** | The agent has 5–10+ MCP tools loaded "just in case." Tool metadata is consuming a large fraction of every turn's context, often without the developer realizing. | Measure tool-metadata-as-percent-of-context on a representative session. If tool schemas exceed ~30% of context, the verdict is confirmed. Most projects need 1–2 core MCP servers, not 10. | Apply §9.6: prune unused tools first, prefer lazy-load architectures (§9.5b), wrap static servers behind a proxy if needed. The cheapest tool schema is the one not loaded this turn. |
 | **Treats untrusted content as plain strings** | LLM-feature product reads external content (web pages, user messages, tool outputs, file contents) into untyped strings that flow directly to the model. New code paths frequently forget to sanitize; sanitize-on-read is scattered across the codebase. | If functions consuming external content take plain `String` parameters (rather than a typed `UntrustedContent<T>` wrapper), the verdict is confirmed. Audit-on-add doesn't catch it; the type system needs to make it uncompileable. | Apply §4 untrusted-content-boundary discipline: typed wrapper at every boundary, provenance tagging, per-provider spotlighting, audit-on-add at code review. |
 | **No agent-approval gate table** | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) but no single document codifying which actions are gated, at what severity, with what audit trail. New contributors discover gates by tripping them. | If the project has consequential agent actions but no `docs/agent-approval-gates.md` (or equivalent), the gates are implicit. Even one HARD action without a tabulated gate is a sign. | Maintain a gate table per §14 "Agent Approval Gates": HARD/SOFT/NONE severity, action class, user-visible surface, audit trail location, implementation pointer. Group by category. |
+| **Runbooks-as-aspiration** | Per-stateful-surface runbooks exist on disk, but RTO/RPO targets are vague ("soon", "minimal") or restore steps haven't been exercised in >6 months. The runbook reads as policy, not procedure. | Pick the longest-untested runbook and run a recovery drill cold (without coaching). If it fails, the runbook is aspiration. RTO/RPO sections without numbers (just adjectives) are also a confirmed signal. | Apply §5 "Recovery Runbooks per Stateful Surface": numbered restore steps with prerequisites, concrete RTO/RPO numbers, quarterly drills rotating across surfaces. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1084,6 +1086,92 @@ Every state mutation is tracked through content-addressable hashing or equivalen
 The result: every edit is recoverable, and you can always answer "what changed and when."
 
 For production systems, recoverability extends beyond code versioning to disaster recovery and incident response — RTO/RPO targets, backup verification, and restore procedures. The IaC extension covers infrastructure recovery (§16.12). The compliance extension covers the procedural layer — incident response plans, DR testing, and communication plans (§22.4).
+
+### Recovery Runbooks per Stateful Surface
+
+For projects with persistent state — configuration files, credential stores, session databases, agent logs, working trees, on-disk caches, indexed memory — formalize *per-surface restore procedures* before they're needed in an incident. A runbook turns "we have backups somewhere" into "here's exactly what to do in the next 15 minutes."
+
+§5 above describes how state tracking *prevents* loss; runbooks describe how to *recover* when prevention fails.
+
+**Surface inventory.** Each project has a set of stateful surfaces. Catalog them up front:
+
+| Common surface | Typical concerns |
+|---|---|
+| Configuration files | Corruption, accidental deletion, schema-incompatible upgrades |
+| Credential stores (keyring, secret store, env files) | Lockout, key rotation gone wrong, host migration |
+| Session / chat databases | Corruption, accidental wipe, schema migration failure |
+| Agent logs / activity logs | Disk-full truncation, log rotation gone wrong |
+| Working-tree / branch state | Force-push accident, branch deletion, stash loss |
+| Persistent caches | Stale invalidation, partial corruption |
+| Indexed memory / embeddings | Index corruption, drift from source-of-truth |
+
+Illustrative; project-specific surfaces (license keys, customer-data exports, schema-state files, etc.) extend the list.
+
+**Per-surface runbook — template fields:**
+
+| Field | What it captures |
+|---|---|
+| **Failure modes** | Concrete ways this surface can fail (corruption, deletion, lock, schema mismatch, etc.) |
+| **Detection** | How you find out the surface is broken — error signature, missing data, user report |
+| **Restore steps** | Exact commands or procedures to recover. Numbered, copy-paste-ready, with prerequisites named |
+| **RTO / RPO targets** | Recovery Time Objective (how fast must we restore?) and Recovery Point Objective (how much data loss is acceptable?). Both as numbers, not "soon" / "minimal" |
+| **Prevention** | What reduces the likelihood or blast radius (snapshots, replication, validation, monitoring) |
+
+**Worked example shape (one surface, end-to-end):**
+
+```markdown
+## Surface: Credential store (system keyring)
+
+### Failure modes
+- User logged out of session keyring; agent loses access to API keys
+- Keyring DB corruption (rare; usually after hard system shutdown)
+- Host migration without keyring export (new machine starts with empty store)
+
+### Detection
+- Agent operations fail with `org.freedesktop.secrets` D-Bus exceptions
+- API calls return 401 across all providers simultaneously
+- `secret-tool lookup ...` returns nothing for known service names
+
+### Restore steps
+1. Verify keyring is unlocked: `gnome-keyring-daemon --replace --start`
+2. If unlocked but empty: re-import from backup at `~/Documents/secrets-backup-<date>.json`
+3. If no backup: re-issue API keys with each provider, store via `secret-tool store --label=...`
+4. Restart agent to pick up restored credentials
+
+### RTO / RPO
+- RTO: 15 minutes (from detection to working agent)
+- RPO: depends on backup recency; backups weekly, worst case ~7 days of stale keys
+
+### Prevention
+- Weekly backup script writes encrypted JSON to `~/Documents/secrets-backup-<date>.json`
+- Keyring auto-unlock on login (configured in OS settings)
+- Probe at session start that exercises one credential lookup; alert if it fails
+```
+
+The shape carries information density: detection signatures help detect; numbered restore steps work under stress; RTO/RPO numbers are real commitments; prevention closes the loop.
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Surface drift (project ships a new stateful surface but no runbook) | New surface deployed without lifecycle planning; first incident discovers the gap |
+| Untested runbooks (>6 months without exercise) | Restore steps may have rotted (commands changed, paths moved, deps different); first real incident finds out |
+| RTO/RPO without numbers ("soon" or "minimal" instead of concrete values) | The runbook is aspiration, not policy; can't be evaluated against incident outcomes |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Runbook-as-aspiration | Runbook exists; no one has tested the restore steps | Run a quarterly recovery drill on at least one surface; rotate which surface |
+| Runbooks without RTO/RPO | "Recover when convenient" | Numbers, even rough ones (RTO: 15m / 1h / 1d; RPO: minutes / hours / days). Forces the conversation about acceptable loss |
+| Runbooks for surfaces that no longer exist | Stale runbook for an architecture two refactors ago | Audit-on-architecture-change: when removing a stateful surface, remove the runbook in the same change |
+| Detection signatures missing | Restore steps documented but readers don't know when to invoke them | Detection is the most-skipped section but the most-needed under incident stress; never write a runbook without it |
+
+**Cross-references:**
+- §5 state tracking (above) — runbooks describe recovery from the failures §5's tracking is meant to prevent
+- §8 acknowledged gaps — surfaces without runbooks are tracked gaps
+- §14 agent approval gates — gates produce audit trails; runbooks restore the state behind them. HARD-gated actions warrant runbooks for the resulting state transitions
+- §22 compliance — runbooks are operational-maturity evidence for compliance audits
 
 ---
 

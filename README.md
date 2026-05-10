@@ -122,6 +122,7 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Status block in CLAUDE.md | §9.1 | Project ships in versions and a fresh session needs to know "where are we right now" |
 | Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or deterministic multi-step workflows |
 | Agent approval gate table | §14 | Project has agents taking consequential actions (write files, run commands, network, sub-agent dispatch) |
+| Recovery runbooks per stateful surface | §5 | Project has persistent state that would be hard to reconstruct from scratch |
 | File size budgets | §11 | Files are getting long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -197,7 +198,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline |
 | §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); flags-document format; spot-check sampling; watch signals |
 | §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products) |
-| §5 | State tracking & recoverability — versioned, undoable state |
+| §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs, audience targeting |
 | §8 | Acknowledged gaps — rolling gap registry plus point-in-time per-release retros |

@@ -625,6 +625,8 @@ For LLM-feature products whose correctness depends on the model's behavior — t
 | **Provider matrix** | The set of LLM providers your product serves (Anthropic / OpenAI / Gemini / Ollama-local / etc.). A behavioral test runs against each |
 | **Substrate tiers** | Progressive complexity. Tier 1: single tool call working. Tier 2: multi-step workflow with multiple tools. Tier 3: full agent workflow with sub-agents and recursive dispatch. Each tier exercises more substrate; each surfaces different failure modes |
 
+The substrate-tier model above is one product's shape — a tool-using agent harness. **Substitute the substrate categories that fit your product's actual feature surface.** A chat-only product won't have tool-call tiers (consider tiering by conversation length / context-window pressure / refusal-rate calibration instead). A RAG product might tier by retrieval-quality vs. generation-quality dimensions. A code-completion product might tier by completion-length and language coverage. The point is *progressive substrate exercise*, not the specific tiers below.
+
 Coverage is providers × substrate tiers — at scale, dozens of cells. Not every cell needs to run on every change; gate critical cells on every commit, run the full matrix nightly or per-release.
 
 **What this catches that lib/bin tests don't:**
@@ -1147,7 +1149,9 @@ For projects where agents take consequential actions, the agent's activity log i
 | **Errors** | Tool failures, model errors, retry chains, fallback paths | Find brittle patterns; track provider reliability |
 | **Sub-agent dispatches** | Dispatch ID, scope, behavior outcome, cost, parent linkage | Trace cross-agent work; debug recursive loops |
 
-Each layer has its own retention and review cadence. Don't conflate them — a single "agent log" file is hard to review at any one of the relevant granularities.
+The 5-layer model above assumes a fairly sophisticated harness (one with context compaction and sub-agent dispatch). **Merge layers when your shape doesn't have all of them** — e.g., a single-agent product with no compaction has 3 layers (tool calls / decisions / errors); a chatbot with no agent tool surface has 2 (decisions / errors). The principle is *one layer per natural unit of audit*, not "always 5 layers." Simpler shapes have simpler logs.
+
+Each retained layer has its own retention and review cadence. Don't conflate them — a single "agent log" file is hard to review at any one of the relevant granularities.
 
 **Retention discipline:**
 
@@ -1241,38 +1245,43 @@ Illustrative; project-specific surfaces (license keys, customer-data exports, sc
 | **RTO / RPO targets** | Recovery Time Objective (how fast must we restore?) and Recovery Point Objective (how much data loss is acceptable?). Both as numbers, not "soon" / "minimal" |
 | **Prevention** | What reduces the likelihood or blast radius (snapshots, replication, validation, monitoring) |
 
-**Worked example shape (one surface, end-to-end):**
+**Worked example shape (one surface, end-to-end).** Below is one project's runbook for a credential store. Replace the platform-specific pieces (system keyring on Linux, Keychain on macOS, Credential Manager on Windows, Vault / 1Password / a secrets-manager service for cloud environments) with whatever the project actually uses; the template fields stay the same.
 
 ```markdown
-## Surface: Credential store (system keyring)
+## Surface: Credential store
 
 ### Failure modes
-- User logged out of session keyring; agent loses access to API keys
-- Keyring DB corruption (rare; usually after hard system shutdown)
-- Host migration without keyring export (new machine starts with empty store)
+- User logged out of the credential session; agent loses access to API keys
+- Credential store corruption (rare; usually after hard shutdown or migration)
+- Host migration without credential export (new machine starts with empty store)
 
 ### Detection
-- Agent operations fail with `org.freedesktop.secrets` D-Bus exceptions
+- Agent operations fail with credential-lookup errors specific to the platform
+  (e.g., D-Bus exceptions on Linux, Keychain access denied on macOS, Vault auth
+  failure in cloud environments)
 - API calls return 401 across all providers simultaneously
-- `secret-tool lookup ...` returns nothing for known service names
+- Platform-specific lookup tool returns nothing for known service names
 
 ### Restore steps
-1. Verify keyring is unlocked: `gnome-keyring-daemon --replace --start`
-2. If unlocked but empty: re-import from backup at `~/Documents/secrets-backup-<date>.json`
-3. If no backup: re-issue API keys with each provider, store via `secret-tool store --label=...`
+1. Verify the credential store is reachable / unlocked
+2. If reachable but empty: re-import from backup
+   (e.g., encrypted JSON at a known backup location)
+3. If no backup: re-issue API keys with each provider, store via the platform's
+   credential CLI / API
 4. Restart agent to pick up restored credentials
 
 ### RTO / RPO
 - RTO: 15 minutes (from detection to working agent)
-- RPO: depends on backup recency; backups weekly, worst case ~7 days of stale keys
+- RPO: depends on backup recency; e.g., weekly backups → worst case ~7 days
+  of stale keys
 
 ### Prevention
-- Weekly backup script writes encrypted JSON to `~/Documents/secrets-backup-<date>.json`
-- Keyring auto-unlock on login (configured in OS settings)
+- Scheduled backup script writes encrypted credentials to a known location
+- Auto-unlock on login configured at the OS or service-account level
 - Probe at session start that exercises one credential lookup; alert if it fails
 ```
 
-The shape carries information density: detection signatures help detect; numbered restore steps work under stress; RTO/RPO numbers are real commitments; prevention closes the loop.
+The shape carries information density: detection signatures help detect; numbered restore steps work under stress; RTO/RPO numbers are real commitments; prevention closes the loop. The same shape applies to other surfaces — the template doesn't change, the platform specifics do.
 
 **Watch signals:**
 

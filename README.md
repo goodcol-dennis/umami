@@ -139,6 +139,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior |
 | Agent log discipline (layers / retention / review cadence) | §4 | Agents take consequential actions in production; audit trail matters for incident response, compliance, or debugging |
+| Cross-implementation research before foundational ADRs | §7 | Committing to a foundational architectural approach with meaningful trade-offs |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -203,7 +204,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence) |
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
-| §7 | Documentation as constraint — living audits, ADRs, audience targeting |
+| §7 | Documentation as constraint — living audits, ADRs, audience targeting, cross-implementation research (research doc ↔ ADR pairing) |
 | §8 | Acknowledged gaps — rolling gap registry plus point-in-time per-release retros |
 | §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, progressive disclosure (lazy schema load, top-K tool retrieval, summaries-then-detail, workflow-as-code), context window optimization, effective-tokens metric |
 | §10 | Change propagation maps — which files to touch for recurring changes |

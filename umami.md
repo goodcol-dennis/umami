@@ -182,6 +182,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
 | Agent log discipline (5-layer log + retention + review cadence) | §4 | Project has agents taking consequential actions in production where audit trail matters for incident response, compliance, or operational debugging |
+| Cross-implementation research before foundational ADRs | §7 | Project is committing to a foundational architectural approach with meaningful trade-offs (agent loop, edit format, sub-agent model, auth framework, state-management pattern, etc.) |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -211,6 +212,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **"From now on when X" without a hook** | Project documents an automated behavior ("we always log Y", "we never let the agent touch Z") in CLAUDE.md or process docs but no hook implements it. The agent doesn't perform the behavior; humans assume it's being done. | Search the project's harness configuration (`settings.json` or equivalent) for the corresponding event and predicate. If the doc says "always do X" but no PreToolUse / PostToolUse / SessionStart / Stop hook fires X, the verdict is confirmed. | Apply §14 "Lifecycle Hooks": wire automated behaviors through the harness's hook layer. Doc-only "always do X" rules are aspiration unless they're hook-implemented. |
 | **Single-provider testing for multi-provider product** | LLM-feature product serves multiple providers (Anthropic / OpenAI / Gemini / etc.) but the behavioral bench / E2E suite runs against only one. Production paths through other providers ship without behavioral verification. | Count the providers the product serves vs. the providers covered in the bench matrix. If serves > covered, the gap is silent regression risk. Often surfaces post-incident: "we shipped a tool-schema change; it works on Anthropic but Gemini rejects it because we never tested." | Apply §3 "Multi-Provider Behavioral Testing": matrix of providers × substrate tiers; gate critical cells per commit; full matrix nightly or per-release. Real-provider RTT, not just mocks. |
 | **Agent logs without review** | Project ships agent activity logs to a sink (disk, observability platform, S3) but nobody actually reads them. The retention policy looks compliance-shaped; nothing ever gets queried. | Ask when the agent log was last queried for anything other than incident response. If "never" or "I don't know," the log is write-only. If retention is set in months but no review cadence is documented, the log exists for paperwork, not for audit. | Apply §4 "Agent Log Discipline" review-cadence guidance: weekly tool-call scan, per-release error-layer review, per-incident forensic reconstruction, quarterly field-utility review. If review doesn't happen, drop the logging cost. |
+| **ADR alternatives without research depth** | ADR has an "alternatives considered" section that names 1–3 alternatives in 1–2 sentences each. Reader can't tell what kind of audit went into the rejection — was it a deep read, a README skim, or just the assistant's training-data summary? | If an ADR doesn't cite a research doc, ask the author when the alternatives were last deep-read and what concrete dimensions were compared. If the answer is "we just knew" or "it's industry consensus," the audit didn't happen. | Apply §7 "Cross-Implementation Research": pair foundational ADRs with a dated research doc, comparison matrix, and tiered steal-list. The research doc gives the ADR's rejection reasoning auditable depth. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1355,6 +1357,43 @@ This prevents re-litigation of settled decisions by future contributors (includi
 Different docs serve different audiences — senior engineers (deep technical context, library names, version pins), executives or stakeholders (decisions and tradeoffs without jargon), operations / SRE (runbooks, recovery steps, signals), end users (task-oriented guides), AI agents (prescriptive ground truth without ambiguity). Specify the audience in the doc's frontmatter or opening line. Audience determines technical depth, jargon density, and what context the reader is assumed to already have.
 
 When asking the AI to *generate* documentation, name the audience in the prompt — *"target a senior engineering audience"* changes the output significantly from *"write for an executive stakeholder"*. Mode-specific (§14): doc generation is implementation mode; audience is one of the inputs.
+
+### Cross-Implementation Research
+
+When committing to a foundational architectural approach where alternatives have meaningful trade-offs (an agent loop architecture, an edit-format strategy, a sub-agent model, an authentication framework, a state-management pattern), audit alternatives systematically *before* locking the choice. The audit produces a research doc; the research doc feeds the ADR.
+
+**Research doc structure:**
+
+| Element | What it captures |
+|---|---|
+| **Alternatives audited** | Named, dated, deep-read (not README-skim). Why each was selected as a comparison anchor — lineage proximity, scale relevance, ideological diversity. 3–5 alternatives is plenty; more is shallowness disguised as thoroughness |
+| **Comparison matrix** | Dimensions that matter for *your* specific decision (project-specific axes, not generic checklist). Each cell concrete — "exact + whitespace-normalized + ellipsis-wildcard + fuzzy + cross-file" beats "five-level fallback" |
+| **Tiered steal-list** | Tier 1: direct fixes for current pain. Tier 2: patterns to adopt as the project grows. Tier 3: patterns deliberately rejected (and why) |
+| **Date and revisit window** | Audit is a snapshot of the world at date X. Note when it should be re-validated (typically 6–12 months) |
+
+**Tie to the ADR.** The research doc and the ADR are paired artifacts. The ADR cites the research doc; the research doc enumerates alternatives in the depth ADRs typically don't. ADR explains *what was chosen and why*; research doc shows the *alternatives considered* with concrete enough depth that "why not X" is answerable. Without the research doc, an ADR's "alternatives considered" section becomes a gesture; with it, the rejection reasoning is auditable.
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| ADR has "alternatives considered" section but doesn't cite a research doc | Either the research wasn't done, or it lives in someone's head and is lost when they leave |
+| Research doc with no date | Can't tell if it's still relevant; alternatives evolve, and the doc may be auditing yesterday's versions |
+| Research doc without a comparison matrix (just prose summary) | Reader can't compare across alternatives; the work didn't go deep enough to surface trade-offs at the dimension level |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Research without follow-through | Five competitors audited; no steal-list; ADR makes the choice anyway with no synthesis | The steal-list is the deliverable. Without it, the audit was effort that didn't compound |
+| Comparison matrix without depth | "Yes/No" cells across 12 dimensions | "Yes" hides what kind of yes. Each cell concrete enough that a reader sees the trade-off, not just presence/absence |
+| Audit N years stale | Research doc cited a version of competitor X from 2 years ago; competitor has shipped major rewrites since | Date the doc. Set a revisit window. When the world has moved, the audit's authority decays |
+| Research used to justify the predetermined choice | Comparison matrix conveniently shapes itself toward what was already going to be picked | Audit an alternative the team is *suspicious* of, not just one they want to dismiss. The research is for surfacing surprises, not validating prior decisions |
+
+**Cross-references:**
+- §7 ADRs — research doc feeds the ADR's "alternatives considered" section with concrete depth
+- §2 specs — research informs which alternatives are worth specifying against
+- §0.6 anti-pattern table — "Cargo-culting practices" (one source of cross-impl research is *catching* patterns that look universal but actually aren't)
 
 ---
 

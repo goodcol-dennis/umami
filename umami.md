@@ -183,6 +183,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
 | Agent log discipline (5-layer log + retention + review cadence) | §4 | Project has agents taking consequential actions in production where audit trail matters for incident response, compliance, or operational debugging |
 | Cross-implementation research before foundational ADRs | §7 | Project is committing to a foundational architectural approach with meaningful trade-offs (agent loop, edit format, sub-agent model, auth framework, state-management pattern, etc.) |
+| Cost caps and budget gates (per-task / per-session / per-day with force-over-cap typed-confirm) | §9.7 | Project runs agents at scale and cost predictability matters; per-task or per-day spend has surprised the team |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -213,6 +214,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Single-provider testing for multi-provider product** | LLM-feature product serves multiple providers (Anthropic / OpenAI / Gemini / etc.) but the behavioral bench / E2E suite runs against only one. Production paths through other providers ship without behavioral verification. | Count the providers the product serves vs. the providers covered in the bench matrix. If serves > covered, the gap is silent regression risk. Often surfaces post-incident: "we shipped a tool-schema change; it works on Anthropic but Gemini rejects it because we never tested." | Apply §3 "Multi-Provider Behavioral Testing": matrix of providers × substrate tiers; gate critical cells per commit; full matrix nightly or per-release. Real-provider RTT, not just mocks. |
 | **Agent logs without review** | Project ships agent activity logs to a sink (disk, observability platform, S3) but nobody actually reads them. The retention policy looks compliance-shaped; nothing ever gets queried. | Ask when the agent log was last queried for anything other than incident response. If "never" or "I don't know," the log is write-only. If retention is set in months but no review cadence is documented, the log exists for paperwork, not for audit. | Apply §4 "Agent Log Discipline" review-cadence guidance: weekly tool-call scan, per-release error-layer review, per-incident forensic reconstruction, quarterly field-utility review. If review doesn't happen, drop the logging cost. |
 | **ADR alternatives without research depth** | ADR has an "alternatives considered" section that names 1–3 alternatives in 1–2 sentences each. Reader can't tell what kind of audit went into the rejection — was it a deep read, a README skim, or just the assistant's training-data summary? | If an ADR doesn't cite a research doc, ask the author when the alternatives were last deep-read and what concrete dimensions were compared. If the answer is "we just knew" or "it's industry consensus," the audit didn't happen. | Apply §7 "Cross-Implementation Research": pair foundational ADRs with a dated research doc, comparison matrix, and tiered steal-list. The research doc gives the ADR's rejection reasoning auditable depth. |
+| **Cost caps in policy doc but not in code** | Project documentation states "max $X per day for agent operations" but no enforcement exists in the harness configuration. Cost overruns happen and post-hoc retros say "well we have a policy" — but the policy never blocked anything. | Search the harness configuration (`settings.json`, hook configurations, etc.) for cap enforcement. If the doc says max $X but no hook / setting / runtime check enforces it, the verdict is confirmed. Cap-without-enforcement is aspiration. | Apply §9.7 "Cost Caps and Budget Gates": enforce caps in the harness layer (hooks, settings constraints, runtime checks). Document the policy AND the enforcement, with the audit-trail entry recorded when a cap fires. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1634,6 +1636,52 @@ Approximate model multipliers (set yours from current pricing): Haiku-class ≈ 
 A 10% ET reduction means a genuine 10% cost reduction, regardless of the model mix that produced it. A 10% raw-token reduction can be illusion (you switched a workload from Opus to Haiku) or worse-than-it-looks (you switched the other way).
 
 **Weight by run frequency.** When prioritizing efficiency work across multiple recurring agent workflows (CI runs, scheduled audits, daily summaries), multiply the per-run ET savings by run frequency. A 60% reduction on a workflow that runs 7 times per day compounds to far more aggregate savings than the same reduction on a once-weekly task. Optimize the high-frequency runs first.
+
+### Cost Caps and Budget Gates
+
+Measurement (ET formula above) tells you what costs were spent. Cost caps tell the harness when to *stop* spending. For projects running agents at scale — many invocations per day, many sub-agent dispatches, many provider calls — caps are the difference between predictable cost and surprise bills.
+
+**Three layers of cap:**
+
+| Layer | What it caps | When it triggers |
+|---|---|---|
+| **Per-task** | Cost of one user request from prompt to result | Reaches limit during execution; agent halts and asks |
+| **Per-session** | Cost across one chat session / interactive run | Cumulative across a session; cap applies to total session spend |
+| **Per-day (or per-period)** | Total spend across a time window — usually per-user-per-day | Caps total window spend; affects new sessions starting |
+
+When a cap is reached, the gate is HARD per §14 — block until user approves continuation. Don't soften to SOFT (auto-continue) on cost caps; the user needs the explicit choice.
+
+**Force-over-cap typed-confirm.** A SOFT "click to continue" gate normalizes blowing through the cap. Use a *typed confirmation* — the user types the cost figure or a phrase like `"continue over $20"` — to override. Typing forces a beat of attention that clicking doesn't. The harness should record the override (action / cost / who-approved / timestamp) in the audit trail (§4 agent log decisions layer).
+
+**Escalation paths:**
+
+| Scenario | Path |
+|---|---|
+| Per-task cap hit on a typical workload | Likely the cap is set too low; revisit. Don't normalize blowing through |
+| Per-session cap hit late in a complex task | Either the task was bigger than estimated, or the agent is looping. Halt and inspect |
+| Per-day cap hit early | A workflow is running away. Block subsequent sessions; investigate the per-task pattern |
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Caps consistently hit at typical workload | Caps too low; user is fighting the system rather than getting useful gates |
+| Force-over-cap fires routinely (>10% of cap-hits) | Either the cap is mis-calibrated or the typed-confirm is being clicked through |
+| No cap-hit telemetry over weeks at known agent activity | Caps are set so high they're aspirational; effectively no gate |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Hard caps without escalation | User gets blocked mid-task with no path forward except restart | Force-over-cap typed-confirm gives a real path; don't gate to a dead end |
+| Caps without measurement | "We have caps" but no ET tracking; can't tell if caps are calibrated | §9.7 ET measurement is the prerequisite for sane cap calibration |
+| Per-day cap without per-task / per-session | One runaway task burns the daily budget; subsequent legitimate work is blocked | Cap at multiple layers; the most-binding fires first |
+| Caps in policy doc but not in code | Documentation says "max $X per day" but no enforcement | Caps must be enforced in the harness (a hook, a settings constraint, etc.). Doc-only caps are aspiration |
+
+**Cross-references:**
+- §9.7 ET formula (above) — measurement is the prerequisite for cap calibration
+- §14 Agent Approval Gates — cost caps are HARD gates; the gate table should include cost-cap rows
+- §4 agent log discipline — cap decisions go in the decisions log layer
 
 ---
 

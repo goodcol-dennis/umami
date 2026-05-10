@@ -524,6 +524,8 @@ Every feature starts with a written spec, not code. Architecture documents and d
 
 **This section establishes spec discipline, not a spec framework.** Any format works — RFCs, design docs, shape-up pitches, PRDs, Gherkin. The discipline is *having* a spec process; the format is a team preference.
 
+**Relationship to Spec-Driven Development (SDD).** SDD is an emerging movement that pushes spec-first further — specs are written to be *executable* by AI agents, with machine-checkable contracts the agent works against rather than human-readable documents alone. §2 is compatible with SDD: SDD-style specs are one valid format, and the discipline of *having a spec before coding* is the shared foundation. Where they differ: SDD is opinionated about format (executable / machine-checkable); umami is format-agnostic. Teams already going SDD don't need to choose — §2 is the broader process discipline around the practice SDD codifies.
+
 ### What to Specify
 
 - **System architecture** — how components connect and communicate.
@@ -1368,6 +1370,8 @@ This prevents re-litigation of settled decisions by future contributors (includi
 Different docs serve different audiences — senior engineers (deep technical context, library names, version pins), executives or stakeholders (decisions and tradeoffs without jargon), operations / SRE (runbooks, recovery steps, signals), end users (task-oriented guides), AI agents (prescriptive ground truth without ambiguity). Specify the audience in the doc's frontmatter or opening line. Audience determines technical depth, jargon density, and what context the reader is assumed to already have.
 
 When asking the AI to *generate* documentation, name the audience in the prompt — *"target a senior engineering audience"* changes the output significantly from *"write for an executive stakeholder"*. Mode-specific (§14): doc generation is implementation mode; audience is one of the inputs.
+
+**Diátaxis as a complementary lens.** [Diátaxis](https://diataxis.fr/) (Daniele Procida) classifies documentation into four types — tutorials, how-to guides, reference, and explanation — each serving a different reader need and mode of engagement. This decomposition is orthogonal to audience targeting (a single audience often needs all four types) and is rigorous enough to detect when documentation is mixing concerns: a "tutorial" that's actually reference, an "explanation" hiding how-to steps. Audience targeting is the first cut (*who is this for?*); Diátaxis is the second cut (*what kind of content is this?*). Both apply to any doc.
 
 ### Cross-Implementation Research
 

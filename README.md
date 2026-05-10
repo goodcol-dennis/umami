@@ -197,7 +197,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 |---------|-------|
 | §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol |
 | §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy for long-running work, multi-surface/one-primitive pattern |
-| §2 | Specification-first development — specs before code |
+| §2 | Specification-first development — specs before code; relationship to Spec-Driven Development (SDD) as the closest movement |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline |
@@ -205,7 +205,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence) |
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
-| §7 | Documentation as constraint — living audits, ADRs, audience targeting, cross-implementation research (research doc ↔ ADR pairing) |
+| §7 | Documentation as constraint — living audits, ADRs, audience targeting (with Diátaxis as a complementary content-type lens), cross-implementation research (research doc ↔ ADR pairing) |
 | §8 | Acknowledged gaps — rolling gap registry plus point-in-time per-release retros |
 | §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, progressive disclosure (lazy schema load, top-K tool retrieval, summaries-then-detail, workflow-as-code), context window optimization, effective-tokens metric, cost caps and budget gates |
 | §10 | Change propagation maps — which files to touch for recurring changes |
@@ -301,6 +301,27 @@ Umami and ECC solve different problems at different layers. They're complementar
 **Where they influenced each other:** ECC's security guide and token optimization research surfaced practices that Umami now incorporates as process-level guidance — agent runtime security (§4), context window optimization (§9.6), and agent-as-attack-surface for compliance-bound projects (§22.11). These are the *what to practice* counterparts to ECC's *how to implement* tooling.
 
 **Can you use both?** Yes. Umami structures the project so the agent starts each session with clear context and minimal re-derivation. ECC gives the agent better tools for the work it does within that session. A project with umami's guardrails and ECC's operational tooling gets both layers — the project is well-structured *and* the agent is well-equipped.
+
+## How is this different from Anthropic's official Claude Code best practices?
+
+[Anthropic's Claude Code documentation](https://docs.claude.com/en/docs/claude-code) is the official guidance for using Claude Code effectively — covering hooks, slash commands, MCP servers, settings, agent skills, model routing, and more. It's the comprehensive reference for what the tool can do.
+
+Umami is the **opinionated process layer above the tool**. The official docs answer *"what does Claude Code do?"* Umami answers *"given a tool like Claude Code, how should the project be structured to make every session efficient and every output high-quality?"*
+
+| | Umami | Anthropic Claude Code docs |
+|---|---|---|
+| **What it is** | A process discipline framework | Official tool documentation |
+| **Scope** | Project-level practices that work across harnesses | Tool-level capabilities and configuration |
+| **Stance** | Opinionated (tiers, anti-patterns with watch signals, audit protocol) | Reference-shaped (here's what the tool does; here's how to configure it) |
+| **Audience** | Teams adopting AI-coding discipline at the project level | Anyone using Claude Code |
+| **AI-tool agnostic?** | Yes — works with Claude Code, Cursor, Codex, Goose, etc. | Claude-Code-specific (some practices generalize) |
+| **Lifecycle** | Periodic audits + version-tracked process maturity | Always-current reference |
+
+**They compose.** Anthropic's docs tell you what Claude Code can do; umami tells you what your *project* should do to make any harness most effective. A team using both gets the tool-level capabilities (from Anthropic) plus the process-level discipline (from umami).
+
+**Where they overlap:** practices around hooks, skills, MCP servers, and instruction files appear in both. Umami's §0.7 audit protocol and §0.7b init protocol depend on harness-supported skills — the underlying mechanism is what Anthropic documents. Where they diverge: tier-based adoption, anti-pattern watch signals, extension ecosystem, and cross-harness portability aren't Anthropic's job to provide — Anthropic ships the tool; umami ships the process discipline above it.
+
+**Should you read both?** Yes. Anthropic's docs first if you're new to Claude Code; umami when you're past the "how do I make this work" phase and into "how do I structure the project for sustained good output across many sessions."
 
 ## Relationship to The Pragmatic Programmer
 

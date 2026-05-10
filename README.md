@@ -137,6 +137,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Measuring efficiency over time (ET, run-frequency) | §9.7 | Optimizing across recurring agent workflows or model tiers; need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review; team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
+| Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -194,7 +195,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol |
 | §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy for long-running work, multi-surface/one-primitive pattern |
 | §2 | Specification-first development — specs before code |
-| §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests |
+| §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline |
 | §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); flags-document format; spot-check sampling; watch signals |

@@ -180,6 +180,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
+| Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -207,6 +208,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **No agent-approval gate table** | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) but no single document codifying which actions are gated, at what severity, with what audit trail. New contributors discover gates by tripping them. | If the project has consequential agent actions but no `docs/agent-approval-gates.md` (or equivalent), the gates are implicit. Even one HARD action without a tabulated gate is a sign. | Maintain a gate table per §14 "Agent Approval Gates": HARD/SOFT/NONE severity, action class, user-visible surface, audit trail location, implementation pointer. Group by category. |
 | **Runbooks-as-aspiration** | Per-stateful-surface runbooks exist on disk, but RTO/RPO targets are vague ("soon", "minimal") or restore steps haven't been exercised in >6 months. The runbook reads as policy, not procedure. | Pick the longest-untested runbook and run a recovery drill cold (without coaching). If it fails, the runbook is aspiration. RTO/RPO sections without numbers (just adjectives) are also a confirmed signal. | Apply §5 "Recovery Runbooks per Stateful Surface": numbered restore steps with prerequisites, concrete RTO/RPO numbers, quarterly drills rotating across surfaces. |
 | **"From now on when X" without a hook** | Project documents an automated behavior ("we always log Y", "we never let the agent touch Z") in CLAUDE.md or process docs but no hook implements it. The agent doesn't perform the behavior; humans assume it's being done. | Search the project's harness configuration (`settings.json` or equivalent) for the corresponding event and predicate. If the doc says "always do X" but no PreToolUse / PostToolUse / SessionStart / Stop hook fires X, the verdict is confirmed. | Apply §14 "Lifecycle Hooks": wire automated behaviors through the harness's hook layer. Doc-only "always do X" rules are aspiration unless they're hook-implemented. |
+| **Single-provider testing for multi-provider product** | LLM-feature product serves multiple providers (Anthropic / OpenAI / Gemini / etc.) but the behavioral bench / E2E suite runs against only one. Production paths through other providers ship without behavioral verification. | Count the providers the product serves vs. the providers covered in the bench matrix. If serves > covered, the gap is silent regression risk. Often surfaces post-incident: "we shipped a tool-schema change; it works on Anthropic but Gemini rejects it because we never tested." | Apply §3 "Multi-Provider Behavioral Testing": matrix of providers × substrate tiers; gate critical cells per commit; full matrix nightly or per-release. Real-provider RTT, not just mocks. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -605,6 +607,57 @@ Common failure categories:
 - **Temporal types** — native datetime objects vs. ISO strings vs. Unix timestamps. Timezone-aware vs. naive.
 
 **The fix is always the same:** make the boundary contract explicit. Specify column lists, validate types before crossing, and test with real data samples — not just the happy path.
+
+### Multi-Provider Behavioral Testing
+
+For LLM-feature products whose correctness depends on the model's behavior — tool-calling shape, structured-output adherence, instruction-following, refusal behavior — test across the providers you actually serve in production. A test that passes only on one provider is silent regression risk for the product's other code paths.
+
+§3 above covers test layers (unit, integration, E2E, property-based); this sub-section adds the *provider matrix* and *substrate tiers* dimensions specific to LLM-feature products.
+
+**Two dimensions of coverage:**
+
+| Dimension | What it covers |
+|---|---|
+| **Provider matrix** | The set of LLM providers your product serves (Anthropic / OpenAI / Gemini / Ollama-local / etc.). A behavioral test runs against each |
+| **Substrate tiers** | Progressive complexity. Tier 1: single tool call working. Tier 2: multi-step workflow with multiple tools. Tier 3: full agent workflow with sub-agents and recursive dispatch. Each tier exercises more substrate; each surfaces different failure modes |
+
+Coverage is providers × substrate tiers — at scale, dozens of cells. Not every cell needs to run on every change; gate critical cells on every commit, run the full matrix nightly or per-release.
+
+**What this catches that lib/bin tests don't:**
+
+- Provider-specific tool-schema strictness (one provider rejects schemas another accepts)
+- Per-provider pricing defaults (cost calc right for one provider, drastically off for another)
+- Tool-calling format differences (native tools vs text-fallback parsing)
+- Model-hint threading (whether the right model gets routed through the right provider's adapter)
+- UTF-8 boundary safety (some providers handle non-ASCII tool args differently)
+- Substrate edge cases that only surface in real provider RTT — timing, streaming, error shapes, rate-limit behavior
+
+These are gaps lib/bin tests structurally can't reach: they mock provider behavior. Once shipping an LLM-feature product, correctness depends on the provider's *actual* output, not on a mock.
+
+**The bench-pays-for-itself observation.** A multi-provider bench is meant to *verify* substrate; in practice the first run is also a substrate-gap *discovery* exercise. Plan for this — bench bring-up is not one-shot validation, it's a discovery cycle. Real bench bring-ups have surfaced and closed 10+ substrate gaps that lib/bin tests didn't reach.
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Bench passes on N of M providers your product serves | Behavioral guarantee covers N; the gap between N and M is silent regression risk |
+| Substrate gap discovered in production but not in bench | Coverage hole — the cell that should have caught the gap doesn't exist or doesn't exercise the path |
+| Bench non-determinism (results vary across runs against same provider) | Bench has timing dependencies, model has temperature > 0, or substrate has a race condition |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| "We test on the cheapest provider" | Bench runs only on the fast/cheap model; production traffic on flagship models has different behavior | Test the providers you actually serve. Cost is real but behavioral parity isn't optional |
+| Tier 1 only | Bench covers single tool calls; ships break on multi-step workflows once they land | Add Tier 2 (multi-step) at minimum once features compose tool calls; Tier 3 (sub-agents) when the product dispatches |
+| Manual bench runs | Bench runs only when someone remembers; regressions slip in between runs | CI-gate the bench. For full-matrix runs that are slow/expensive, schedule nightly with explicit pre-release gates |
+| Provider mocks instead of real provider | Bench uses recorded fixtures; doesn't catch behavioral changes the providers ship | Fixtures sparingly (cost-bounded CI on every PR); full real-provider matrix at known cadence (nightly, per-release) |
+
+**Cross-references:**
+- §3 multi-layer testing (above) — multi-provider bench is a layer above E2E for LLM-feature products
+- §4 untrusted-content boundaries — bench should include planted-injection cases per provider's spotlighting strategy
+- §9.7 measuring efficiency — bench produces ET per provider per substrate tier; useful for cost-comparison and regression detection
+- §0.5 LLM-feature-product row references this
 
 ---
 

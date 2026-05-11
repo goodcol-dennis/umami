@@ -138,6 +138,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Your system manages stateful operations that need rollback |
 | Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating, or releases need a frozen "what was true at vX.Y" record alongside the rolling gap registry |
+| Periodic dropped-item audit | §8 | Forward designs / explorations / POCs / deferred decisions are accumulating without a discipline for surfacing forgotten items |
 | Measuring efficiency over time (ET, run-frequency) | §9.7 | Optimizing across recurring agent workflows or model tiers; need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review; team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
@@ -212,7 +213,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs, audience targeting (with Diátaxis as a complementary content-type lens), cross-implementation research (research doc ↔ ADR pairing) |
-| §8 | Acknowledged gaps — rolling gap registry plus point-in-time per-release retros |
+| §8 | Acknowledged gaps — rolling gap registry, point-in-time per-release retros, periodic dropped-item audit (surfaces designs/explorations/POCs/deferred decisions that fell off the radar) |
 | §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, progressive disclosure (lazy schema load, top-K tool retrieval, summaries-then-detail, workflow-as-code), context window optimization, effective-tokens metric, cost caps and budget gates |
 | §10 | Change propagation maps — which files to touch for recurring changes |
 | §11 | File size budgets — keep files small to reduce token cost and complexity |

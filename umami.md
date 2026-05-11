@@ -180,6 +180,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Stateful operations need rollback or audit trails |
 | Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating faster than it's being addressed, or releases need a frozen "what was true at vX.Y" record |
+| Periodic dropped-item audit | §8 | Project has accumulated forward designs / explorations / POCs / "decide later" entries without a discipline for surfacing what's been forgotten |
 | Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
@@ -223,6 +224,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Refactoring without tests** | Code restructured "for clarity" without tests covering the affected behavior. Either no tests exist, or the tests were added/changed as part of the refactor commit. Behavior may have changed silently. | If a "refactor" commit also modifies tests in ways that aren't pure rename / move, it's not a refactor — it's a rewrite. If the codebase has refactor-style commits but the test suite doesn't run reliably, the safety net is missing. | Apply §3e "Refactoring Discipline": tests as the safety net are non-negotiable. If behavior isn't covered, write the test first; then refactor. If you can't write the test, you're not refactoring — you're rewriting. |
 | **Security as reactive — no threat model** | Project ships features with security controls in place (boundary validation, secrets management, auth) but no systematic threat model. Defenses cover threats the team happened to think of; threats they didn't think of slip through. Security incidents repeatedly surface "we should have caught this." | Ask the team to draw the system's trust-boundary data flow diagram on a whiteboard from memory. If they can't, the threat model doesn't exist. Look for a document mapping system boundaries → threats → mitigation decisions. If absent, security is reactive, not deliberate. | Apply §4 "Threat Modeling": the 5-step protocol (DFD → STRIDE → rate → decide mitigations → living document). One pass at project bootstrap; re-visit when boundaries change; per-release for compliance-bound projects. |
 | **Aesthetic restructure** | Someone proposes (or an agent quietly executes) a directory / file-layout reorganization framed as "cleaner" or "more consistent." The change breaks paths referenced from downstream `CLAUDE.md` files, skill files, tests, change-propagation maps, or external documentation. Coordination cost was not enumerated. | When a restructure is proposed, ask the proposer to enumerate the external contracts that will break (tests, docs, downstream `CLAUDE.md` references, skill paths, propagation maps). If they can't or won't, the change is aesthetic and the coordination cost is invisible to them. Often the current layout is fine and the structural rule just needs codification. | Apply §1 "Preserving Project Structure": codify the rule (CLAUDE.md), encode invariants as §3 fitness functions, flag structural changes in §3d code review. Restructure only at appropriate phases (discovery, pre-shipping, major-version boundary, or trigger-fired per §8). |
+| **Deferred decisions that never get decided** | Project has decisions-log entries / ADRs / design docs marked "decide later", "TBD", "deferred", or "Proposed" status that persist across multiple phases without resolution. The gap registry tracks these implicitly but they're not in it; they're in the middle ground of "we'll get to it" that never gets gotten to. | Count decisions-log entries / ADRs in "deferred" or "Proposed" state with no follow-up resolution. If the count grows over time (or stays flat across multiple phases without items resolving), the discipline is missing. Old `docs/designs/` files without recent updates and no archive move are the same pattern in design-doc form. | Apply §8 "Periodic Dropped-Item Audit" (typically quarterly). For each dropped item, force a disposition: Revive (still relevant, schedule it) / Archive (was relevant, preserve in `_archive/`) / Delete (truly dead) / Re-decide (the deferred decision gets a real decision now). Default to archive unless revival is justified. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1732,6 +1734,58 @@ The retro is what was true *at point T*; the registry is current. A retro that g
 ```
 
 The retro stays useful for years as a reference for "what was the state of the world at v0.10.0?" The registry only ever shows the current snapshot. Both are needed; neither replaces the other.
+
+### Periodic Dropped-Item Audit
+
+§8 above covers known gaps (rolling registry, point-in-time retros). This sub-section covers a third concern: **items that aren't formally tracked because they represent dropped intent** — designs proposed but never decided, explorations that surfaced findings but the findings never reached a decision, POCs that ran their course but were never archived, "decide later" deferrals that nobody returns to. In a healthy project, decisions are made (ADRs / decisions log) or explicitly deferred. The dropped category is the silent middle ground.
+
+The gap registry tracks items everyone *knows* are open. This audit catches items that *quietly fell off attention*. Both are needed.
+
+**What to scan periodically** (quarterly is a reasonable default):
+
+| Location | Look for |
+|---|---|
+| `docs/designs/` (or equivalent forward-design directory) | Files without recent updates; no implementation activity; no archive move |
+| `docs/research/` (or equivalent exploration directory) | Research that surfaced findings; the findings never reached a decision |
+| `poc/` (per §3b) | POCs nobody can explain — what question, what's the answer, why are they still here |
+| Decisions log entries | "decide later" / "TBD" / "deferred" items with no resolution after multiple phases |
+| ADRs in "Proposed" state | ADRs that never reached "Accepted" or "Rejected" |
+| Phase backlogs | Items that have been "deferred" across N phases |
+| Code TODOs referencing unbuilt designs | "TODO: implement when we ship X" where X never happened |
+
+**For each dropped item, decide one of:**
+
+- **Revive** — still relevant; schedule into the next phase; add to gap registry if blocking
+- **Archive** — was relevant; not blocking; move to `docs/designs/_archive/` (or equivalent) with a note
+- **Delete** — no longer relevant; remove the file (git history preserves it)
+- **Re-decide** — "decide later" decisions get a real decision now (Yes / No / Pivot)
+
+**Default disposition: archive unless revival is justified**, not keep unless deletion is justified. Items at rest stay at rest; the audit's job is to force motion.
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| `docs/designs/` has many files >6 months old without implementation or archive | Forward designs accumulating without resolution; backlog rot |
+| Decisions log has many "deferred" entries without resolution | "Decide later" became "never decide"; decision-avoidance pattern |
+| Phase retros show same items "deferred" across multiple phases | Items silently dying; force the disposition |
+| Audit produces a very large list | Either cadence is too long, or process maturity needs work to catch items earlier |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Audit treats everything as "still relevant" | Findings list grows; nothing gets archived | Default to archive unless revival is justified |
+| Audit runs without dispositions | Findings produced; no decisions made; next audit finds the same items | Each item gets a disposition. Audit-without-decisions is theater |
+| Aggressive deletion erases history | Items deleted in one audit, re-proposed in a later session without knowledge of prior thinking | Archive (don't delete) preserves discoverability; deletion is for truly dead items |
+| Audit cadence too long | First run finds 50+ items; team is overwhelmed | Quarterly is reasonable; first run may need batched triage; subsequent runs should be smaller |
+
+**Cross-references:**
+- §8 above — gap registry tracks known items; this audit catches forgotten items
+- §3b POC lifecycle — same disposition vocabulary (Keep / Archive / Delete) applied to a broader scope
+- §7 ADRs — "Proposed" ADRs that fell off the radar; audit reviews and decides
+- §0.7 process maturity audit — different audit type; runs on different cadence
+- §3d code review — TODOs referencing unbuilt designs can be flagged in code review
 
 ---
 

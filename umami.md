@@ -160,6 +160,7 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Multi-layer testing | §3 | The system has more than one layer (API + UI, pipeline + warehouse) |
 | Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
 | Refactoring discipline | §3e | Project has agents refactoring code at velocity, or refactoring is bundled with feature work creating reviewability problems |
+| Threat modeling | §4 | Project has security-relevant boundaries (external integrations, user input, agent tools touching privileged operations) past prototype phase |
 | Runtime validation | §4 | The system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain later (including to future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
@@ -219,6 +220,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Cost caps in policy doc but not in code** | Project documentation states "max $X per day for agent operations" but no enforcement exists in the harness configuration. Cost overruns happen and post-hoc retros say "well we have a policy" — but the policy never blocked anything. | Search the harness configuration (`settings.json`, hook configurations, etc.) for cap enforcement. If the doc says max $X but no hook / setting / runtime check enforces it, the verdict is confirmed. Cap-without-enforcement is aspiration. | Apply §9.7 "Cost Caps and Budget Gates": enforce caps in the harness layer (hooks, settings constraints, runtime checks). Document the policy AND the enforcement, with the audit-trail entry recorded when a cap fires. |
 | **Fitness functions as documentation** | Architectural fitness functions exist in the test suite, but they assert constraints that are always trivially true. They never fail. They're aspirational descriptions of architecture, not active gates. | Run the fitness function suite in a deliberately broken state (introduce a known violation). If the suite still passes, the constraint is too loose or the test isn't actually checking what it claims. Functions that have never failed in their lifetime are also a sign — either the codebase has perfect compliance (unlikely) or the test is documentation. | Apply §3 "Architectural Fitness Functions": each function should be specific enough to fail when its invariant is violated. If you can't construct a violation case, the test is documentation, not a fitness function. |
 | **Refactoring without tests** | Code restructured "for clarity" without tests covering the affected behavior. Either no tests exist, or the tests were added/changed as part of the refactor commit. Behavior may have changed silently. | If a "refactor" commit also modifies tests in ways that aren't pure rename / move, it's not a refactor — it's a rewrite. If the codebase has refactor-style commits but the test suite doesn't run reliably, the safety net is missing. | Apply §3e "Refactoring Discipline": tests as the safety net are non-negotiable. If behavior isn't covered, write the test first; then refactor. If you can't write the test, you're not refactoring — you're rewriting. |
+| **Security as reactive — no threat model** | Project ships features with security controls in place (boundary validation, secrets management, auth) but no systematic threat model. Defenses cover threats the team happened to think of; threats they didn't think of slip through. Security incidents repeatedly surface "we should have caught this." | Ask the team to draw the system's trust-boundary data flow diagram on a whiteboard from memory. If they can't, the threat model doesn't exist. Look for a document mapping system boundaries → threats → mitigation decisions. If absent, security is reactive, not deliberate. | Apply §4 "Threat Modeling": the 5-step protocol (DFD → STRIDE → rate → decide mitigations → living document). One pass at project bootstrap; re-visit when boundaries change; per-release for compliance-bound projects. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -1162,6 +1164,64 @@ These only work together if they share correlation identifiers — a trace ID in
 - Don't instrument every function call. Instrumentation has overhead. Excessive instrumentation creates noise and inflates costs.
 
 Each domain extension includes specific observability guidance for its context — what to monitor, what to alert on, and what tools to consider.
+
+### Threat Modeling
+
+Security discipline (below) tells you what to defend against once you know the threats. **Threat modeling tells you what the threats are** — for your specific system, with its specific data flows, boundaries, and trust relationships. Without it, security work is reactive (defending against threats you happened to think of) rather than deliberate (defending against threats you systematically identified).
+
+§4's other security sub-sections assume you've identified the threats relevant to your project; this sub-section is the practice of identifying them.
+
+**When to do threat modeling:**
+
+- At project bootstrap, before locking architectural choices (auth model, trust boundaries, data classification)
+- When adding any new boundary — a new external integration, a new user-input surface, a new agent tool that touches privileged operations
+- After an incident, as part of postmortem follow-up
+- Per release for projects in regulated industries (§22 treats threat modeling as required evidence)
+
+**The basic protocol:**
+
+1. **Identify the system's boundaries.** Draw a data flow diagram (DFD) at the appropriate level. Mark trust boundaries — every place where data crosses from one trust zone to another (untrusted internet → your service, your service → your database, your service → an LLM API, etc.).
+2. **Enumerate threats at each boundary** using a framework like **STRIDE** (Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege) — or per-domain frameworks (OWASP for web, MITRE ATT&CK for adversarial, LINDDUN for privacy).
+3. **Rate each threat** by likelihood and impact. Use a simple scale (Low / Medium / High); don't over-engineer the rating. The goal is prioritization, not precision.
+4. **Decide mitigations** per threat — for each High and Medium item: Mitigate (apply a §4 security discipline) / Accept (document residual risk in §8) / Transfer (insurance, third-party) / Avoid (change the design).
+5. **Document the model** as a living artifact — diagram + threat table + mitigation decisions. Re-visit when boundaries change. The artifact informs §3 fitness functions (testing the mitigations), §3d code review (flagging changes that affect boundaries), and §22 evidence packs.
+
+**Threat-modeling frameworks worth considering:**
+
+| Framework | Shape | When to consider |
+|---|---|---|
+| **STRIDE** (Microsoft) | Per-element threat categorization | General-purpose; default starting point |
+| **OWASP Top 10** | Web-specific common threats | Web applications |
+| **MITRE ATT&CK** | Adversary-tactics catalog | Mature security programs; adversarial modeling |
+| **LINDDUN** | Privacy-specific threats | Projects handling personal data (often paired with §22 compliance) |
+| **PASTA** | Process for Attack Simulation and Threat Analysis | Risk-centric, business-aligned modeling |
+| **Free-form / informal** | A diagram + a list of threats, no formal framework | Small teams, early-stage projects — trades rigor for speed |
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Threat model exists but boundaries don't match current architecture | Boundary diagram has drifted from the running system |
+| New boundaries added without threat-model update | Project grew; threat model didn't. Real coverage gap |
+| All threats rated Low | Team isn't surfacing real risks; either system is genuinely low-risk or rating discipline is broken |
+| Threat model never revisited after an incident | Postmortem follow-through is missing; incidents teach the model |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Threat modeling as one-time exercise | Document from project bootstrap; never updated; bears no resemblance to current system | Threat models are living artifacts. Re-visit when boundaries change; default to per-release review for compliance-bound projects |
+| Threat modeling as theater | Comprehensive document; no mitigations shipped | Each threat → mitigation decision is the deliverable. A model without decisions is documentation, not security |
+| STRIDE applied without DFD | Threats enumerated abstractly; no map of where they apply | STRIDE is per-element; needs the data flow diagram to be meaningful |
+| Mitigation backlog without prioritization | All threats matter; nothing gets done | Prioritize by likelihood × impact; ship mitigations for High items first |
+| Threat modeling exclusively pre-implementation | Initial model is rigorous; post-launch evolution isn't modeled | Recurring practice. Re-do when architecture changes; new integration = new modeling |
+
+**Cross-references:**
+- §4 below — security discipline applies the mitigations threat modeling identifies
+- §4 untrusted-content boundaries — addresses the threats LLM-feature products face at content boundaries
+- §3 architectural fitness functions — threat-model mitigations can be encoded as fitness functions ("no untrusted content reaches the model without wrap")
+- §8 acknowledged gaps — threats decided to accept get tracked here
+- §22 compliance — threat models are evidence-pack components for regulated industries
 
 ### Security Discipline
 

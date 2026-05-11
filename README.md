@@ -118,6 +118,7 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Multi-layer testing | §3 | You have more than one layer (API + UI, pipeline + warehouse) |
 | Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
 | Refactoring discipline | §3e | Agents refactor at velocity, or refactoring bundled with feature work hurts reviewability |
+| Threat modeling | §4 | Project has security-relevant boundaries past prototype; you want security to be deliberate, not reactive |
 | Runtime validation | §4 | Your system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain to someone later (including future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
@@ -206,7 +207,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline |
 | §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); flags-document format; spot-check sampling; watch signals |
 | §3e | Refactoring discipline — tests as safety net (non-negotiable); named transformations; small atomic commits; refactoring vs. cleanup distinction; agentic-velocity refactoring patterns |
-| §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence) |
+| §4 | Runtime validation — structural correctness, observability, threat modeling (DFD + STRIDE / OWASP / MITRE ATT&CK / LINDDUN / PASTA), security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence) |
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
 | §7 | Documentation as constraint — living audits, ADRs, audience targeting (with Diátaxis as a complementary content-type lens), cross-implementation research (research doc ↔ ADR pairing) |

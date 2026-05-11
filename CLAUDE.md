@@ -43,6 +43,18 @@ A **process template**, not a software project. There are no tests, no builds, n
 
 Core sections are §0–§15. Extensions use §16+ (assigned per extension, see table above). New extensions get the next available number. Section numbers are **stable identifiers** — they are cross-referenced across files and must never be renumbered.
 
+## File layout conventions
+
+The repo follows two layout patterns for extensions:
+
+- **Domain extensions live at the repo root.** `umami-web.md`, `umami-data.md`, `umami-iac.md`, etc. URLs to these files are **external contracts** — they're referenced from downstream projects' `CLAUDE.md` files, the umami init/audit skills, and the README's paste list. Don't restructure root-level extensions; the URL cost is recurring across every project that adopts umami.
+
+- **Domain extensions with platform-specific variants live in a subdir named after the domain.** When an extension has a shared base + per-platform sub-extensions, group them: the shared file stays at root (e.g., `umami-cms.md`, `umami-desktop.md`), and the platform-specific files live in a subdir (`cms/umami-wordpress.md`, `cms/umami-drupal.md`, `desktop/umami-linux.md`, `desktop/umami-spa-wrapper.md`). The subdir name matches the shared file's domain.
+
+  New shared+variant domains follow this rule. Example: if a hypothetical `umami-database.md` shared extension landed with `database/umami-postgres.md` and `database/umami-mysql.md` platform variants, the `database/` subdir is the right shape.
+
+The same URL-as-external-contract reasoning applies to file paths: moving a file means breaking every downstream `CLAUDE.md` that references it. Stability beats aesthetic improvement.
+
 ## Change Propagation Map
 
 When you make changes to this repo, multiple files often need coordinating updates. Consult this map before marking any change as complete.

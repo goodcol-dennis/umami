@@ -102,6 +102,7 @@ These practices cost almost nothing to adopt and prevent the most common sources
 | Project discovery | §0 | Know what you're building before applying guardrails |
 | Predictable project structure | §1 | Agents and humans find things without searching |
 | Phase / Session hierarchy for multi-sitting work | §1 | Gives commits, decisions, and roadmap a unit of work bigger than the commit and smaller than the milestone |
+| Preserving project structure (structure-as-contract) | §1 | Project committed to a structure; restructuring would break downstream references and accumulated tooling |
 | Development discipline (TDD, systematic debugging) | §3b | Prevents "fix one thing, break another" cycles that burn tokens |
 | Security discipline (boundaries, secrets, dependencies) | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
 | Enforced consistency (types, linting, formatting) | §6 | Catches errors at build time, not in production or code review |
@@ -200,7 +201,7 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 | Section | Topic |
 |---------|-------|
 | §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol |
-| §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy for long-running work, multi-surface/one-primitive pattern |
+| §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy, multi-surface/one-primitive pattern, preserving project structure (structure-as-contract discipline) |
 | §2 | Specification-first development — specs before code; relationship to Spec-Driven Development (SDD) as the closest movement |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes |

@@ -144,6 +144,7 @@ These practices cost almost nothing to adopt and prevent the most common sources
 | Project discovery | §0 | Know what you're building before applying guardrails |
 | Predictable project structure | §1 | Agents and humans find things without searching |
 | Phase / Session hierarchy for multi-sitting work | §1 | Gives commits, decisions, and roadmap a unit of work bigger than the commit and smaller than the milestone |
+| Preserving project structure (structure-as-contract discipline) | §1 | Once the project commits to a structure, restructuring it has compounding cost; codify the rule and pre-identify seams before urgency |
 | Development discipline | §3b | TDD and systematic debugging prevent "fix one, break another" cycles |
 | Security discipline | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
 | Enforced consistency | §6 | Types, linting, formatting, and dependency hygiene catch errors at build time |
@@ -221,6 +222,7 @@ When onboarding a project to umami — especially an existing codebase — watch
 | **Fitness functions as documentation** | Architectural fitness functions exist in the test suite, but they assert constraints that are always trivially true. They never fail. They're aspirational descriptions of architecture, not active gates. | Run the fitness function suite in a deliberately broken state (introduce a known violation). If the suite still passes, the constraint is too loose or the test isn't actually checking what it claims. Functions that have never failed in their lifetime are also a sign — either the codebase has perfect compliance (unlikely) or the test is documentation. | Apply §3 "Architectural Fitness Functions": each function should be specific enough to fail when its invariant is violated. If you can't construct a violation case, the test is documentation, not a fitness function. |
 | **Refactoring without tests** | Code restructured "for clarity" without tests covering the affected behavior. Either no tests exist, or the tests were added/changed as part of the refactor commit. Behavior may have changed silently. | If a "refactor" commit also modifies tests in ways that aren't pure rename / move, it's not a refactor — it's a rewrite. If the codebase has refactor-style commits but the test suite doesn't run reliably, the safety net is missing. | Apply §3e "Refactoring Discipline": tests as the safety net are non-negotiable. If behavior isn't covered, write the test first; then refactor. If you can't write the test, you're not refactoring — you're rewriting. |
 | **Security as reactive — no threat model** | Project ships features with security controls in place (boundary validation, secrets management, auth) but no systematic threat model. Defenses cover threats the team happened to think of; threats they didn't think of slip through. Security incidents repeatedly surface "we should have caught this." | Ask the team to draw the system's trust-boundary data flow diagram on a whiteboard from memory. If they can't, the threat model doesn't exist. Look for a document mapping system boundaries → threats → mitigation decisions. If absent, security is reactive, not deliberate. | Apply §4 "Threat Modeling": the 5-step protocol (DFD → STRIDE → rate → decide mitigations → living document). One pass at project bootstrap; re-visit when boundaries change; per-release for compliance-bound projects. |
+| **Aesthetic restructure** | Someone proposes (or an agent quietly executes) a directory / file-layout reorganization framed as "cleaner" or "more consistent." The change breaks paths referenced from downstream `CLAUDE.md` files, skill files, tests, change-propagation maps, or external documentation. Coordination cost was not enumerated. | When a restructure is proposed, ask the proposer to enumerate the external contracts that will break (tests, docs, downstream `CLAUDE.md` references, skill paths, propagation maps). If they can't or won't, the change is aesthetic and the coordination cost is invisible to them. Often the current layout is fine and the structural rule just needs codification. | Apply §1 "Preserving Project Structure": codify the rule (CLAUDE.md), encode invariants as §3 fitness functions, flag structural changes in §3d code review. Restructure only at appropriate phases (discovery, pre-shipping, major-version boundary, or trigger-fired per §8). |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
@@ -521,6 +523,66 @@ MCP ─┘
 **The discipline:** before exposing a new write capability through any surface, define it as a variant of the patch type first. The surface code should never call the engine directly; it should always go through the primitive.
 
 This generalizes beyond write operations. Read operations can also benefit from a single typed query primitive — but the cost-benefit is weaker for reads (they don't have invariants or undo). Apply this rule strictly to writes; selectively to reads when it earns its keep.
+
+### Preserving Project Structure
+
+§1's other sub-sections cover what to *set up* — directory layout, workspace partitioning, the phase/session hierarchy, multi-surface routing. This sub-section covers how to *preserve* what you've set up. Once a project commits to a structure, that structure becomes an **external contract** — for tests that reference paths, for documentation that mentions modules, for change-propagation maps (§10), for skills and automation that reference file locations, for downstream consumers if the project is a library or shared spec. Restructuring late has costs that compound with project age.
+
+**The core principle: structural commitments are contracts.** The same reasoning §11 applies to spec-section identifiers (external contracts; don't renumber) applies to file paths, module names, and directory layouts. Changing them means breaking every reference. The cost is real and recurring.
+
+**When structural changes are appropriate:**
+
+| Phase | Why it's OK to restructure |
+|---|---|
+| **Discovery (§0)** | No commitments have formed yet; this is when to get the structure right |
+| **Pre-shipping** | No external consumers exist; internal refactoring is local |
+| **Major-version boundaries** | Breaking changes are scheduled and communicated; downstream consumers expect adjustment |
+| **Trigger-driven (per §8 watch signals)** | A pre-identified seam fires its trigger; restructure has been pre-staged |
+
+**When structural changes are expensive and should be avoided:**
+
+- After publication, when downstream `CLAUDE.md` files / skills / automation reference paths
+- When the change is *aesthetic* ("cleaner layout") rather than driven by a real constraint
+- Mid-version, when external contracts haven't been renegotiated
+- Bundled with feature work (per §3e: structure changes are refactorings; same atomic-commit rules apply)
+
+**Protecting structure from drift:**
+
+| Tool | What it catches |
+|---|---|
+| **Codified rules in CLAUDE.md / instruction files** | New contributors and agents follow the explicit rule instead of inventing or inferring one |
+| **§3 architectural fitness functions** | Module import-direction violations, file-location-rule violations, naming-pattern violations |
+| **§3d code review classifications** | New files outside the canonical layout flagged HIGH for human review |
+| **§10 change propagation maps** | Capture "files that move together"; restructures that split them get flagged |
+| **§8 acknowledged gaps — seam pre-identification** | When a trigger fires (file size, growth pattern), the restructure is pre-staged with execution plan |
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| New files added in inconsistent directories | The structural rule isn't being followed; either codify it more visibly or train contributors |
+| Code review repeatedly flags "where does this file go?" | The structural rule isn't internalized; documentation gap |
+| Structural changes batched with feature work | §3e refactoring discipline violated; structure changes should be their own commit |
+| Restructure proposed without external-contract analysis | The proposer doesn't see the coordination cost; ask them to enumerate what breaks |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Aesthetic restructure | "Cleaner layout" reorg that breaks external contracts | The cleanest layout is the one with the lowest aesthetic-improvement-to-coordination-cost ratio. Often the current layout is fine; codify the rule instead |
+| Structural drift via small changes | No single change is a restructure but the cumulative effect is one | §3e refactoring discipline + §3d code review flagging at the structural level |
+| No codified rules | New contributors guess at conventions; inconsistency accumulates | Codify rules in CLAUDE.md (file layout, directory conventions, naming, import patterns) |
+| Treating structure as forever-frozen | Project grows; structure no longer fits; team says "we can't change it" | Major-version boundaries are the right time. Pre-identify seams in §8 *before* urgency; when the trigger fires, execute the staged plan |
+| Restructuring driven by an agent that doesn't see external contracts | Agent "tidies" the layout in a refactor; downstream consumers break silently | §3d Layer 2 (AI pre-screen) flags structural changes for human review |
+
+**Cross-references:**
+- §1 above — the setup sub-sections this protects
+- §3 architectural fitness functions — encode structural rules as automated tests
+- §3d code review — structural changes get HIGH-flagged
+- §3e refactoring discipline — structural changes are refactorings; same atomic-commit rules apply
+- §8 acknowledged gaps — pre-identify seams before urgency
+- §10 change propagation maps — capture structural patterns
+- §11 file size budgets — the spec-ID-as-external-contract exemption is the same logic applied to one specific structural element
 
 ---
 

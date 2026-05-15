@@ -5,7 +5,7 @@ description: First-time umami setup or upgrade-existing-setup. Discovers project
 
 # umami-init — Initialization protocol
 
-**Last synced:** 2026-05-09 from §0.7b. Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-13 from §0.7b (umami v3 multi-file architecture). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -44,11 +44,11 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
 
 2. **Run §0.1–§0.4 discovery** from freshly-fetched `umami.md`. Walk the questionnaire interactively, one decision at a time per §3c when answers compound.
 
-3. **Derive the recommended set** of core + extensions via §0.5's "if the project has..." mapping.
+3. **Derive the recommended set** of URLs via §0.5's "if the project has..." mapping. The URL block always includes the **landing document** (`umami.md` at the repo root). Core companion files (`core/umami-quality.md`, `core/umami-runtime.md`, `core/umami-process.md`, `core/umami-agents.md`) and domain extensions (`ext/umami-{name}.md`, with shared+variant clusters under `ext/{domain}/`) are added based on the tier the project is targeting and which concerns apply. For Tier 1 / first-pass adoption, the URL block may legitimately list only the landing plus relevant domain extensions — companions can be added when the project escalates to Tier 2.
 
 4. **Compute the diff** against current state:
-   - **Adds:** extensions to add to the URL list.
-   - **Removes:** extensions referenced but not relevant (rare; usually keep, just flag).
+   - **Adds:** companion files (if Tier 2+) and domain extensions to add to the URL list.
+   - **Removes:** files referenced but not relevant (rare; usually keep, just flag).
    - **Skill installations:** `.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md` with `**Last synced:** YYYY-MM-DD` set to today.
 
 5. **Show the user the proposed changes, then present the four-option dialog.** Enumerate every file that would be modified or created — paths, line counts, the exact URL block that would land in each instruction file, which skill files would be created or updated and at what `Last synced:` date. The user must be able to read the diff before deciding. Then surface the dialog (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
@@ -64,8 +64,10 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
 These are not advisory. The skill drifts when constraints are advisory; it holds when they're rules.
 
 - **Read-only by default.** The four-option dialog gates every write; no destructive changes without explicit approval.
-- **Always fetch the spec fresh** from the canonical URL (`https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md`). Never cache the spec locally. Skill files don't count — they're invocation aids, not copies.
-- **If the fetch fails, tell the user and stop.** Do not fall back to a stale local copy. Init against three-month-old guidance produces wrong recommendations.
-- **Cite a file path or doc reference for every observation.** "The project lacks the data extension" is an opinion; "no `umami-data.md` URL is referenced in `CLAUDE.md` despite the project containing `lib/pipeline/`" is a finding.
-- **Don't fetch extension files unless they apply.** Confirm relevance via §0.2 system shape answers before pulling.
+- **Always fetch the landing document fresh** from the canonical URL (`https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md`). Never cache locally. Skill files don't count — they're invocation aids, not copies.
+- **For Tier 2+ scope, fetch the companion files identified by the landing's Section Navigation Map.** Don't fetch companions speculatively.
+- **If any fetch fails, tell the user and stop.** Do not fall back to a stale local copy. Init against three-month-old guidance produces wrong recommendations.
+- **Cite a file path or doc reference for every observation.** "The project lacks the data extension" is an opinion; "no `ext/umami-data.md` URL is referenced in `CLAUDE.md` despite the project containing `lib/pipeline/`" is a finding.
+- **Detect legacy v2.1 paths and offer migration.** If `CLAUDE.md` references pre-v3 paths (root-level `umami-X.md`, `cms/`, `desktop/`), surface this in the proposed diff. Offer to update the URLs to their v3 paths (`core/`, `ext/`, `ext/cms/`, `ext/desktop/`). Legacy paths still work via deprecation stubs in v3.0 but **will 404 in v3.1** — flag the migration as a priority.
+- **Don't fetch companion or extension files unless they apply.** Confirm relevance via §0.2 system shape answers and the §0.6 target tier before pulling.
 - **Drift detection always runs** before finalizing the report. See step 7.

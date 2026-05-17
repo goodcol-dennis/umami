@@ -5,7 +5,7 @@ description: Periodic dropped-item audit. Surfaces designs, explorations, POCs, 
 
 # umami-drift-audit — Periodic dropped-item audit
 
-**Last synced:** 2026-05-10 from §8. Re-derive this skill from the current §8 when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-16 from §8 (umami v3 multi-file architecture; shipped-features scan-location added). Re-derive this skill from the current §8 when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -30,8 +30,11 @@ The gap registry tracks items everyone *knows* are open. This audit catches item
 ## Hard rules
 
 - **Read-only.** Never delete, archive, or restructure files during the audit. The output is a findings report with proposed dispositions; the user decides.
-- **Each item gets a proposed disposition.** Findings without dispositions are theater. Disposition options: Revive / Archive / Delete / Re-decide.
-- **Default disposition: archive unless revival is justified.** Items at rest stay at rest; the audit's job is to force motion. If a file has been untouched for >6 months without explicit reason, the default is archive.
+- **Always fetch the landing document fresh** from `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md` (or `refs/heads/main` for downstream-stable consumers). Never cache locally.
+- **Consult the Section Navigation Map** in the landing to identify §8's home (`core/umami-process.md`). Fetch that companion for the full audit protocol (scan-location categories, disposition options, post-ship shipped-features extension). Drift-audit scope always requires the process companion.
+- **If any fetch fails, tell the user and stop.** Do not fall back to a stale local copy.
+- **Each item gets a proposed disposition.** Findings without dispositions are theater. Disposition options: Revive / Archive / Delete / Re-decide (pre-ship items); Keep / Deprecate / Remove (post-ship features).
+- **Default disposition: archive unless revival is justified (pre-ship); Deprecate-or-Remove unless active use is confirmed (post-ship shipped features).** Items at rest stay at rest; the audit's job is to force motion. Shipped features carry operational cost while they exist, so the default tilts away from "keep."
 - **Cite file paths and last-touched dates** for every finding. "Some old designs exist" is opinion; "`docs/designs/agent-chat-v2.md` last edited 2025-11-04; no implementation activity since" is a finding.
 - **Never recommend more than ~15 dispositions per audit run.** Larger lists overwhelm; batch into subsequent runs.
 - **Audit one disposition path at a time when working through dispositions interactively** — per §3c, walk through findings rather than batching.

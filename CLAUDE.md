@@ -8,22 +8,39 @@ A **process template**, not a software project. There are no tests, no builds, n
 
 ## Status
 
-`v2.1` is the current released tag. **v3.0 is being prepared on the `v3-restructure` branch** — a major architectural reframe that splits the monolithic `umami.md` into a landing document + 4 concern-based companion files. Section numbers are stable across files; the landing's *Section Navigation Map* tells the agent which file holds each section. Tier 1 / Foundation fetches now use the landing alone (~13K tokens), down from ~40K for the v2 monolith.
+`v3.0` merged into `develop` 2026-05-13 (architectural reframe: landing + 4 core companions + repo reorg into `core/`, `ext/`, `recipes/`). **Currently shipping on `develop`; `main` tag pending validation against external projects.** Last updated: 2026-05-16.
 
-After v3.0 merges, develop will carry the multi-file architecture; main will be tagged v3.0 when the user is ready.
+**Just shipped (v3.0 → develop):**
+- Landing-doc-as-index architecture; Tier 1 fetch now ~13K tokens (was ~40K monolithic)
+- 5-skill audit family: `umami-init`, `umami-audit`, `umami-auto-review`, `umami-pipeline-audit` (new 2026-05-16), `umami-drift-audit`
+- Trust Posture sub-section (§4); §6b Developer Experience and Pipeline Health (new section); §30 agent-workflows extension
+- Risk taxonomy with auto-merge thresholds + Cross-provider review (§3d, 2026-05-16); Closed-Loop PR Review workflow (§30.5, 2026-05-16)
+- Velocity-balance anti-patterns: "Security investment outpaces threat model", "Pipeline cargo cult", "Winchester Mansion sprawl"
+- `recipes/` directory seeded with `consulting-timesheet.md` and `closed-loop-pr-review.md` placeholders
+- 14 deprecation stubs at pre-v3 paths (removed in v3.1)
+
+**Active gaps** (tracked in [`audits/gaps.md`](audits/gaps.md)):
+- `v3 multi-file architecture not yet validated at scale by external adopters` — closes on first external adopter completing the bootstrap flow
+- `§3d risk taxonomy + cross-provider review + §30.5 closed-loop PR review not yet validated across projects` — closes when ≥2 projects run the full pattern for ≥1 release cycle
+- Plus ~15 "not yet validated across projects" entries for individual v3.0 practices (Trust Posture, §6b, untrusted-content boundaries, etc.) — same shape, awaiting field validation
+
+**v3.1 scheduled work** (per `audits/v3.0-retro.md`):
+- Remove all 14 deprecation stubs at pre-v3 paths
+- Roll up §20 (WordPress) and §21 (Drupal) content into §25 (CMS); delete `ext/cms/umami-wordpress.md` and `ext/cms/umami-drupal.md` entirely (section numbers stay reserved)
+- Refine v3.0 practices based on external-adopter feedback
+
+**Next planned tag:** v3.1 — CMS rollup + stub removal + first-pass external-adopter refinements.
 
 **v3 file architecture:**
 - `umami.md` — Landing (framework + Section Navigation Map + §0 + §1 + §3b + §6 + §13 + §15 + Security Essentials sidebar)
-- `umami-quality.md` — §2 · §3 · §3c · §3d · §3e (specs, testing, decisions, review, refactoring)
-- `umami-runtime.md` — §4 · §5 · §6b (runtime validation, security disciplines, state recovery, pipeline health)
-- `umami-process.md` — §7 · §8 · §10 · §12 (docs, gaps, propagation, change tracking)
-- `umami-agents.md` — §9 · §11 · §14 (token efficiency, file budgets, orchestration)
-
-**In-flight rollups:**
-- CMS sub-extensions §20 (WordPress) and §21 (Drupal) are marked for fold-in to §25 (general CMS) — banner notes added but rollup not yet executed.
-- §29 (SPA wrapper) repositioned as a worked example of §27 + §28, not a domain peer; content otherwise unchanged.
+- `core/umami-quality.md` — §2 · §3 · §3c · §3d · §3e (specs, testing, decisions, review, refactoring)
+- `core/umami-runtime.md` — §4 · §5 · §6b (runtime validation, security disciplines, state recovery, pipeline health)
+- `core/umami-process.md` — §7 · §8 · §10 · §12 (docs, gaps, propagation, change tracking)
+- `core/umami-agents.md` — §9 · §11 · §14 (token efficiency, file budgets, orchestration)
 
 **Next available extension section:** §31.
+
+See [`audits/v3.0-retro.md`](audits/v3.0-retro.md) for the v3 architectural decision record and [`docs/decisions/`](docs/decisions/) for individual ADRs.
 
 ## Files
 
@@ -51,6 +68,8 @@ After v3.0 merges, develop will carry the multi-file architecture; main will be 
 | `ext/umami-agent-workflows.md` | Agent workflows extension — §30 (closed-loop auto-remediation, production agentic CI, workflow cost patterns, anti-patterns, closed-loop PR review with risk-tiered auto-merge) |
 | Deprecation stubs at pre-v3 paths | Short markdown files at the old root-level / `cms/` / `desktop/` locations that point readers back to `umami.md`. **Removed in v3.1.** Exist to keep legacy URL fetches from returning 404 during the v3.0 grace period. |
 | `recipes/` | Drop-in implementation artifacts (cross-cutting features). Distinct from extensions: extensions guide *what to think about*, recipes provide *what to type / copy*. Independent of §0–§30 numbering. See [`recipes/README.md`](recipes/README.md). |
+| `docs/decisions/` | Architecture Decision Records (ADRs) — individual records of significant architectural decisions. Distinct from `audits/` retros: ADRs cover one decision; retros cover a release window. See [`docs/decisions/README.md`](docs/decisions/README.md). |
+| `tools/check-refs.sh` | Architectural fitness function (§3) — verifies every `§N` cross-reference resolves to a defined section. Run before commits per the pre-commit checklist below. |
 | `README.md` | Public-facing documentation, adoption guide, comparison tables |
 | `LICENSE` | CC BY-SA 4.0 |
 | `audits/` | Per-release retros (`v1.0-retro.md`, `v2.1-retro.md`, `v3.0-retro.md`) and rolling [`gaps.md`](audits/gaps.md) — see §8 for the retro/registry distinction |
@@ -93,7 +112,7 @@ When you make changes to this repo, multiple files often need coordinating updat
 | **Rename or re-describe a section** | 1. The file that holds the section → 2. `umami.md` Section Navigation Map → 3. `README.md` section description tables → 4. Any other files that cross-reference the renamed section |
 | **Add cross-references between core files** | 1. Source file (the one adding the reference) → 2. Use plain `§N` notation — file is metadata, section number is the stable identifier. On first occurrence per section, optionally hint *"(in `umami-X.md`)"* for navigation; subsequent occurrences use plain `§N`. |
 | **Update adoption tiers** | 1. `umami.md` §0.6 → 2. `umami.md` Section Navigation Map (the Tier column) → 3. `README.md` tier tables → 4. `README.md` "What the document covers" if the tier change reflects a depth shift |
-| **Update §0.7 (audit), §0.7b (init), §3d (code review), §6b (pipeline audit), or §8 (drift audit) protocol** | 1. The file that holds the protocol (`umami.md` for §0.7/§0.7b; `umami-quality.md` for §3d; `core/umami-runtime.md` for §6b; `umami-process.md` for §8) → 2. corresponding skill template in `.claude/skills/` (`umami-audit.md` / `umami-init.md` / `umami-auto-review.md` / `umami-pipeline-audit.md` / `umami-drift-audit.md`) — mirror the change and bump `**Last synced:**` to today's date → 3. `README.md` "Get started" section if the bootstrap one-liner or invocation language changes |
+| **Update §0.7 (audit), §0.7b (init), §3d (code review), §6b (pipeline audit), or §8 (drift audit) protocol** | 1. The file that holds the protocol (`umami.md` for §0.7/§0.7b; `core/umami-quality.md` for §3d; `core/umami-runtime.md` for §6b; `core/umami-process.md` for §8) → 2. corresponding skill template in `.claude/skills/` (`umami-audit.md` / `umami-init.md` / `umami-auto-review.md` / `umami-pipeline-audit.md` / `umami-drift-audit.md`) — mirror the change and bump `**Last synced:**` to today's date → 3. `README.md` "Get started" section if the bootstrap one-liner or invocation language changes |
 
 ## Writing conventions
 
@@ -102,6 +121,42 @@ When you make changes to this repo, multiple files often need coordinating updat
 - **No fluff:** Every sentence should either define a practice, explain why it matters, or provide a concrete example. If a sentence does none of these, delete it.
 - **Cross-references:** Use `§N` notation (e.g., "see §4 for runtime validation"). Never use page numbers or vague references like "see above."
 - **Tables over prose:** When listing practices, requirements, or mappings, prefer tables. They're faster to scan for both humans and agents.
+
+## Pre-commit checklist (for changes to umami itself)
+
+Umami applies §15-style checklist discipline to its own commits. Before pushing a substantive change, walk through this checklist — most failures here are recoverable in seconds but expensive if they ship.
+
+**Structural integrity:**
+- [ ] If a section was added, moved, or renamed → Section Navigation Map in `umami.md` updated to match
+- [ ] If a section was added or moved → Change Propagation Map below was consulted; all listed files for the change type were touched
+- [ ] If a new practice was added → §0.6 Tier table (in `umami.md` AND `README.md` — mirrored) has the corresponding row
+- [ ] If a new sub-section was added → README.md "What the document covers" core table reflects the change
+- [ ] Cross-references audited: `tools/check-refs.sh` exits 0 (no orphan §N references)
+
+**Skill family consistency:**
+- [ ] If §0.7 / §0.7b / §3d / §6b / §8 was edited → corresponding skill in `.claude/skills/` was mirrored; `Last synced:` bumped to today's date
+- [ ] If a new audit-shaped protocol was introduced → corresponding skill file was created in `.claude/skills/`
+
+**File layout:**
+- [ ] Landing (`umami.md`) stays at repo root — never moves
+- [ ] New core companion files (rare) land in `core/`; new extensions land in `ext/` (or `ext/{domain}/` for shared+variant clusters)
+- [ ] If a file was moved across paths → deprecation stub left at the old path until the next major release; documented in retro
+
+**Documentation and history:**
+- [ ] If a major architectural decision was made → ADR added to `docs/decisions/` (separate from per-release retros in `audits/`)
+- [ ] Status block in this CLAUDE.md updated if `v3.x` shipped or scheduled work changed
+- [ ] If a new practice was added → gap-registry entry created in `audits/gaps.md` for "not yet validated across projects" (the framework's own validation discipline)
+
+**Security:**
+- [ ] No `.mcp.json`, `.mcp.local.json`, or other per-developer config staged (gitignored, but verify)
+- [ ] No secrets or API tokens in staged content; spot-check with `git diff --cached | grep -iE 'token|password|secret|api[_-]?key'`
+
+**Voice and cross-references:**
+- [ ] Voice matches existing umami: direct, imperative, second-person; tables over prose for lists; no emojis unless explicitly requested
+- [ ] §N notation used for cross-references (not page numbers, not vague "see above")
+- [ ] First reference to a section in another file optionally hints at the file (e.g., "§6b in `core/umami-runtime.md`"); subsequent references use plain `§N`
+
+The checklist isn't a CI gate — there's no CI on this repo. It's a manual discipline the human or agent runs through before committing. If a step finds a gap, fix and re-check. Items that don't apply to a given change can be checked through quickly.
 
 ## Branching
 

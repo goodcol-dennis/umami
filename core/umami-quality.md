@@ -461,17 +461,26 @@ Worked example (one project's shape):
 ```markdown
 ## Review flags — PR #1234
 
+### Change tier (per Risk taxonomy below)
+**Medium** — new feature behind flag + data-integrity touch. Default disposition: AI pre-screen + ≥1 human spot-check.
+
 ### HIGH (need eyes)
 - security: src/api/orders.ts:142 — new validation skips length check (potential XSS via order notes field)
+  - **Impact:** closes XSS vector in user-controlled `notes` field reaching admin dashboard. **Effort:** Agent-autonomous · Hours · One-time. **Quick win.**
 - data: src/db/migrations/0042.sql — adding NOT NULL without backfill (table size 50M rows)
+  - **Impact:** prevents production migration timeout / lock contention. **Effort:** Operator-required · Days · One-time (backfill script + multi-phase migration).
 
 ### MEDIUM (consider)
 - resilience: src/utils/retry.ts:8 — retry budget not propagated to caller
+  - **Impact:** caller can't reason about total wait time; reduces operational debuggability. **Effort:** Agent-autonomous · Hours · One-time.
 - observability: src/services/auth.ts — debug log statement includes token
+  - **Impact:** closes secret-leak risk in logs (§4 build-output hygiene). **Effort:** Agent-autonomous · Hours · One-time. **Quick win.**
 
 ### LOW (note)
-- 12 test files updated; no production-code test coverage added for the new branch in orders.ts:142
+- 12 test files updated; no production-code test coverage added for the new branch in orders.ts:142 — **Effort:** Agent-with-review · Hours · One-time.
 ```
+
+**Impact and Effort on every finding.** Same discipline as §0.7 audit recommendations: Impact names a specific improvement (closes a vector, resolves a watch signal, reduces measurable pain); Effort uses the §4 cost-profile scheme. Quick-win flag only when Impact is concrete and Effort is Hours.
 
 The exact shape (HIGH/MEDIUM/LOW vs. red/yellow/green vs. priority numbers) is a project taste call. The qualities are universal.
 

@@ -160,6 +160,8 @@ The gap registry tracks items everyone *knows* are open. This audit catches item
 
 **Post-ship items (shipped features) use different dispositions.** A shipped feature that surfaces in the audit gets: **Keep** (active use confirmed) / **Deprecate** (announce removal with timeline so users can migrate) / **Remove** (no users, no future, no transition needed). The pre-ship default (archive unless revival is justified) doesn't apply — shipped features carry operational cost while they exist, so the default tilts toward Deprecate-or-Remove when active use can't be confirmed. See §13 dead code hygiene for the per-line equivalent.
 
+**Each disposition cites Impact and Effort** per the §0.7 audit-recommendation format: Impact names the specific improvement (resolves a deferred decision, frees mental load, retires operational cost); Effort uses the §4 cost-profile scheme (Who · Magnitude · Shape). Flag **Quick win** when Impact is concrete (closes a gap-registry entry, removes a feature with measurable operational cost, retires storage/auth/monitoring overhead) and Effort is Hours.
+
 **Watch signals:**
 
 | Signal | What it catches |

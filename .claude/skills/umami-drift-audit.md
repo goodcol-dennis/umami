@@ -5,7 +5,7 @@ description: Periodic dropped-item audit. Surfaces designs, explorations, POCs, 
 
 # umami-drift-audit — Periodic dropped-item audit
 
-**Last synced:** 2026-05-16 from §8 (umami v3 multi-file architecture; shipped-features scan-location added). Re-derive this skill from the current §8 when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-16 from §8 (umami v3 multi-file architecture; shipped-features scan-location; Impact + Effort + Quick-win on dispositions). Re-derive this skill from the current §8 when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -78,17 +78,32 @@ The gap registry tracks items everyone *knows* are open. This audit catches item
 
 ### Findings — proposed dispositions
 
+Each disposition cites **Impact** and **Effort** per the §0.7 audit-recommendation format. Flag **Quick win** when Impact is concrete (gap-registry entry closed, operational cost retired, decision unblocked) and Effort is Hours.
+
 **Revive (N items)**
 - [file:path] — last touched [date]. [1-line purpose]. Proposed: revive because [reason]. Action: [schedule into phase X / add to gap registry].
+  - **Impact:** [specific value of reviving — e.g., "unblocks Phase 12 feature work"]
+  - **Effort:** [Agent-autonomous / Operator-required / Specialist · Hours/Days/Weeks/Months · One-time]
 
 **Archive (N items)**
 - [file:path] — last touched [date]. [1-line purpose]. Proposed: archive — [reason it's not blocking but worth preserving].
+  - **Impact:** [reduces mental load; preserves historical context]
+  - **Effort:** Agent-autonomous · Hours · One-time **Quick win**
 
 **Delete (N items)**
 - [file:path] — last touched [date]. [1-line purpose]. Proposed: delete — [reason it's truly dead].
+  - **Impact:** [retires operational cost — e.g., "removes feature flag with N monitoring rules"]
+  - **Effort:** [Agent-with-review / Operator-required · Hours/Days · One-time]
 
 **Re-decide (N items)**
 - [decision entry / ADR] — deferred [date]. [1-line summary]. Proposed: decide now — options [A / B / Pivot].
+  - **Impact:** [unblocks downstream work; resolves a deferred-decisions gap]
+  - **Effort:** [Operator-required (the decision itself) · Hours · One-time; implementation of the chosen option is separate]
+
+**Post-ship features — Keep / Deprecate / Remove (N items)**
+- [feature name] — README/marketing claim. Production-exercise: [last seen / never]. Proposed: [Keep / Deprecate / Remove].
+  - **Impact:** [for Remove: "retires N support tickets per month, M monitoring rules, K lines of dead code"; for Deprecate: "begins migration window for users on legacy path"]
+  - **Effort:** [Operator-required · Days/Weeks · One-time + recurring during deprecation window]
 
 ### Skill drift (only if detected)
 - [one-line drift callout]

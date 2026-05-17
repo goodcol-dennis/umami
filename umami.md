@@ -322,14 +322,21 @@ Auditing the full document against a project is expensive — both in tokens and
 
 ### Recommended next practices (priority order)
 1. [Practice] (§X) — [why this addresses a current pain point]
+   - **Impact:** [specific improvement, tied to a watch signal or measurable signal where possible — e.g., "closes the §3d rubber-stamping watch signal; merge rate currently 8× human engagement", "eliminates ~14 contributor-hours/week per §6b tax", "resolves gap-registry entry X"]
+   - **Effort:** Agent-autonomous / Operator-required / Specialist · Hours/Days/Weeks/Months · One-time / Recurring / Architectural / Spend (per §4 *Reading the cost profiles*)
+   - **Quick win** *(flag only when Impact is documented anti-pattern / gap-registry entry / measurable pain reduction AND Effort is Hours)*
    - **Changes required:** [which files would be created, modified, or restructured]
    - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
 2. [Practice] (§X) — [why this addresses a current pain point]
-   - **Changes required:** [which files would be created, modified, or restructured]
-   - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
+   - **Impact:** [...]
+   - **Effort:** [...]
+   - **Changes required:** [...]
+   - **Conflict risk:** [low/medium/high]
 3. [Practice] (§X) — [why this addresses a current pain point]
-   - **Changes required:** [which files would be created, modified, or restructured]
-   - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
+   - **Impact:** [...]
+   - **Effort:** [...]
+   - **Changes required:** [...]
+   - **Conflict risk:** [low/medium/high]
 
 ### Latent practices observed
 - [Practice X] — evidence: [hook / script / file / pattern showing the team exercises this]. Currently uncodified in [target doc / spec section]. Recommendation: codify in [the project's CLAUDE.md / a process doc / surface for umami contribution if universally applicable].
@@ -382,6 +389,7 @@ This callout sits **outside** the priority-ordered recommendations list and does
 - **Cite a file path or doc reference for every observation.** "The project lacks ADRs" is an opinion; "no files exist under `docs/decisions/`" is a finding.
 - **Don't fetch companion or extension files unless they apply.** A Tier 1 audit doesn't need any companion file. A web project doesn't need `umami-data.md`. Confirm scope relevance before pulling.
 - **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
+- **Every recommendation cites Impact and Effort.** Impact names a specific improvement (anti-pattern closed, gap-registry entry resolved, measurable pain reduced — ideally with a falsifiable signal). Effort uses the §4 *Reading the cost profiles* scheme (Who · Magnitude · Shape). Both are required; vague impact ("improves quality") and vague effort ("not too bad") defeat prioritization. **Flag Quick win** only when Impact is concrete AND Effort is Hours; the flag dilutes if applied to medium-effort items. Unflagged recommendations are still actionable — readers prioritize from the Impact/Effort dimensions themselves.
 - **Surface latent practices.** Beyond tier-gap recommendations, look for practices the team is *already exercising* that aren't yet codified — either in the project's own `CLAUDE.md` / process docs, or in umami's spec. Evidence: hooks doing something the docs don't describe, scripts doing operations not captured in process, conventions visible across commits but not in `CLAUDE.md`, gap-registry entries pre-staging work that isn't reflected in any tier-table practice. When found, recommend codification.
 
 When the audit flags an anti-pattern, name the watch signal that would confirm or refute the verdict (see §0.6). Verdicts without falsifiers become opinion.

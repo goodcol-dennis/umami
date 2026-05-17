@@ -5,7 +5,7 @@ description: First-time umami setup or upgrade-existing-setup. Discovers project
 
 # umami-init — Initialization protocol
 
-**Last synced:** 2026-05-13 from §0.7b (umami v3 multi-file architecture). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-16 from §0.7b (umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on findings — applied where init surfaces process recommendations, not for mechanical URL/skill installation). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 

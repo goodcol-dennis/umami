@@ -5,7 +5,7 @@ description: Pre-screen reviewer agent for code changes. Reviewing mode — prod
 
 # umami-auto-review — Auto-review pre-screen agent
 
-**Last synced:** 2026-05-16 from §3d (umami v3 multi-file architecture; risk taxonomy + cross-provider review additions). Re-derive this skill from the current §3d when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-16 from §3d (umami v3 multi-file architecture; risk taxonomy + cross-provider review; Impact + Effort + Quick-win on flags). Re-derive this skill from the current §3d when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -63,20 +63,28 @@ The flags document goes at the end of the review or as a comment on the PR. Defa
 ```markdown
 ## Review flags — {change ID, e.g., PR #1234}
 
+### Change tier (per §3d Risk taxonomy)
+{Trivial / Low / Medium / High / Critical} — {one-line justification}. Default disposition: {auto-merge / auto-merge with notification / require human ack / full human review / full team review}.
+
 ### HIGH (need eyes)
 - {dimension}: {file:line} — {one-line concern}
+  - **Impact:** {specific improvement when addressed; falsifiable where possible}
+  - **Effort:** {Agent-autonomous / Operator-required / Specialist · Hours/Days/Weeks/Months · One-time / Recurring / Architectural / Spend}
+  - **Quick win** *(only when concrete Impact AND Effort is Hours)*
 
 ### MEDIUM (consider)
 - {dimension}: {file:line} — {one-line concern}
+  - **Impact:** {...}
+  - **Effort:** {...}
 
 ### LOW (note)
-- {one-line note}
+- {one-line note} — **Effort:** {...}
 
 ### Skill drift (only if detected)
 - {one-line drift callout}
 ```
 
-Projects can adapt the shape (HIGH/MEDIUM/LOW vs. red/yellow/green vs. priority numbers); the qualities are what matter.
+Projects can adapt the shape (HIGH/MEDIUM/LOW vs. red/yellow/green vs. priority numbers); the qualities — `file:line` citation, dimension tag, Impact, Effort, change-tier — are what matter.
 
 ## Specialized reviewer escalation
 

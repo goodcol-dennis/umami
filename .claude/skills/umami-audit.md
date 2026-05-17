@@ -5,7 +5,7 @@ description: Periodic process audit against the Umami framework. Read-only — p
 
 # umami-audit — Process audit against the Umami framework
 
-**Last synced:** 2026-05-13 from §0.7 (umami v3 multi-file architecture). Re-derive this skill from the current §0.7 when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-16 from §0.7 (umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on recommendations). Re-derive this skill from the current §0.7 when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -47,6 +47,7 @@ These are not advisory. The skill drifts when constraints are advisory; it holds
 - **Don't fetch companion or extension files unless they apply.** A Tier 1 audit needs no companion files. A web project doesn't need an audit against `ext/umami-data.md`. Confirm scope relevance before pulling.
 - **Handle legacy URLs gracefully.** If a project's `CLAUDE.md` references a pre-v3 path (e.g., `umami-web.md` at the root, or `cms/umami-wordpress.md`), the agent should still fetch successfully because deprecation stubs are in place. The stub will redirect the agent to fetch the landing (`umami.md`) for the current Section Navigation Map. Flag legacy paths in the audit output under "Recommended next practices" so the project gets migrated to v3 paths before v3.1 removes the stubs.
 - **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
+- **Every recommendation cites Impact and Effort.** Impact names a specific improvement (anti-pattern closed, gap entry resolved, measurable pain reduced — ideally falsifiable). Effort uses the §4 cost-profile scheme. Flag **Quick win** only when Impact is concrete and Effort is Hours.
 - **Surface latent practices.** Beyond tier-gap recommendations, look for practices the team is *already exercising* that aren't yet codified — either in the project's own CLAUDE.md / process docs, or in umami's spec. Evidence: hooks doing something the docs don't describe, scripts doing operations not captured in process, conventions visible across commits but not in CLAUDE.md, gap-registry entries pre-staging work that isn't reflected in any tier-table practice. When found, surface them in the "Latent practices observed" section of the report and recommend codification — either in the project's docs or, if universally applicable, as a contribution to umami itself.
 
 ## Self-audit special case
@@ -76,6 +77,9 @@ Use the §0.7 audit output format:
 
 ### Recommended next practices (priority order)
 1. [Practice] (§X) — why this addresses a current pain point
+   - **Impact:** specific improvement, tied to a watch signal or measurable signal where possible
+   - **Effort:** Agent-autonomous / Operator-required / Specialist · Hours/Days/Weeks/Months · One-time / Recurring / Architectural / Spend (per §4 *Reading the cost profiles*)
+   - **Quick win** *(only when Impact is documented anti-pattern / gap entry / measurable pain reduction AND Effort is Hours)*
    - **Changes required:** files created / modified / restructured
    - **Conflict risk:** low / medium / high
 2. ...

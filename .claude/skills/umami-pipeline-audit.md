@@ -5,7 +5,7 @@ description: Periodic CI/CD pipeline audit. Measures cycle time, inventories gat
 
 # umami-pipeline-audit — Periodic CI/CD pipeline audit
 
-**Last synced:** 2026-05-16 from §6b. Re-derive this skill from the current §6b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-16 from §6b (umami v3 multi-file architecture; guardrails-vs-needs fit; Impact + Effort + Quick-win on dispositions). Re-derive this skill from the current §6b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -98,6 +98,9 @@ When auditing **this repo itself** (the canonical umami source), umami has no CI
 
 ### Findings — proposed dispositions
 1. [Gate name] (§ref) — [proposed disposition: Keep / Move local / Demote nightly / Remove / Add] — [why this addresses a real concern]
+   - **Impact:** [specific improvement — cycle-time reduction, gate-mismatch closed, missing-coverage filled, gap-registry entry resolved]
+   - **Effort:** [Agent-autonomous / Operator-required / Specialist · Hours/Days/Weeks/Months · One-time / Recurring / Architectural / Spend (per §4 *Reading the cost profiles*)]
+   - **Quick win** *(only when concrete Impact AND Effort is Hours)*
    - **Changes required:** [config file lines / branch protection settings to adjust]
    - **Conflict risk:** [low / medium / high]
 2. ...

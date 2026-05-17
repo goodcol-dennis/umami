@@ -567,8 +567,14 @@ The core practice of this section: a periodic gut check on CI/CD. Quarterly is t
 2. **Inventory gates** — list every gate (build, lint, format, type-check, unit tests, integration tests, E2E, visual regression, security scan, deploy gate, manual approvals). For each: what does it check, when did it last catch something, who owns it.
 3. **Audit purposes** — for each gate, can someone name the specific failure mode it catches and a recent example? If the answer is "we've always had it" or "for compliance" without naming the specific control, the gate is unmoored from its purpose.
 4. **Calculate the tax** — cycle time × commits per day × contributors = contributor-hours per week spent waiting. This is the tax the pipeline imposes; compare it to the value the gates produce.
-5. **Decide dispositions** per gate — Keep (still catches things) / Move local (catches issues that should be caught pre-push) / Demote to nightly (catches drift, not per-commit issues) / Remove (no longer earns its cost).
-6. **Re-baseline** — record cycle time and gate inventory; schedule the next audit (default 90 days).
+5. **Check guardrails-vs-needs fit** — evaluate the gate set as a whole against the team's actual context, not just per-gate purpose. Pipelines drift out of fit in either direction: under-guardrailed (a small team grows into a security-sensitive product without growing its pipeline) or over-guardrailed (an early-stage prototype inherits an enterprise pipeline that costs hours per commit for no real risk). Check fit against four dimensions:
+   - **Team structure** — size, distribution, on-call coverage. A 2-person team rarely needs the same approval gates as a 30-person team.
+   - **Risk profile** — regulated? user-facing? handles secrets, payments, PHI? Pipeline depth should match the §3d risk taxonomy the project actually carries, not what a similar-looking project elsewhere carries.
+   - **Deployment model** — continuous deploy vs. periodic releases vs. canary. Each implies different gate priorities (CD: gate everything before merge; canary: defer some gates to staged rollout).
+   - **Velocity expectations** — does the team need fast inner loop for prototyping, or strict outer loop for compliance evidence? The pipeline can optimize for one but rarely both — name which.
+   Mismatches surface as a finding: "pipeline is under-guardrailed for the current risk profile" (add gates), or "pipeline is over-guardrailed for the team's size and risk surface" (remove gates), with concrete recommendations.
+6. **Decide dispositions** per gate — Keep (still catches things and fits the team's needs) / Move local (catches issues that should be caught pre-push) / Demote to nightly (catches drift, not per-commit issues) / Remove (no longer earns its cost or doesn't fit needs) / Add (missing for the current risk profile).
+7. **Re-baseline** — record cycle time, gate inventory, and the guardrails-vs-needs fit assessment; schedule the next audit (default 90 days).
 
 ### Inner-Loop Feedback
 
@@ -598,6 +604,9 @@ These are heuristics, not hard rules. Your project may justify slower budgets (l
 | Identical gate configuration across multiple projects regardless of context | Pipeline cargo-culted from one project to another without local justification |
 | No gate has caught a real regression in N months | Gates documenting aspiration, not catching incidents |
 | Audit ran; no gates removed | Audit-without-disposition pattern (see §0.6 "Documentation theater" applied to pipeline) |
+| Team scaled up or down without pipeline adjustment | Pipeline guardrails sized for the team six months ago, not the team today (e.g., 2-person team grew to 10 with no review gates added; or 30-person team shrank to 5 with the same heavyweight approval gates blocking everything) |
+| Risk profile changed without pipeline adjustment | Project shipped a new compliance-bound feature, started handling secrets, or grew an authenticated user base — but the pipeline still gates as if it's the prototype it was |
+| Deployment model changed without pipeline adjustment | Team moved to continuous deploy but the pipeline still assumes periodic releases (or vice versa); gate priorities don't match the deploy flow anymore |
 
 ### Failure modes
 
@@ -608,18 +617,24 @@ These are heuristics, not hard rules. Your project may justify slower budgets (l
 | Pipeline cargo cult | Pipeline config copied from another project; gates that made sense there don't apply here, but they ship | When adopting a pipeline pattern, re-justify each gate against the current project's threat model and feature surface |
 | "We need this for compliance" without naming the control | Gate exists; rationale is "compliance"; nobody can name which specific control (SOC 2 CC8.1, PCI-DSS 6.4, etc.) it satisfies | Per §22, every compliance-driven gate maps to a specific control. If the mapping isn't documented, the rationale is folklore |
 | Inner loop ignored | CI is audited; local test runner takes 90 seconds and nobody talks about it | The inner loop is often the bigger velocity tax. Include inner-loop signals in the audit |
-| Audit without disposition | Audit runs; finds 6 gates with no recent catches; nothing gets removed | Each finding needs Keep / Move local / Demote nightly / Remove. An audit without disposition is theater |
+| Audit without disposition | Audit runs; finds 6 gates with no recent catches; nothing gets removed | Each finding needs Keep / Move local / Demote nightly / Remove / Add. An audit without disposition is theater |
+| Under-guardrailed for current risk profile | Project handles secrets, payments, or compliance-bound data but the pipeline lacks the gates that match (no security scan, no audit-trail check, no schema-migration review) | Step 5 of the audit protocol surfaces this. Add the missing gates; document the rationale in an ADR per §7 |
+| Over-guardrailed for current team | Pipeline imposes enterprise-grade gates on a 3-person prototype team; cycle time and contributor hours don't earn their value | Step 5 of the audit protocol surfaces this. Right-size to the team's actual context per §0.6 tier framework; remove gates that don't match the risk profile |
+| Guardrails don't match deployment model | Team continuously deploys but pipeline blocks merge until a manual approval that fits a periodic-release flow (or vice versa) | Align gate priorities to the deploy flow. Continuous deploy: gate everything before merge. Periodic release: defer expensive gates to release candidate. Canary: defer to staged rollout |
 
 ### Cross-references
 - §0.6 "Cargo-culting practices" — applies to pipeline gates specifically; this section operationalizes it for CI/CD
 - §0.6 "Pipeline cargo cult — slow CI as accepted reality" — the anti-pattern this section addresses
+- §0.6 Tier framework — pipeline guardrail depth should track the project's tier; this is the fit dimension of the audit
 - §3 multi-layer testing — what runs in each gate's test step; pipeline audit asks whether the right layer runs at the right gate
+- §3d Risk taxonomy — gate set should match the project's actual risk taxonomy, not a similar-looking project's
 - §4 security gates — boundary-trust verification at pipeline gates; pipeline audit checks whether these earn their cost
 - §6 Enforced Consistency — *what* to enforce; this section asks *whether enforcement is healthy*
 - §13 dead code hygiene — dead gates are dead code; the same disposition discipline applies
 - §15 Pre-commit checklist — what runs *before* CI; inner-loop budgets feed into this
 - §16 IaC — pipeline definition often lives in IaC; gate changes are infrastructure changes
 - §22 compliance — gates driven by compliance need explicit control mapping
+- `.claude/skills/umami-pipeline-audit.md` — invocable skill that runs the audit protocol above as a one-command flow
 
 ---
 

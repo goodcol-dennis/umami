@@ -154,6 +154,95 @@ These extend §0.6's anti-pattern table with patterns specific to agent-as-subst
 
 ---
 
+### §30.5 Closed-Loop PR Review
+
+*Cousin pattern to §30.1 Closed-Loop Auto-Remediation. Where §30.1 closes the loop on observed bugs, §30.5 closes the loop on incoming pull requests.*
+
+The agent drives mechanical pre-flight → AI review → risk classification → auto-merge or escalate. Low-risk PRs land automatically; high-risk PRs route to a human with a structured flags document. The human reads a summary of *what merged and why*, not every diff.
+
+**Cost profile:** Agent-autonomous (per-PR) + Operator-required (taxonomy maintenance) · Hours per PR (low-tier) / Days per PR (high-tier) · Architectural (CI / branch protection wiring) + Spend (per-PR review token cost, multiplied if cross-provider per §3d)
+
+**The trade-off, named up front.** This pattern trades token spend (review costs run every PR) for human review-bottleneck removal. The 90% claim — that ~90% of PRs in a mature codebase can be auto-merged with AI review — is achievable when the risk taxonomy is right and the codebase has a healthy mix of Trivial / Low changes. The other 10% (Medium and above) still need human eyes; the pattern's value is *not pretending humans review the 90% they were already rubber-stamping*.
+
+**When this pattern earns its cost:**
+
+- Project has agentic-velocity code generation: PR volume exceeds what human review can handle without becoming rubber-stamping or a bottleneck
+- 60%+ of changes are Trivial / Low per the §3d risk taxonomy (typical of mature codebases with stable APIs)
+- Tests are trustworthy at the boundaries that matter (auto-merge of code with weak tests is worse than no auto-merge)
+- Team has §4 Agent Log Discipline in place — every auto-merge is an audited event
+
+**When this pattern doesn't earn its cost:**
+
+- Small team where humans can keep up with PR volume and rubber-stamping isn't a real risk
+- Codebase where most changes are Medium+ (early-stage product, frequent breaking changes, evolving APIs)
+- Weak test infrastructure — the mechanical layer can't be trusted
+- Regulated / compliance-bound projects where the audit trail requires human sign-off on every change
+
+**Prerequisites:**
+
+| Prerequisite | Where it lives |
+|---|---|
+| §3d three-layer code review model with risk taxonomy | §3d in `core/umami-quality.md` — the discipline. Auto-merge requires the taxonomy to exist and be maintained |
+| Mechanical pre-flight that meaningfully gates | §3d Layer 1 + §6 Enforced Consistency — types, lint, tests, coverage delta must be sufficient for the trivial-tier definition |
+| Cost caps with per-PR budget allocation | §9.7 — cross-provider review (per §3d) multiplies per-PR token cost; the cap must accommodate |
+| §4 Agent Log Discipline | Auto-merge events must be logged at the decisions layer (with classification, reviewer's flags doc, cost, and outcome) |
+| Branch protection that respects the workflow | Auto-merge requires the workflow account to bypass the human-required-reviewer setting on auto-merge-eligible tiers, while preserving it for Medium+ |
+| Reviewer agent skill (e.g., `umami-auto-review.md`) | Project-derived from §3d, with project-specific risk dimensions and paths |
+| Approval gates per §14 | Auto-merge is a HARD action in §14 terms; gate semantics must make this explicit |
+
+**The PR-review loop protocol:**
+
+1. **PR opens** — workflow triggers on `pull_request` event (or equivalent)
+2. **Mechanical pre-flight** — §3d Layer 1: lint, types, tests, coverage delta. Hard gate; fail → block merge, surface failures
+3. **Classify the change** — apply §3d risk taxonomy via the project's signal map (path globs, diff-content patterns, change-type detection). Tier output: Trivial / Low / Medium / High / Critical
+4. **AI pre-screen** — §3d Layer 2: invoke the auto-review skill. For Medium+ changes, optionally invoke cross-provider review per §3d. Output: flags document
+5. **Decide disposition** based on tier × flags:
+   - Trivial + no flags → auto-merge
+   - Low + no flags → auto-merge with notification to author
+   - Medium → require human acknowledgment of flags doc; merge on ack
+   - High → full human review; AI flags doc serves as second eye
+   - Critical → full team review + ADR; auto-merge disabled
+6. **Log the decision** — every disposition (auto-merged, escalated, blocked) is recorded per §4 Agent Log Discipline (decisions layer): change identifier, classification, flags, reviewer model(s), cost, outcome
+7. **Spot-check sampling** — per §3d, 5–15% of auto-merged Trivial/Low changes get human spot-check (post-merge). Findings refine the taxonomy
+
+**Watch signals:**
+
+| Signal | What it catches |
+|---|---|
+| Auto-merge rate drifting (>90% or <30% over several weeks) | Either classification is over-trusting (top-end drift) or over-cautious (bottom-end drift); audit recent classifications against actual change types |
+| Spot-check finding rate >2% on auto-merged changes | Taxonomy is misclassifying; the auto-merge tier is doing more than it should. Tighten signal rules |
+| Cost cap firing per-PR | The cross-provider review (or specialized reviewer escalation) is over-running budget; reduce scope or increase cap |
+| Time-to-merge bimodal (very fast OR very slow, nothing in between) | Healthy — Trivial/Low merging fast, Medium+ taking human time. Inverted (fast on Medium+, slow on Trivial) means classification or workflow is misconfigured |
+| Auto-merged PR linked to a post-merge incident | The classification missed something. Investigate: was the tier wrong, or was the reviewer wrong? Fix the taxonomy or the reviewer prompt accordingly |
+
+**Failure modes:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Rubber-stamp-by-AI | AI flags doc says "looks fine"; humans trust it; classification was wrong; problem ships | Spot-check sampling per §3d is the antidote. Verify the watch signal (spot-check finding rate <2%) is actually being tracked, not just nominally configured |
+| Classification drift via path additions | New code paths added without updating the §3d signal map; risky changes auto-merge under the wrong tier | When adding new paths or files, the change-propagation map (§10) gets updated *and* the §3d signal map gets reviewed. Pair this in PR review checklist |
+| Auto-merge with broken tests | Trivial change marked auto-mergeable; tests are weak in that area; behavior regression slips through | Trivial-tier definition must require that the affected code is covered by tests that exercise the changed behavior. If coverage is weak, the change isn't Trivial regardless of diff shape |
+| Stealth promotion | A change *should* be Medium based on what it touches, but the taxonomy sees it as Low and auto-merges | Strengthen the diff-content signal rules; spot-check sampling catches this when it slips through |
+| Reviewer-author collusion (cross-provider context) | When cross-provider review is in place, reviewer and author models share the same blind spot; both say "looks fine"; problem ships | Per §3d cross-provider failure modes: verify provider diversity. If disagreement rate is <5%, the providers are too similar |
+| Auto-merge bypasses §4 agent log | Auto-merge happens at the CI layer; agent log is at a different layer; no audit trail of "what was auto-merged when, with what classification" | The CI workflow must write the agent log entry as part of the merge step. If the log isn't written, the merge is blocked |
+| Reviewer cost runaway | Every PR triggers full cross-provider review including Trivial changes; budget burns fast | Cross-provider review applies only to Medium+ per §3d guidance; Trivial/Low get single-provider review. Enforce in workflow |
+| Human-bypass fatigue | Human ack on Medium PRs is a click; humans click without engaging; classification provides false comfort | Watch signal: time-from-flag-to-ack. If it's <30 seconds median on Medium PRs, humans are clicking without reading. Adjust process — require evidence of engagement, or escalate Medium to require deeper review |
+
+**Cross-references:**
+
+- §3d Code Review Discipline — the discipline this workflow operationalizes; risk taxonomy and cross-provider review live there
+- §3 Multi-Layer Test Infrastructure — the mechanical layer's substrate
+- §6 Enforced Consistency — pre-flight gate prerequisites
+- §9.7 Cost Caps and Budget Gates — per-PR cost cap is non-negotiable for auto-merge workflows
+- §4 Agent Log Discipline — every auto-merge is a logged decision event
+- §14 Agent Approval Gates — auto-merge is a HARD action; gate semantics must be explicit
+- §10 Change Propagation Maps — path additions must update both the propagation map and the §3d signal map
+- §30.1 Closed-Loop Auto-Remediation — cousin pattern; shares the closed-loop shape but operates on different signals
+- §30.3 Workflow Cost Patterns — the loop cost shape applies here especially when cross-provider review is in play
+- §0.6 "Pipeline cargo cult" — auto-merge is part of the pipeline; cargo-culting an auto-merge config from another project is the failure mode this anti-pattern names
+
+---
+
 ### Cross-references
 
 - §14 Agent Orchestration — the building blocks this extension composes

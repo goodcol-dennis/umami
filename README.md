@@ -83,7 +83,10 @@ The agent fetches the spec, runs §0 discovery interactively (asking which kind 
 After init, ongoing use:
 
 - **`/umami-init`** — re-run when project shape changes (added a frontend, became multi-layer, added compliance requirements).
-- **`/umami-audit`** — periodic process review.
+- **`/umami-audit`** — periodic process-maturity review against the §0.6 tier framework.
+- **`/umami-auto-review`** — PR-level code review per §3d (three-layer model with AI pre-screen, risk taxonomy, optional cross-provider verification).
+- **`/umami-pipeline-audit`** — quarterly CI/CD pipeline audit per §6b (cycle time, gate purposes, guardrails-vs-needs fit against team / risk / deploy model / velocity).
+- **`/umami-drift-audit`** — periodic dropped-item audit per §8 (designs, POCs, decisions that fell off the radar).
 
 ### Manual setup (fallback)
 
@@ -183,6 +186,9 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Periodic dropped-item audit | §8 | Forward designs / explorations / POCs / deferred decisions are accumulating without a discipline for surfacing forgotten items |
 | Measuring efficiency over time (ET, run-frequency) | §9.7 | Optimizing across recurring agent workflows or model tiers; need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review; team is rubber-stamping or bottlenecking on review |
+| Risk taxonomy with auto-merge thresholds | §3d | Auto-merge is on the table; team needs to agree explicitly on what merges without humans |
+| Cross-provider code review | §3d | Tier Medium+ changes on LLM-feature products; budget supports parallel review across two model families |
+| Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or rubber-stamping |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior |
 | Architectural fitness functions | §3 | Project has clear architectural boundaries linter rules can't express; team has been bitten by boundary violations |
@@ -257,7 +263,7 @@ The core spans 5 files in v3. Section numbers are stable across files; the **Fil
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products | `core/umami-quality.md` |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes | `umami.md` |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline | `core/umami-quality.md` |
-| §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); flags-document format; spot-check sampling; watch signals | `core/umami-quality.md` |
+| §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); risk taxonomy with auto-merge thresholds (Trivial → Critical, each with default disposition); cross-provider review (adversarial-eye principle: review with a model from a different family than the author); flags-document format; spot-check sampling; watch signals | `core/umami-quality.md` |
 | §3e | Refactoring discipline — tests as safety net (non-negotiable); named transformations; small atomic commits; refactoring vs. cleanup distinction; agentic-velocity refactoring patterns | `core/umami-quality.md` |
 | §4 | Runtime validation — structural correctness, observability, threat modeling (DFD + STRIDE / OWASP / MITRE ATT&CK / LINDDUN / PASTA), trust posture (perimeter-trust vs. zero-trust; NIST 800-207 / CISA ZTMM alignment), security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence). Tier 1 security floor lives in landing's *Security Essentials* sidebar. | `core/umami-runtime.md` (Tier 1 floor in landing) |
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) | `core/umami-runtime.md` |
@@ -291,7 +297,7 @@ The core spans 5 files in v3. Section numbers are stable across files; the **Fil
 | [`ext/desktop/umami-desktop.md`](ext/desktop/umami-desktop.md) | §27.1–27.9 | Project has a desktop GUI application |
 | [`ext/desktop/umami-linux.md`](ext/desktop/umami-linux.md) | §28.1–28.10 | Desktop app targets Linux (loads with §27) |
 | [`ext/desktop/umami-spa-wrapper.md`](ext/desktop/umami-spa-wrapper.md) | §29.1–29.12 | Desktop app wraps a web app in WebKitGTK (loads with §27 + §28) |
-| [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) | §30.1–30.4 | Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI) — not just as interactive coding assistants |
+| [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) | §30.1–30.5 | Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI, workflow cost patterns, closed-loop PR review with risk-tiered auto-merge) — not just as interactive coding assistants |
 
 ## Compliance and regulated environments
 

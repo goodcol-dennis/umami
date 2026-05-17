@@ -48,7 +48,7 @@ After v3.0 merges, develop will carry the multi-file architecture; main will be 
 | `ext/desktop/umami-desktop.md` | Desktop application shared extension — §27 |
 | `ext/desktop/umami-linux.md` | Desktop Linux extension — §28 (loads with §27) |
 | `ext/desktop/umami-spa-wrapper.md` | SPA wrapper extension — §29 (loads with §27 + §28) |
-| `ext/umami-agent-workflows.md` | Agent workflows extension — §30 (closed-loop auto-remediation, production agentic CI, workflow cost patterns) |
+| `ext/umami-agent-workflows.md` | Agent workflows extension — §30 (closed-loop auto-remediation, production agentic CI, workflow cost patterns, anti-patterns, closed-loop PR review with risk-tiered auto-merge) |
 | Deprecation stubs at pre-v3 paths | Short markdown files at the old root-level / `cms/` / `desktop/` locations that point readers back to `umami.md`. **Removed in v3.1.** Exist to keep legacy URL fetches from returning 404 during the v3.0 grace period. |
 | `recipes/` | Drop-in implementation artifacts (cross-cutting features). Distinct from extensions: extensions guide *what to think about*, recipes provide *what to type / copy*. Independent of §0–§30 numbering. See [`recipes/README.md`](recipes/README.md). |
 | `README.md` | Public-facing documentation, adoption guide, comparison tables |
@@ -93,7 +93,7 @@ When you make changes to this repo, multiple files often need coordinating updat
 | **Rename or re-describe a section** | 1. The file that holds the section → 2. `umami.md` Section Navigation Map → 3. `README.md` section description tables → 4. Any other files that cross-reference the renamed section |
 | **Add cross-references between core files** | 1. Source file (the one adding the reference) → 2. Use plain `§N` notation — file is metadata, section number is the stable identifier. On first occurrence per section, optionally hint *"(in `umami-X.md`)"* for navigation; subsequent occurrences use plain `§N`. |
 | **Update adoption tiers** | 1. `umami.md` §0.6 → 2. `umami.md` Section Navigation Map (the Tier column) → 3. `README.md` tier tables → 4. `README.md` "What the document covers" if the tier change reflects a depth shift |
-| **Update §0.7 (audit), §0.7b (init), §3d (code review), or §8 (drift audit) protocol** | 1. The file that holds the protocol (`umami.md` for §0.7/§0.7b; `umami-quality.md` for §3d; `umami-process.md` for §8) → 2. corresponding skill template in `.claude/skills/` (`umami-audit.md` / `umami-init.md` / `umami-auto-review.md` / `umami-drift-audit.md`) — mirror the change and bump `**Last synced:**` to today's date → 3. `README.md` "Get started" section if the bootstrap one-liner or invocation language changes |
+| **Update §0.7 (audit), §0.7b (init), §3d (code review), §6b (pipeline audit), or §8 (drift audit) protocol** | 1. The file that holds the protocol (`umami.md` for §0.7/§0.7b; `umami-quality.md` for §3d; `core/umami-runtime.md` for §6b; `umami-process.md` for §8) → 2. corresponding skill template in `.claude/skills/` (`umami-audit.md` / `umami-init.md` / `umami-auto-review.md` / `umami-pipeline-audit.md` / `umami-drift-audit.md`) — mirror the change and bump `**Last synced:**` to today's date → 3. `README.md` "Get started" section if the bootstrap one-liner or invocation language changes |
 
 ## Writing conventions
 

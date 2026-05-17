@@ -366,11 +366,85 @@ Most projects also need to extend with *some* of: dependencies (supply chain), i
 
 A project's risk classification is the mapping between dimensions it cares about and signals that detect them — typically a small table maintained alongside the change-propagation map (§10).
 
+### Risk taxonomy and auto-merge thresholds
+
+The three-layer model determines *who reviews*; the risk taxonomy determines *what happens after review*. Each change gets classified into a tier; the tier determines the default disposition. The taxonomy below is a starting kit — projects extend with their own tiers and overrides.
+
+| Tier | Examples | Default disposition | Required guardrails |
+|---|---|---|---|
+| **Trivial** | Typo fixes, dependency version bumps in lockfile, formatting-only, generated-file regeneration | Auto-merge if mechanical layer passes | Branch protection requires green CI; spot-check sample applies |
+| **Low** | Internal refactor (no public API), test additions, documentation updates, comment cleanup | AI pre-screen + auto-merge if no flags raised | + Cost-cap on reviewer (§9.7); notification to author on merge |
+| **Medium** | New feature behind a flag, UI change, new dependency, performance-sensitive code | AI pre-screen + 1-human spot-check at ≥5% sample | + Flags document required; merge requires human acknowledgment of flags |
+| **High** | Auth/authz, payment flows, schema migration, security-relevant boundaries (§4 threat-model surfaces), public API changes | Full human review + AI as second eye + ADR if architectural | + Linked threat-model touchpoint per §4; dual review for compliance-bound projects |
+| **Critical** | Production secrets handling, untrusted-content boundary changes (§4), major architecture (§7 ADR territory), regulatory-bound code (§22), changes to the review system itself | Full team review + ADR + linked research doc | + ADR per §7; cross-implementation research per §7 if foundational; compliance check per §22 |
+
+**The principle: more risk → more guardrails.** The auto-merge threshold lives in the project's `CLAUDE.md` (or equivalent process doc) so the team agrees explicitly on what merges without humans. Visibility matters more than the specific cutoff.
+
+**"Tests pass" is not sufficient evidence of safety.** The mechanical layer is necessary but never sufficient. A trivial-tier change with passing tests can still be wrong (a typo can introduce a regression in a string compared elsewhere); the risk taxonomy is the discipline of asking *what kind of change is this*, not just *did the gate pass*.
+
+**Auto-merge for trivial and low changes is the velocity multiplier.** If 60–90% of changes are trivial or low (typical in mature projects), auto-merge with AI pre-screen turns those changes from "open PR, wait for human, get LGTM, merge" into "open PR, AI reviews, merge if clean" — a 10×+ wall-clock reduction. The discipline is *trusting the taxonomy and the reviewer*; spot-check sampling catches the cases where you shouldn't have trusted.
+
+**Cost profile (the taxonomy itself, not its implementation):** Operator-required (taxonomy decision) · Days setup, minutes per change ongoing · Architectural (touches branch protection + CI) + Recurring (taxonomy maintenance)
+
+**Failure modes specific to auto-merge:**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Misclassification on the trivial-low boundary | Changes labeled trivial slip in a behavior change that the mechanical layer doesn't catch | Strengthen the trivial-tier definition (e.g., "only changes where AST diff is identical to a known-safe pattern"); raise borderline changes to Low |
+| Tier inflation | Team labels everything Medium+ to feel safer; auto-merge benefit disappears | Audit recent merges by tier distribution; if Trivial+Low is <30% of merges in a mature codebase, classification is over-cautious |
+| Stealth promotion | A change marked Low touches a path that should map to Medium; the taxonomy hasn't been updated | Spot-check sampling catches this. Fix the taxonomy mapping, not just the one change |
+| Auto-merge without observability | Trivial changes merge fast; nobody knows what was merged when something later breaks | Auto-merge events feed the §4 agent log (per §4 Agent Log Discipline). Every auto-merge is a logged event with the classification and reviewer's flags doc |
+
 ### Reviewer agent pattern
 
 The **auto-review** skill is the foundation. It's invoked on every change after Layer 1 passes, does a broad sweep across the project's risk dimensions, and produces the flags document. One skill template lives in this repo (`.claude/skills/umami-auto-review.md`); each project derives its own with project-specific risk dimensions and paths.
 
 **Specialized reviewers** are an *optional escalation* for projects where scale demands it. A separate skill per dimension (security, performance, contract integrity, error-handling) can come off the bench when auto-review flags High in that dimension, producing deeper analysis. Most projects don't need specialized reviewers until repeated High flags on the same dimension justify the focused mandate. Per §14, scoped specialized agents are a measurable cost lever, but only useful when there's enough flagged volume to justify them.
+
+### Cross-provider review
+
+Same-family review (Claude reviewing Claude, GPT reviewing GPT) tends to validate same-shape errors. The reviewer and the author share training data, reasoning patterns, and blind spots; a logical leap the author made invisibly is one the reviewer is statistically more likely to make invisibly too. **Cross-provider review** treats the reviewer as an *adversarial eye* — a model from a different family (different vendor, different training corpus) reviews the code the original model wrote.
+
+**The principle:** model diversity is to AI review what code review is to solo development. The argument isn't that one model is better than another; it's that *two different models look at the same code from different angles*, and the disagreement (or shared concern) is signal.
+
+**Cost profile:** Operator-required (provider selection) + Agent-autonomous (per-review) · Days setup, hours/day ongoing · Architectural + Spend (parallel API costs across providers)
+
+**When this earns its cost:**
+
+- Tier Medium+ changes where same-family blind spots are most expensive (security, data integrity, contract integrity)
+- Projects with API access to multiple providers (Anthropic + OpenAI, Anthropic + Gemini, etc.)
+- LLM-feature products where the review system itself shouldn't be single-vendor (otherwise a vendor-specific bug propagates from author to reviewer to production)
+
+**When it doesn't earn its cost:**
+
+- Trivial / Low tier changes — cross-provider cost outweighs same-family-bias risk
+- Projects on a single-provider budget; revisit when budget allows
+- Reviewer disagreements that humans can't adjudicate — if no human is calibrated enough to tell which review is right, the cross-provider signal isn't actionable
+
+**Prerequisites:**
+
+- API access to ≥2 providers in different families (different vendors, ideally different RLHF lineages)
+- Cost caps per §9.7 that account for parallel-review token spend
+- A protocol for handling disagreement (default: any High-tier disagreement escalates to human; same as auto-review's High flag)
+- A record of agreement/disagreement rates per project so the discipline calibrates
+
+**Watch signals (cross-provider specific):**
+
+| Signal | What it catches |
+|---|---|
+| Cross-provider agreement on every change | Either changes are genuinely uncontroversial, OR both models share the same blind spot. Spot-check sampling catches the second case. |
+| Persistent disagreement on the same kind of change | Indicates a recurring blind spot in one (or both) models — codify the pattern as a project-specific risk dimension |
+| Cost-cap firing repeatedly on cross-provider review | The pattern may be mis-applied at scale; consider running cross-provider review only on Medium+ tiers |
+| Single-provider review fares better than cross-provider on a specific dimension | The reviewer for that dimension may need specialization more than cross-provider verification — see specialized reviewers above |
+
+**Failure modes (cross-provider specific):**
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Cross-provider collusion | Both models trained on similar data; reviews are correlated; "two reviewers" is one reviewer with double the cost | Verify provider diversity (different families, different RLHF lineages). Sample disagreement rate; if it's < 5% on Medium+ changes, the providers are too similar to count as adversarial |
+| Reviewer-of-the-week | Team rotates which provider reviews based on price/availability; classification map gets retrained for one provider's quirks; consistency degrades | Pick providers deliberately, not opportunistically. Document the choice in an ADR per §7 |
+| Cost surprise | Parallel review doubles or triples token spend per PR; cap fires unexpectedly | Pre-allocate budget in §9.7. Cross-provider review is Tier 3 / Scale practice — only adopt when the project's token budget can sustain it |
+| Disagreement paralysis | Models disagree often; humans can't adjudicate fast enough; queue backs up | Reduce cross-provider scope to a smaller tier band (e.g., only Critical) until the protocol matures, or invest in a tie-breaker (a third model, or a human reviewer with the cross-domain expertise to adjudicate) |
 
 ### Flags document
 

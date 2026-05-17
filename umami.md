@@ -238,6 +238,9 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Periodic dropped-item audit | §8 | Project has accumulated forward designs / explorations / POCs / "decide later" entries without a discipline for surfacing what's been forgotten |
 | Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
+| Risk taxonomy with auto-merge thresholds | §3d | Auto-merge is on the table; team needs to agree explicitly on what merges without humans (most projects: 60–90% of changes are eligible) |
+| Cross-provider code review | §3d | Tier Medium+ changes on LLM-feature products where same-family blind spots are expensive; budget supports parallel review |
+| Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or has become rubber-stamping |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
 | Architectural fitness functions | §3 | Project has clear architectural boundaries that linter rules can't express; team has been bitten by boundary violations |

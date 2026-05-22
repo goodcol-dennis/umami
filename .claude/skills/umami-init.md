@@ -5,7 +5,7 @@ description: First-time umami setup or upgrade-existing-setup. Discovers project
 
 # umami-init — Initialization protocol
 
-**Last synced:** 2026-05-16 from §0.7b (umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on findings — applied where init surfaces process recommendations, not for mechanical URL/skill installation). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-05-22 from §0.7b (umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on findings — applied where init surfaces process recommendations, not for mechanical URL/skill installation; auto-chain into `/umami-audit` on successful apply added 2026-05-22). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -57,7 +57,7 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
 
 7. **Check for skill drift before finalizing.** Compare this skill's embedded shape against the freshly-fetched §0.7b: count of disposition options in the four-option dialog, count of hard rules below, structure of the procedure. Also check the `**Last synced:**` header against today. If structural drift OR `Last synced` is >3 months old, append a non-blocking `### Skill drift` callout to the report (one line, doesn't count toward the ≤5 limit).
 
-8. **Hand off:** *"Initialization complete. Run `/umami-audit` for a first process audit, or invoke it periodically as the project grows."*
+8. **On apply, auto-chain into the first audit.** When step 6 actually wrote files, immediately invoke `/umami-audit` to produce a baseline process audit against the freshly-installed configuration. Announce: *"Init complete — wrote {file list}. Running first process audit now…"* and proceed without further confirmation. The audit runs its full §0.7 procedure — read-only fetch, findings report, its own four-option findings-disposition dialog at the end — so the user still chooses interactively what to act on; auto-chain only removes the manual `/umami-audit` invocation step, not the findings dialog. If init was skipped at the four-option dialog (no files written), do **not** auto-chain; hand off with *"Init skipped — re-invoke `/umami-init` when you're ready."*
 
 ## Hard rules (non-negotiable)
 
@@ -71,3 +71,4 @@ These are not advisory. The skill drifts when constraints are advisory; it holds
 - **Detect legacy v2.1 paths and offer migration.** If `CLAUDE.md` references pre-v3 paths (root-level `umami-X.md`, `cms/`, `desktop/`), surface this in the proposed diff. Offer to update the URLs to their v3 paths (`core/`, `ext/`, `ext/cms/`, `ext/desktop/`). Legacy paths still work via deprecation stubs in v3.0 but **will 404 in v3.1** — flag the migration as a priority.
 - **Don't fetch companion or extension files unless they apply.** Confirm relevance via §0.2 system shape answers and the §0.6 target tier before pulling.
 - **Drift detection always runs** before finalizing the report. See step 7.
+- **Auto-chain into `/umami-audit` on successful apply** (step 8). Printing a hand-off message and stopping leaves the user with installed skills but no view of their baseline; the bootstrap one-liner ends in a finding-bearing audit, not a confirmation message. The audit's own four-option findings-disposition dialog still runs — the user remains in control of what to act on. Auto-chain only when files were written; skip the audit when the user chose **Skip** at the init four-option dialog.

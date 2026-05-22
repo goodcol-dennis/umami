@@ -69,6 +69,80 @@ Specs have diminishing returns. Over-specifying is its own form of waste — a s
 
 ---
 
+## 2b. Async Channel Contracts
+
+§2's "What to Specify" list covers a module's static interface — exported functions, types, configuration schemas. Modules have a second interface too: the **dynamic / async surface** — events emitted, messages sent, errors raised, worker output streamed. In most codebases that surface is implicit, and that's where leaks happen: a global event bus delivering a message to a subscriber that shouldn't see it, an untyped payload routed by guess, a catch-all UI notification surface that any code can write to, a shared worker-output region where multiple streams interleave. The leak surfaces as *"a message appeared in the wrong part of the app"* — usually long after the code that emitted it was forgotten.
+
+§2b makes the async surface a first-class spec artifact, sitting alongside the data dictionary and source registry that §2 already covers. **Same discipline as static interfaces; different artifact shape.**
+
+**Cost profile:** Agent-with-review · Days per module (first-time migration) / Hours per new channel (steady state) · Architectural + Recurring discipline
+
+### The four parts
+
+For every async surface (event, message, notification, error stream, worker output), declare:
+
+1. **Typed channel.** Named, typed payload — TypeScript discriminated union, Rust enum, dataclass with `kind:` field, equivalent. Not `string`, not untyped `event`, not `any`. The type discriminator turns "what arrived?" from a runtime question into a compile-time one.
+
+2. **Origin tag.** Which module owns this channel. One owner per channel; co-ownership is a smell that usually means the channel needs splitting. The origin tag travels with the payload so consumers can route on it without inferring from context.
+
+3. **Allowed-consumer list.** Which modules may subscribe. Defaults to "the owning module only" unless the channel is explicitly a cross-module contract. "Anyone may subscribe" is not a default — it's a deliberate design choice with its own justification.
+
+4. **Audit-on-add at code review.** Any new channel, or any new subscriber to an existing channel, gets reviewed against the spec (this is a §3d code-review gate, not a runtime check). The reviewer asks: *"Is this channel in the spec? Is this consumer on the allowed list? If not, why is the spec wrong, or why is this subscriber inappropriate?"* Treat *"I just need to subscribe to this one event from over there"* as a leak indicator — most leaks start as one-off exceptions nobody removed.
+
+The four parts compose. A typed channel without an origin tag tells you the shape but not who's allowed to send it; an origin tag without an allowed-consumer list tells you who sends it but not who may listen; either without audit-on-add lets the spec drift silently the moment delivery pressure rises.
+
+### Fitness function (Tier 3 escalation)
+
+When the practice matures, an architectural fitness function (§3 *Architectural Fitness Functions*) detects cross-module subscribers that aren't on the channel's allowed-consumer list. Approaches vary by stack:
+
+| Stack | Approach |
+|---|---|
+| TypeScript / JavaScript | Import-direction lints (`eslint-plugin-boundaries`, `dependency-cruiser`) plus a custom rule walking event-bus subscriber registrations |
+| Rust | The type system enforces this when channels are module-private (`pub(crate)`); the fitness function checks no channels are leaked through `pub use` against the spec |
+| Python | `import-linter` contract layers plus a registry-walker inspecting subscriber bindings |
+| Generic | A test that loads the channel spec and asserts every registered subscriber appears on the allowed-consumer list for the channel it subscribes to |
+
+The fitness function turns "we should keep this clean" into "the build fails when it isn't." Don't reach for it on day one — it's the Tier 3 escalation when audit-on-add proves insufficient at the team's pace.
+
+### Anti-patterns
+
+| Anti-pattern | Why it leaks | Remediation |
+|---|---|---|
+| **Global event bus with no topic scoping** | Every subscriber sees every event; "wrong consumer" is a runtime accident waiting to happen | Replace with per-domain typed channels. A bus is fine as the *transport*; the channels riding on it must be scoped |
+| **Untyped message payload (`any`, `Map<String, Object>`, raw JSON, untyped `event`)** | Consumer can't tell what arrived or where it came from; routes by guessing | Discriminated union with a `kind:` discriminator and an `origin:` field. Validate payload at the boundary, not in the consumer |
+| **Catch-all UI notification surface** | One toast root receives all messages from all modules; nothing scopes a notification to its originating view | Scoped notification surfaces per view region. The toast root is a fallback for genuinely global events, not the default destination for every async message |
+| **Shared worker / stream output display** | Multiple background workers or streams write to one shared output region; messages interleave and lose origin | Per-worker output channel with a typed wrapper indicating which worker / stream produced each line. The display layer routes on the wrapper, not on arrival order |
+
+### Watch signals
+
+| Signal | What it catches |
+|---|---|
+| Wrong-place-message incidents per quarter | Pre-adoption: count > 0 is the trigger for relevance — the discipline pays for itself only if leaks are happening. Post-adoption: target 0; any non-zero means audit-on-add isn't catching the leak at the boundary |
+| Number of subscribers per channel | A channel with 1 origin and 30+ subscribers is a global-bus smell wearing a typed-channel costume; audit whether the wide fan-out is intentional or inertia |
+| Number of untyped / `any` channels | Should trend to zero in steady state. Any non-zero count is deferred risk — the leak that hasn't happened yet |
+| Subscribers registered far from where their containing module lives | If `modules/billing/` subscribes to a channel owned by `modules/inventory/` and the subscription is in `modules/ui/notifications/`, the wiring is hiding ownership. Move the subscriber to its owning module or split the channel |
+
+### Failure modes
+
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Spec lists channels but doesn't list consumers | Specs that record the typed channel and origin but skip the allowed-consumer list — looks complete, fails to catch leaks | Allowed-consumer list is non-optional. If "anyone may consume" is the intent, write that down explicitly — that's a different design choice than "we forgot to specify" |
+| Audit-on-add becomes rubber-stamp | New subscribers added in PRs that don't reference the channel spec; reviewers approve without checking | Add a §3d code-review checklist item: *"If this PR adds an async subscriber, did the reviewer verify the consumer is on the allowed list?"* Promote to fitness function when rubber-stamping persists |
+| Cross-module channels grow to be the majority | Most channels end up cross-module because everything happened to need to see everything — at which point the spec stops constraining anything | The right per-channel scope is one owning module + a small allowed-consumer list. If most channels are wide-open, the modules are probably too small or the wrong boundaries — surface as a §1 *Preserving Project Structure* concern |
+| Discipline applied unevenly | New code uses typed channels; legacy code still posts to a global bus; the leak surface is the legacy edge | Inventory existing async surfaces during initial adoption; migrate the highest-fan-out ones first; track the rest in §8 acknowledged gaps with a removal trigger |
+
+### Cross-references
+
+The four-part pattern (typed wrapper + origin tag + allowed-consumer list + audit-on-add) **rhymes with §4's untrusted-content-boundary discipline** (typed wrapper + provenance + per-provider spotlighting + audit-on-add). They're structurally parallel but solve different problems: §4 is about *trust scope* ("can I trust this string in this context?"); §2b is about *reachability scope* ("can this consumer subscribe to this channel?"). Cite the parallel, don't merge them — the failure modes and remediations diverge, and conflating them invites the "Winchester Mansion sprawl" anti-pattern.
+
+- §1 *Preserving Project Structure* — structure-as-contract framing makes "this consumer shouldn't subscribe to that channel" a structural violation, not a style preference
+- §3 *Architectural Fitness Functions* — the Tier 3 escalation when audit-on-add isn't enough
+- §3d *Code Review Discipline* — the gate where audit-on-add fires; any new channel or subscriber is an audit-on-add trigger
+- §4 *Untrusted-Content Boundaries* — the structural parallel (different scope, same four-part shape)
+- §8 *Acknowledged Gaps* — track legacy async surfaces awaiting migration; pre-stage the removal trigger
+
+---
+
 ## 3. Multi-Layer Test Infrastructure
 
 Testing spans the full stack across complementary layers:

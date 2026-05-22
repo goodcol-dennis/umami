@@ -14,7 +14,7 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 | Core companion | Covers (§) | When to fetch |
 |---|---|---|
-| [`core/umami-quality.md`](core/umami-quality.md) | §2 Specs · §3 Multi-Layer Testing · §3c Decision Planning · §3d Code Review · §3e Refactoring | Tier 2+ correctness work |
+| [`core/umami-quality.md`](core/umami-quality.md) | §2 Specs · §2b Async Channel Contracts · §3 Multi-Layer Testing · §3c Decision Planning · §3d Code Review · §3e Refactoring | Tier 2+ correctness work |
 | [`core/umami-runtime.md`](core/umami-runtime.md) | §4 Runtime Validation, threat modeling, trust posture, security disciplines, agent runtime security, untrusted content, agent log · §5 State Recovery · §6b Pipeline Health | Tier 2+ security / operational / pipeline work |
 | [`core/umami-process.md`](core/umami-process.md) | §7 Documentation · §8 Gap registry + retros + dropped-item audit · §10 Change Propagation · §12 Change Tracking | Tier 2+ process / docs / tracking work |
 | [`core/umami-agents.md`](core/umami-agents.md) | §9 Token Efficiency · §11 File Size Budgets · §14 Agent Orchestration | Tier 2+ agent-infrastructure work |
@@ -77,6 +77,8 @@ Paste this into your AI assistant (Claude Code, Cursor, Copilot, etc.):
 The agent fetches the spec, runs §0 discovery interactively (asking which kind of project this is, whether you have a data layer, frontend, mobile app, etc.), and proposes the right core + extension set per §0.5.
 
 **Before any file is written, you'll see exactly what's changing** — every file touched, the URL block that would land in your instruction files, and any skill files that would be created. With your approval — via a four-option dialog (apply all / selective walkthrough / do something else / skip) — the changes are applied. Nothing happens to your project until you say so.
+
+**On successful apply, init auto-chains into `/umami-audit`** so the bootstrap ends with a baseline process audit rather than just a "skills installed" message — you see where the project actually stands against the §0.6 tier framework on day one. The audit runs read-only and ends with its own four-option findings-disposition dialog (apply all / selective / other / skip), so you stay in control of what to act on. If you chose **Skip** at the init dialog (no files written), the audit does not auto-chain.
 
 **This is a lightweight setup, not a framework install.** Init writes only URL references (so your agent knows where to fetch the spec) and small skill files (so the harness recognizes `/umami-init` and `/umami-audit` as commands). The umami spec itself is never stored locally — it's fetched fresh on every audit/init run from the canonical URL, which is a hard rule (§0.7) so the framework's evolution always reaches every project. There's no dependency to maintain, no library to upgrade.
 
@@ -159,6 +161,7 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Practice | Section | Adopt when... |
 |----------|---------|---------------|
 | Spec-first development | §2 | You're building features that take more than a session |
+| Async channel contracts | §2b | Project has async surfaces (events, messages, worker output) and team has seen wrong-place message incidents — or wants to prevent them before scale |
 | Multi-layer testing | §3 | You have more than one layer (API + UI, pipeline + warehouse) |
 | Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
 | Refactoring discipline | §3e | Agents refactor at velocity, or refactoring bundled with feature work hurts reviewability |
@@ -260,6 +263,7 @@ The core spans 5 files in v3. Section numbers are stable across files; the **Fil
 | §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol, init protocol | `umami.md` |
 | §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy, multi-surface/one-primitive pattern, preserving project structure (structure-as-contract discipline) | `umami.md` |
 | §2 | Specification-first development — specs before code; relationship to Spec-Driven Development (SDD) as the closest movement | `core/umami-quality.md` |
+| §2b | Async channel contracts — typed channel + origin tag + allowed-consumer list + audit-on-add at code review; structural parallel to §4 untrusted-content discipline applied to *reachability scope* instead of trust scope; addresses leaky-async-interface failure modes (global bus, untyped payload, catch-all UI notification surface, shared worker-output display) | `core/umami-quality.md` |
 | §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products | `core/umami-quality.md` |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes | `umami.md` |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline | `core/umami-quality.md` |

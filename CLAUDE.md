@@ -8,7 +8,7 @@ A **process template**, not a software project. There are no tests, no builds, n
 
 ## Status
 
-`v3.0` merged into `develop` 2026-05-13 (architectural reframe: landing + 4 core companions + repo reorg into `core/`, `ext/`, `recipes/`). **Currently shipping on `develop`; `main` tag pending validation against external projects.** Last updated: 2026-05-16.
+`v3.0` merged into `develop` 2026-05-13 (architectural reframe: landing + 4 core companions + repo reorg into `core/`, `ext/`, `recipes/`). **Currently shipping on `develop`; `main` tag pending validation against external projects.** Last updated: 2026-05-22.
 
 **Just shipped (v3.0 → develop):**
 - Landing-doc-as-index architecture; Tier 1 fetch now ~13K tokens (was ~40K monolithic)
@@ -18,6 +18,8 @@ A **process template**, not a software project. There are no tests, no builds, n
 - Velocity-balance anti-patterns: "Security investment outpaces threat model", "Pipeline cargo cult", "Winchester Mansion sprawl"
 - `recipes/` directory seeded with `consulting-timesheet.md` and `closed-loop-pr-review.md` placeholders
 - 14 deprecation stubs at pre-v3 paths (removed in v3.1)
+- **Init auto-chains into `/umami-audit` on successful apply** (§0.7b step 7, 2026-05-22) — bootstrap ends with a baseline findings report instead of a "skills installed" hand-off message. Audit's own four-option findings-disposition dialog still runs. Skipped when user picks **Skip** at the init dialog. Surfaced from a real bootstrap where init completed but no audit fired.
+- **§2b Async Channel Contracts** (`core/umami-quality.md`, 2026-05-22) — typed channel + origin tag + allowed-consumer list + audit-on-add. Structural parallel to §4 untrusted-content discipline (same four-part pattern, different scope: reachability instead of trust). Addresses four leaky-async failure shapes (global bus / untyped payload / catch-all UI surface / shared worker-output display). Tier 3 escalation = fitness function. New `Leaky async interfaces` anti-pattern in §0.6 with watch signal. Surfaced from an adopter project where async messages surfaced in the wrong part of the app.
 
 **Active gaps** (tracked in [`audits/gaps.md`](audits/gaps.md)):
 - `v3 multi-file architecture not yet validated at scale by external adopters` — closes on first external adopter completing the bootstrap flow
@@ -33,7 +35,7 @@ A **process template**, not a software project. There are no tests, no builds, n
 
 **v3 file architecture:**
 - `umami.md` — Landing (framework + Section Navigation Map + §0 + §1 + §3b + §6 + §13 + §15 + Security Essentials sidebar)
-- `core/umami-quality.md` — §2 · §3 · §3c · §3d · §3e (specs, testing, decisions, review, refactoring)
+- `core/umami-quality.md` — §2 · §2b · §3 · §3c · §3d · §3e (specs, async channel contracts, testing, decisions, review, refactoring)
 - `core/umami-runtime.md` — §4 · §5 · §6b (runtime validation, security disciplines, state recovery, pipeline health)
 - `core/umami-process.md` — §7 · §8 · §10 · §12 (docs, gaps, propagation, change tracking)
 - `core/umami-agents.md` — §9 · §11 · §14 (token efficiency, file budgets, orchestration)
@@ -47,7 +49,7 @@ See [`audits/v3.0-retro.md`](audits/v3.0-retro.md) for the v3 architectural deci
 | File | Role |
 |------|------|
 | `umami.md` | Landing document — framework, Section Navigation Map, §0, §1, §3b, §6, §13, §15, Security Essentials sidebar. **Lives at repo root and never moves** (single stable URL across the entire framework). |
-| `core/umami-quality.md` | Core companion — §2 specs, §3 testing, §3c decisions, §3d review, §3e refactoring |
+| `core/umami-quality.md` | Core companion — §2 specs, §2b async channel contracts, §3 testing, §3c decisions, §3d review, §3e refactoring |
 | `core/umami-runtime.md` | Core companion — §4 runtime + security disciplines, §5 state recovery, §6b pipeline health |
 | `core/umami-process.md` | Core companion — §7 docs, §8 gaps, §10 propagation, §12 change tracking |
 | `core/umami-agents.md` | Core companion — §9 token efficiency, §11 file budgets, §14 orchestration |

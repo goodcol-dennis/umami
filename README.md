@@ -35,7 +35,7 @@ umami/
 │   └── desktop/
 │       └── umami-{desktop,linux,spa-wrapper}.md
 └── recipes/                  ← drop-in implementation artifacts (cross-cutting features)
-    └── *.md                  ← e.g., consulting-timesheet, adr-template, gitignore-stack-*
+    └── *.md                  ← e.g., activity-stream, adr-template, gitignore-stack-*
 ```
 
 **About `recipes/`:** Drop-in artifacts for cross-cutting features (e.g., a consulting timesheet pipeline, an ADR template, a status-block starter). Extensions tell you *why* you'd want a discipline; recipes tell you *exactly what to type / copy* to implement it. See [`recipes/README.md`](recipes/README.md) for the catalog and contribution model. Recipes are independent of the §0–§30 numbering — they're implementation aids, not numbered practices.

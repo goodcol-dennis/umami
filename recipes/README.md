@@ -32,7 +32,7 @@ Each recipe declares its maturity:
 
 | Recipe | Status | What it does |
 |---|---|---|
-| [`consulting-timesheet.md`](consulting-timesheet.md) | Planned | Inject enough tracking that an LLM can generate a billable timesheet at month-end |
+| [`activity-stream.md`](activity-stream.md) | Drafted | Consolidated activity stream (multi-source capture: Claude `Stop` hook + git `post-commit` + manual `/log`) — primary use case is billable-timesheet reconstruction; replaces the v3.0 `consulting-timesheet.md` placeholder |
 | [`closed-loop-pr-review.md`](closed-loop-pr-review.md) | Planned | Auto-merge ~90% of PRs via mechanical pre-flight + AI review + risk-tiered disposition, with optional cross-provider review for adversarial verification on Medium+ tiers |
 | `agent-cost-monthly-report.md` | Future | Aggregate agent token costs across workflows for invoicing or budget tracking |
 | `adr-template.md` | Future | Drop-in ADR template with the §7 fields pre-stubbed |

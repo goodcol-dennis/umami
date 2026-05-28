@@ -6,6 +6,16 @@ This repository contains `umami.md` (a development guardrails template) and its 
 
 A **process template**, not a software project. There are no tests, no builds, no dependencies. Quality is measured by clarity, internal consistency, and correct cross-references — not by CI passing.
 
+## Corpus vs. tooling boundary
+
+This repo has three categories of content; the agent-agnostic rule applies to one of them. Developing umami with Claude Code is fine — what matters is that the *corpus* (what adopters consume) reads as harness-neutral.
+
+- **Corpus** (`umami.md`, `core/`, `ext/`, `recipes/`) — what adopters fetch. **Must be agent-agnostic.** Substitute conventions (`CLAUDE.md` / `AGENTS.md` / `.cursorrules`), use harness-neutral hook category names (see §14), don't assume one harness's schema. When showing a reference implementation, label it as such (e.g., the activity-stream recipe's "Harness scope" callout) and map known harnesses below.
+- **Dev tooling** (`.claude/skills/umami-*.md`, `.claude/settings.local.json`, `tools/`) — what the maintainer uses to *develop* the corpus. Claude-Code-shaped is fine; this never reaches adopters.
+- **Installer artifacts** — files an adopter's `/umami-init` writes into their project to wire the corpus into their harness. Necessarily harness-specific (each agent has different config schemas). The current installer is Claude-Code-shaped; a future Cursor/Aider/Codex/Goose installer would be a parallel artifact, not a replacement.
+
+If a corpus file drifts toward Claude-Code-specific assumptions, that's the slip to fix — see commit `b0fed0f` (2026-05-27 neutrality pass on §14 + `recipes/activity-stream.md`) for the worked example.
+
 ## Status
 
 `v3.0` released to `main` 2026-05-27 (tag `v3.0`; architectural reframe: landing + 4 core companions + repo reorg into `core/`, `ext/`, `recipes/`). **`main` now carries v3.0; canonical bootstrap + skill-fetch URLs point at `refs/heads/main`.** `develop` is the active branch for v3.1 work. The "not yet validated across projects" gaps below remain open — release doesn't gate on them; they close as external adopters report. Last updated: 2026-05-27.

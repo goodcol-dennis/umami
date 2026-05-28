@@ -1,6 +1,8 @@
-# Claude Code local state — settings.local.json holds per-developer permission grants
-# and other transient state that should never be shared. The shared settings.json,
-# skills/, and similar are intentionally tracked.
+# Claude Code local state. Both settings.json and settings.local.json end up holding
+# per-developer permission grants with personal absolute paths and ad-hoc bash allowlists
+# that aren't portable across contributors — neither is treated as shared project state
+# in this repo. `.claude/skills/` and other shared artifacts under `.claude/` ARE tracked.
+.claude/settings.json
 .claude/settings.local.json
 
 # MCP server configuration — typically contains per-developer server bindings, paths,

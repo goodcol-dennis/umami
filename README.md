@@ -280,7 +280,7 @@ The core spans 5 files in v3. Section numbers are stable across files; the **Fil
 | §11 | File size budgets — keep files small to reduce token cost and complexity | `core/umami-agents.md` |
 | §12 | Lightweight change tracking — active change blocks, session handoffs | `core/umami-process.md` |
 | §13 | Dead code hygiene — delete, don't comment out | `umami.md` |
-| §14 | Agent orchestration — modes of AI use (implementation / thinking / reviewing), delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria, agent approval gate tables (HARD/SOFT/NONE), lifecycle hooks (PreToolUse / PostToolUse / SessionStart / Stop) | `core/umami-agents.md` |
+| §14 | Agent orchestration — modes of AI use (implementation / thinking / reviewing), delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria, agent approval gate tables (HARD/SOFT/NONE), lifecycle hooks (four neutral categories: *before-tool* / *after-tool* / *session-start* / *turn-end*, with per-harness identifier mapping for Claude Code / Cursor / Aider / Codex CLI / Goose) | `core/umami-agents.md` |
 | §15 | Checklist — before starting, during dev, before commit, before merge | `umami.md` |
 
 ### Extensions

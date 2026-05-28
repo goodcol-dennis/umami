@@ -48,7 +48,7 @@ See [ROADMAP.md], [v0.11.0-retro.md], [decisions.md].
 
 The Status block is also where the §1 Phase / Session structure surfaces visibly — naming the current phase and the next phase tag. Update it as part of the release workflow; if you forget, the next session will tell you (it'll re-derive everything from scratch and the cost will be obvious).
 
-**Per-send re-walk.** When instruction files (CLAUDE.md / AGENTS.md / skills) can change *during* a session — the team edits CLAUDE.md mid-session, a skill gets updated, AGENTS.md gets refined as you work — re-walk per *send* rather than per *session start*. Loading once at session start means the agent runs against stale instructions for the rest of the conversation, which becomes a real problem when those files are actively maintained. SessionStart hooks (§14) fire only at session start; per-send re-walk is the live-edit alternative. The cost is small (a few hundred tokens per re-walk for short files); the benefit is that edits land instantly without restart. Harness-dependent: support varies. When the harness supports per-send re-walk, prefer it for projects under active CLAUDE.md / skills development.
+**Per-send re-walk.** When instruction files (CLAUDE.md / AGENTS.md / skills) can change *during* a session — the team edits CLAUDE.md mid-session, a skill gets updated, AGENTS.md gets refined as you work — re-walk per *send* rather than per *session start*. Loading once at session start means the agent runs against stale instructions for the rest of the conversation, which becomes a real problem when those files are actively maintained. *Session-start* hooks (§14) fire only at session start; per-send re-walk is the live-edit alternative. The cost is small (a few hundred tokens per re-walk for short files); the benefit is that edits land instantly without restart. Harness-dependent: support varies. When the harness supports per-send re-walk, prefer it for projects under active CLAUDE.md / skills development.
 
 ### 9.2 Persistent Memory Across Sessions
 
@@ -544,20 +544,30 @@ Without retention info, "we have an audit trail" means nothing under compliance 
 
 Most agentic harnesses expose **lifecycle hooks** — user-controlled extension points where a project can insert custom behavior at well-defined moments in the agent's execution. Hooks are how you implement automated behaviors that aren't in the harness's defaults, without modifying harness code, without losing the change on the next harness update.
 
-The four canonical events most harnesses converge on:
+**The four canonical event categories most harnesses converge on** (harness-neutral names; each harness exposes these under different identifiers):
 
-| Event | Triggered before | Common uses |
+| Event category | Triggered when | Common uses |
 |---|---|---|
-| **PreToolUse** | Any tool call about to execute | Block tool calls based on user-defined predicates (deny lists, allow lists, content checks); add custom approval gates beyond the harness's defaults; redact arguments before the call |
-| **PostToolUse** | After any tool call completes | Log / audit, redact sensitive results before they reach the model, trigger downstream behavior (notifications, metrics, dispatch chains) |
-| **SessionStart** | Chat session begins (or resumes) | Re-walk instruction files (CLAUDE.md / AGENTS.md / skills), refresh project memory, run pre-flight checks. For projects under active instruction-file development, see also §9.1 per-send re-walk |
-| **Stop** | Agent loop terminates | Cleanup, summary generation, archival, write-back of session state |
+| **before-tool** | A tool call is about to execute | Block tool calls based on user-defined predicates (deny lists, allow lists, content checks); add custom approval gates beyond the harness's defaults; redact arguments before the call |
+| **after-tool** | A tool call has completed | Log / audit, redact sensitive results before they reach the model, trigger downstream behavior (notifications, metrics, dispatch chains) |
+| **session-start** | Chat session begins (or resumes) | Re-walk instruction files (the project's primary AI instruction file — `CLAUDE.md` / `AGENTS.md` / `.cursorrules` / equivalent — plus skills/rules), refresh project memory, run pre-flight checks. For projects under active instruction-file development, see also §9.1 per-send re-walk |
+| **turn-end** | The agent loop terminates for a turn | Cleanup, summary generation, archival, write-back of session state, activity-stream logging (see `recipes/activity-stream.md`) |
 
-Different harnesses use different names — `before_tool` / `after_tool`, `BeforeRequest` / `AfterRequest`, etc. — but the structural shape is the same: well-known points where user-supplied code runs. Names matter less than the discipline of using them.
+**How each harness names these categories** (sample, not exhaustive — consult your harness's hook documentation for the current names and input/output schemas):
+
+| Harness | before-tool | after-tool | session-start | turn-end |
+|---|---|---|---|---|
+| **Claude Code** | `PreToolUse` | `PostToolUse` | `SessionStart` | `Stop` |
+| **Cursor** | (rules / hooks; check current docs) | (check current docs) | rule-load on session begin | (check current docs) |
+| **Aider** | command-execution shell hook (via `.aider.conf.yml`) | post-command shell hook | startup hook | post-turn hook |
+| **Codex CLI** | (check OpenAI Codex CLI docs) | (varies) | (varies) | (varies) |
+| **Goose** | extension `PreInvoke` (MCP-layer) | extension `PostInvoke` | extension load on session | extension `on_complete` |
+
+The category names matter; the specific identifiers don't. When this document or a recipe refers to "the turn-end hook" or "the session-start hook," substitute your harness's name. The naming table above is a starting position — fill in the row for your harness with confidence once you've validated against its current documentation. The `core/umami-agents.md` §14 hook examples and `recipes/activity-stream.md` Stop-hook snippets use the Claude Code identifiers because that's the harness this corpus is field-tested on.
 
 **The "from now on when X" insight.** Any automated behavior of the form *"from now on, every time Y happens, do Z"* requires a hook. Memory and process documentation cannot fulfill these — the agent is not the runtime, the harness is. If a user says "remember to log every git push" or "block tool calls that touch /etc," that's a hook configuration, not a memory entry. Process docs that say "we always do X" are aspiration unless wired through hooks.
 
-**Configuration shape.** Hooks are user-controlled — configured via the harness's settings (e.g., `settings.json`, `.claude/settings.json`, per-project YAML). The harness ships sensible defaults; project-specific or developer-specific hooks layer on top. Project hooks live in the repo (committed, shared); personal hooks live in user-scope settings (uncommitted).
+**Configuration shape.** Hooks are user-controlled — configured via the harness's settings (e.g., `.claude/settings.json` for Claude Code, `.aider.conf.yml` for Aider, `.cursorrules` / `.cursor/rules/` for Cursor, harness-specific YAML elsewhere). The harness ships sensible defaults; project-specific or developer-specific hooks layer on top. Project hooks live in the repo (committed, shared); personal hooks live in user-scope settings (uncommitted).
 
 **Watch signals:**
 
@@ -565,7 +575,7 @@ Different harnesses use different names — `before_tool` / `after_tool`, `Befor
 |---|---|
 | Hooks-as-aspiration (configured but never fire) | The hook is mis-targeted — its predicate doesn't match what actually runs, or it's registered for an event the agent doesn't reach |
 | Hook drift (rule references deprecated tool, path, or behavior) | Codebase moved on; hook didn't. First incident discovers the gap |
-| Hook overhead (slow hook delays every tool call) | Hook is doing too much — fast-path the common case, or move work to PostToolUse where latency is cheaper |
+| Hook overhead (slow hook delays every tool call) | Hook is doing too much — fast-path the common case, or move work to the *after-tool* event where latency is cheaper |
 
 **Failure modes:**
 
@@ -577,9 +587,10 @@ Different harnesses use different names — `before_tool` / `after_tool`, `Befor
 | Hook proliferation (15+ hooks doing similar things) | Hard to reason about what fires when; rules conflict; debugging "why did this happen?" is expensive | Periodic hook review: consolidate similar predicates, remove dead hooks, document each remaining hook's purpose |
 
 **Cross-references:**
-- §14 Agent Approval Gates (above) — hooks are the user-controlled extension point for adding gates beyond what the harness ships. PreToolUse hooks implement custom HARD/SOFT gates
-- §0.7 / §0.7b audit and init protocols — skills are SessionStart-time loaded; hooks fire on session start to refresh them
-- §9.1 front-load context — SessionStart hooks can re-walk instruction files per session start
+- §14 Agent Approval Gates (above) — hooks are the user-controlled extension point for adding gates beyond what the harness ships. *before-tool* hooks implement custom HARD/SOFT gates
+- §0.7 / §0.7b audit and init protocols — skill/rule files load at session-start time; hooks fire on session start to refresh them
+- §9.1 front-load context — *session-start* hooks can re-walk instruction files per session start
+- `recipes/activity-stream.md` — a worked example of the *turn-end* hook category, with a Claude Code reference implementation and adaptation pointers for other harnesses
 
 ### Agent Orchestration Anti-Patterns
 

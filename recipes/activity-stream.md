@@ -4,7 +4,7 @@
 
 ## What it does
 
-Maintains a single, consolidated activity log for the project — one timestamped line per event, regardless of source. The Claude harness, git, calendar, and manual logging all feed into the same file. At month-end you have a complete reconstructable record of *what happened, when, in what workstream* — billable or not.
+Maintains a single, consolidated activity log for the project — one timestamped line per event, regardless of source. The AI coding harness (via a turn-end hook), git (via `post-commit`), and manual logging (via a harness command/skill) all feed into the same file. At month-end you have a complete reconstructable record of *what happened, when, in what workstream* — billable or not.
 
 The stream is the primitive. The named use case is **timesheet reconstruction for consulting work** — read the log, look at timestamps to gauge duration, fill in the timesheet. Other consumers come for free:
 
@@ -24,13 +24,24 @@ The stream is the primitive. The named use case is **timesheet reconstruction fo
 
 - You bill flat-fee per project — hour granularity doesn't matter
 - The client requires their own time-tracking tool (Harvest, Toggl, etc.) — use that
-- Your work is mostly outside Claude AND outside git — the auto-capture sources give little signal; you'd be writing every entry manually, at which point a notes file is simpler
+- Your work is mostly outside both the AI harness AND git — the auto-capture sources give little signal; you'd be writing every entry manually, at which point a notes file is simpler
 - You're an employee, not a consultant — HR's time-tracking system is the source of truth
+
+## Harness scope
+
+This recipe ships a **working Claude Code reference implementation** of a more general pattern. The pattern (see *The pattern (harness-neutral)* below) applies to any AI coding harness with two primitives:
+
+1. A *turn-end* hook (per §14 lifecycle hooks; called `Stop` in Claude Code, varies elsewhere)
+2. A way to define custom commands or skills the user can invoke (slash commands, custom commands, MCP tools, rules — varies by harness)
+
+The bash snippets in Steps 3, 5, and 6 below assume Claude Code's hook input schema and `.claude/` directory layout. The other steps (front matter, gitignore, `post-commit` git hook, month-end reconstruction) are universal — git is git regardless of which AI harness you use, and the log file format is plain markdown.
+
+**If you're on a different harness** (Cursor, Aider, Codex CLI, Goose, etc.), read *The pattern* below for the universal shape, then jump to *Adapting for other harnesses* near the end of this recipe for pointers on substituting your harness's equivalent primitives. None of the alternative harness implementations are field-tested in this repo yet; the gap-registry tracks this as ["`recipes/activity-stream.md` not yet validated across projects"](../audits/gaps.md).
 
 ## Prerequisites
 
-- Claude Code (or compatible harness) supporting **PreToolUse / Stop hooks** — capture mechanism depends on it
-- Git repository — `post-commit` hook is one of the primary capture sources
+- AI coding harness with a *turn-end* hook category (§14) and a custom-command / skill / rule mechanism. Examples: Claude Code (`Stop` hook + `.claude/skills/`); Aider (post-turn hook in `.aider.conf.yml` + `/commands`); Cursor (rules + commands — consult current docs); Goose (MCP-layer extension hooks). See §14's per-harness mapping table for the canonical event names
+- Git repository — `post-commit` hook is one of the primary capture sources (universal, no harness dependency)
 - Project committed to a single log location (`logs/activity.md` recommended) — adopters with multi-project setups maintain one log per project
 
 ## Architecture
@@ -50,7 +61,21 @@ The stream is the primitive. The named use case is **timesheet reconstruction fo
                          (periodic LLM cleanup)
 ```
 
-**Capture stays dumb and deterministic** — no LLM in the hot path; hooks fire unconditionally and append raw entries. **Refinement is smart and batched** — a `/refine-log` skill runs LLM judgement over a range of entries to fix workstream tags, merge related lines, and remove noise. Reconciliation is the human's job — LLM hour-estimates are unreliable; raw signal + human judgement is better than confident-wrong estimates.
+**Capture stays dumb and deterministic** — no LLM in the hot path; hooks fire unconditionally and append raw entries. **Refinement is smart and batched** — a periodic cleanup skill/command runs LLM judgement over a range of entries to fix workstream tags, merge related lines, and remove noise. Reconciliation is the human's job — LLM hour-estimates are unreliable; raw signal + human judgement is better than confident-wrong estimates.
+
+## The pattern (harness-neutral)
+
+The recipe below is one implementation of a four-part pattern that any AI coding harness with turn-end hooks and custom-command primitives can support:
+
+1. **A single canonical log file.** Plain markdown, one event per line, timestamped. Format: `- HH:MM  [source]  Workstream | description`. Date headers (`## YYYY-MM-DD`) group entries by day. YAML front matter at the top carries billing metadata.
+2. **Multiple capture sources** feeding the same file with the same format:
+   - `[claude]` (or `[ai]`, `[agent]`, `[cursor]` — whatever names the AI source): emitted by the harness's *turn-end* hook (§14)
+   - `[git]`: emitted by git's `post-commit` hook (universal, no harness dependency)
+   - `[manual]`: emitted when the user invokes a small log-this-thing command from the harness (slash command, custom command, MCP tool — depending on what the harness exposes)
+3. **Deterministic capture, batched refinement.** Hooks are dumb and unconditional; cleanup is smart and periodic. The capture hook never calls an LLM (no latency cost, no failure mode); a separate command runs LLM judgement in batch to fix workstream tags and remove noise.
+4. **Human-driven reconciliation** at month-end. Open the log, look at timestamps and entries to gauge approximate durations per workstream, fill in the timesheet template the client expects. No LLM hour estimates — they're unreliable, and the cost-of-being-confidently-wrong on a billable hour exceeds the savings.
+
+The Claude Code reference implementation in *The recipe* below wires these four parts together. The *Adapting for other harnesses* subsection further down maps the harness-specific bits (Steps 3, 5, 6) onto Cursor, Aider, Codex CLI, and Goose equivalents.
 
 ## The recipe
 
@@ -83,7 +108,9 @@ echo "logs/activity.md" >> .gitignore
 
 Most consulting projects don't share the activity log with the client. If you're using a wrapper project (umbrella repo across multiple client projects), the log lives in the wrapper and `.gitignore` isn't needed.
 
-### Step 3: Wire the Stop hook for Claude turns
+### Step 3: Wire the turn-end hook for AI-harness turns
+
+> **Harness scope:** Steps 3, 5, and 6 are the Claude Code reference implementation. See *Adapting for other harnesses* below for equivalents in Cursor / Aider / Codex CLI / Goose. The hook semantics are identical (a turn-end hook appends a `[claude]` entry to the log); only the configuration mechanism varies.
 
 Add to `.claude/settings.json` (or `settings.local.json` for per-developer config):
 
@@ -167,6 +194,8 @@ Mark it executable: `chmod +x .git/hooks/post-commit`.
 
 ### Step 5: The `/log` skill for manual entries
 
+> **Harness scope:** Claude Code skill format. For Cursor, Aider, Codex CLI, or Goose, port the procedure text below into your harness's custom-command / rule / MCP-tool format — the operations (append a line to the log) are identical. See *Adapting for other harnesses* below.
+
 Create `.claude/skills/log.md`:
 
 ```markdown
@@ -203,6 +232,8 @@ Examples:
 ```
 
 ### Step 6: The `/refine-log` skill for periodic cleanup
+
+> **Harness scope:** Claude Code skill format, same adaptation note as Step 5.
 
 Create `.claude/skills/refine-log.md`:
 
@@ -289,6 +320,27 @@ The format reserves the `[source]` slot for additional capture mechanisms as MCP
 
 None of these are in the initial Drafted recipe — adopters wire them in as MCP integrations stabilize. The schema accommodates them without format changes.
 
+## Adapting for other harnesses
+
+Steps 3, 5, and 6 of *The recipe* use Claude Code identifiers. The pattern is harness-neutral — every mainstream AI coding harness exposes equivalent primitives, just under different names and in different config locations. The table below is a starting point; **none of the non-Claude-Code rows have been field-tested in this repo** — they're pointers for adopters on those harnesses to fill in and refine.
+
+| Capture | Claude Code (field-tested) | Cursor | Aider | Codex CLI | Goose |
+|---|---|---|---|---|---|
+| **Turn-end hook** (Step 3) | `Stop` hook in `.claude/settings.json` calling `.claude/hooks/activity-log-claude.sh` | Check current Cursor docs for the turn-end equivalent (rules + hooks system); place the bash logic in the harness's hook-script location | Post-turn shell hook in `.aider.conf.yml` (`post_response: bash logs/activity-log-aider.sh`) | Consult Codex CLI documentation for the turn-end event; bash logic ports as-is | Define an extension that fires on `on_complete` and runs the append-to-log command |
+| **Source tag in entries** | `[claude]` | `[cursor]` | `[aider]` | `[codex]` | `[goose]` |
+| **Manual log command** (Step 5) | `.claude/skills/log.md` — invoked as `/log <description>` | Cursor command / rule in `.cursorrules` or `.cursor/rules/` | `/log` defined in `.aider.conf.yml` or as an alias | Codex CLI custom command | Custom MCP tool exposed by an extension |
+| **Refine-log command** (Step 6) | `.claude/skills/refine-log.md` — invoked as `/refine-log` | Same as Manual log, different command body | Same — Aider command | Same — Codex custom command | Same — MCP tool |
+| **AI-instruction file** (the project's primary AI doc) | `CLAUDE.md` | `.cursorrules` or `.cursor/rules/` | `CONVENTIONS.md` / aider.conf-referenced | (varies) | `AGENTS.md` or harness-specific |
+
+**Adaptation procedure:**
+
+1. **Port the bash hook script first** (Step 3). The script's core operations — read prompt text from stdin JSON, write a timestamped line to `logs/activity.md` — don't change. What changes is how the JSON arrives (which field carries the user prompt; how `default_workstream` is read; what env vars are set). Read your harness's hook-input spec and adjust the `jq` query and any env-var references.
+2. **Translate the skill procedure text** (Steps 5–6) into your harness's command format. The procedures are short and prose-driven (read file → infer workstream → append entry). Most harness command formats can express them directly.
+3. **Keep the source tag stable across harnesses if you ever switch**. If you migrate from `[claude]` to `[cursor]` mid-project, prior log entries stay `[claude]` — that's correct, the entries record what produced them at the time. Switch the tag in the hook script going forward; don't rewrite history.
+4. **Test the turn-end hook deliberately** before relying on it. Start a session, end it, verify a new entry shows up in `logs/activity.md`. The pattern's whole reliability claim rests on the hook firing every turn; verify that before you bill against it.
+
+If you adapt the recipe for a harness not yet listed, contributions back are welcome — see the gap-registry entry on this recipe for the validation criteria.
+
 ## Cross-references
 
 - **§14 Lifecycle Hooks** — this recipe is a worked example of the `Stop` hook pattern; the recipe's reliability advantage over the memory-based predecessor is exactly the §0.6 "From now on when X without a hook" anti-pattern resolved
@@ -303,7 +355,7 @@ None of these are in the initial Drafted recipe — adopters wire them in as MCP
 
 ## Known limitations (validate across projects)
 
-- **Stop hook spec varies by harness.** The bash snippet assumes Claude Code's hook input schema; other harnesses (Cursor, Codex, Goose) expose conversation context differently. Adapt accordingly.
-- **LLM workstream inference can mis-tag.** `/refine-log` is the corrective; if it mis-tags consistently, refine the prompt or pre-declare more workstreams in front matter.
+- **LLM workstream inference can mis-tag.** The `/refine-log` cleanup is the corrective; if it mis-tags consistently, refine its prompt body or pre-declare more workstreams in front matter so the LLM has a constrained set to choose from.
 - **Manual entries depend on user discipline.** The `[manual]` capture path is inherently aspirational — there's no hook for "the user just had a phone call." Mitigate by `/log`ging at low friction (one short invocation) immediately after the event, while it's fresh.
-- **Not yet validated across projects** — see [`audits/gaps.md`](../audits/gaps.md) for the matching entry. Refinements based on adopter feedback land in subsequent drafts.
+- **Harness portability is partially aspirational.** Steps 3, 5, 6 ship working Claude Code wiring; the *Adapting for other harnesses* table maps the equivalents for Cursor, Aider, Codex CLI, Goose but those rows are pointers, not field-tested implementations.
+- **Not yet validated across projects** — see [`audits/gaps.md`](../audits/gaps.md) for the matching entry. Refinements (including non-Claude-Code adaptations) land in subsequent drafts.

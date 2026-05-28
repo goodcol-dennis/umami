@@ -10,25 +10,81 @@ This document is a template for establishing processes, testing strategies, and 
 
 ```markdown
 ## Process Audit Reference
-- Development guardrails (core): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
-- Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-web.md
-- Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
-- Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
-- Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
-- Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-cms.md
-- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-wordpress.md
-- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-drupal.md
-- Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
-- Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
-- Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
+- Development guardrails (landing — start here): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
+- Core companion — Quality (specs, testing, decisions, review, refactoring): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-quality.md
+- Core companion — Runtime (security, threat modeling, trust posture, state, pipeline health): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-runtime.md
+- Core companion — Process (ADRs, gaps, change propagation, change tracking): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-process.md
+- Core companion — Agents (token efficiency, file size budgets, orchestration): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-agents.md
+- Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-web.md
+- Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-data.md
+- Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
+- Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-mobile.md
+- Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
+- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-wordpress.md
+- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-drupal.md
+- Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-compliance.md
+- Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-scripting.md
+- Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-integration.md
+- Extension — Homelab: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-homelab.md
+- Extension — Desktop (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-desktop.md
+- Extension — Desktop Linux: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-linux.md
+- Extension — SPA Wrapper: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-spa-wrapper.md
+- Extension — Agent Workflows: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-workflows.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
-  When the user asks you to audit the development process, fetch the core document and
-  follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
-  then audit one tier above. Do NOT read every section or fetch every extension. Focus on
-  3-5 actionable recommendations, not comprehensive compliance. Audits are READ-ONLY —
-  report findings and describe what changes each recommendation requires, but do not modify
-  code or project files until the user explicitly chooses which recommendations to apply.
+  When the user asks you to audit the development process, fetch the landing document
+  (umami.md) first and consult its Section Navigation Map to identify which companion
+  files apply. Follow the tiered audit protocol in §0.7 — determine the project's current
+  adoption tier, fetch only the companion files needed for the current and next tier,
+  then audit one tier above. Tier 1 audits typically don't need any companion file.
+  Focus on 3-5 actionable recommendations, not comprehensive compliance. Audits are
+  READ-ONLY — report findings and describe what changes each recommendation requires,
+  but do not modify code or project files until the user explicitly chooses which
+  recommendations to apply.
 ```
+
+---
+
+## Section Navigation Map
+
+This document is the **landing doc** for umami v3 — it carries the framework, this navigation map, and Tier 1 practices. Tier 2+ practices live in focused companion files grouped by concern. Section numbers (`§N`) are stable identifiers across all files; the file location is metadata.
+
+| § | Topic | File | Tier | Fetch when... |
+|---|---|---|---|---|
+| §0 | Project Discovery (questionnaire, tiers, anti-patterns, audit and init protocols) | `umami.md` | Foundation | Always |
+| §1 | Project Structure | `umami.md` | Foundation | Always |
+| §2 | Specification-First Development | `core/umami-quality.md` | Structure | Features take more than one session |
+| §2b | Async Channel Contracts (typed channel + origin tag + allowed-consumer list + audit-on-add) | `core/umami-quality.md` | Structure | Project has async surfaces (events, messages, worker output) and team has seen wrong-place message incidents |
+| §3 | Multi-Layer Test Infrastructure | `core/umami-quality.md` | Structure | System has more than one layer |
+| §3b | Development Process Discipline (TDD, debugging, verification) | `umami.md` | Foundation | Always |
+| §3c | Interactive Decision Planning | `core/umami-quality.md` | Structure | Design has 3+ load-bearing compounding decisions |
+| §3d | Code Review Discipline (three-layer) | `core/umami-quality.md` | Scale | Code generation outpaces human review capacity |
+| §3e | Refactoring Discipline | `core/umami-quality.md` | Structure | Agents refactor at velocity |
+| §4 | Runtime Validation, observability, threat modeling, trust posture, security disciplines, agent runtime security, untrusted-content boundaries, agent log discipline | `core/umami-runtime.md` | Mixed (Tier 1 floor lives in landing's *Security Essentials* below; full discipline in companion) | Threat-relevant boundaries, security depth beyond day-one floor, LLM-feature products |
+| §5 | State Tracking & Recoverability (recovery runbooks per stateful surface) | `core/umami-runtime.md` | Scale | Stateful operations need rollback or audit trails |
+| §6 | Enforced Consistency Rules (types, lint, deps, supply-chain defenses) | `umami.md` | Foundation | Always |
+| §6b | Developer Experience and Pipeline Health | `core/umami-runtime.md` | Structure | Pipeline cycle time taxing every commit; contributors skipping local CI |
+| §7 | Documentation as Constraint (ADRs, cross-impl research, audience targeting) | `core/umami-process.md` | Structure | You make decisions you'll need to explain later |
+| §8 | Acknowledged Gaps (rolling registry, per-release retros, periodic dropped-item audit) | `core/umami-process.md` | Scale | Tech debt accumulating; designs / decisions / features falling off the radar |
+| §9 | Token Efficiency Practices (front-loading, memory, progressive disclosure, cost caps) | `core/umami-agents.md` | Structure | Agent sessions re-derive the same codebase understanding |
+| §10 | Change Propagation Maps | `core/umami-process.md` | Scale | Changes routinely touch 5+ files |
+| §11 | File Size Budgets | `core/umami-agents.md` | Structure | Files long enough that agents truncate or miss context |
+| §12 | Lightweight Change Tracking | `core/umami-process.md` | Scale | Work spans multiple sessions and context is lost between handoffs |
+| §13 | Dead Code Hygiene | `umami.md` | Foundation | Always |
+| §14 | Agent Orchestration (modes, delegation, model routing, skills, gates, hooks) | `core/umami-agents.md` | Scale | Multi-agent workflows or specialized agent delegation |
+| §15 | Putting It Together — Checklist | `umami.md` | Foundation | Always |
+
+**Companion files (core):**
+
+- [`core/umami-quality.md`](core/umami-quality.md) — §2 · §2b · §3 · §3c · §3d · §3e — specs, async channel contracts, testing, decision planning, code review, refactoring
+- [`core/umami-runtime.md`](core/umami-runtime.md) — §4 · §5 · §6b — runtime validation, security disciplines, threat modeling, trust posture, state recovery, pipeline health
+- [`core/umami-process.md`](core/umami-process.md) — §7 · §8 · §10 · §12 — documentation, gap registry, change propagation, change tracking
+- [`core/umami-agents.md`](core/umami-agents.md) — §9 · §11 · §14 — token efficiency, file size budgets, agent orchestration
+
+**Domain extensions** (§16–§30) live in [`ext/`](ext/), with shared+variant clusters grouped under `ext/{domain}/` (currently `ext/cms/` and `ext/desktop/`). See [README](README.md) for the full extension catalog.
+
+**Deprecation note (v3.0 → v3.1):** Stubs remain at the pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory). These stubs are deprecated and **will be removed in v3.1**. They exist so adopters fetching legacy paths get a clear migration message rather than a 404.
+
+**Cost-aware adoption:** Tier 1 / foundation work uses `umami.md` alone — no companion file needed. Fetch concern files only when the §0.6 tier table or §0.5 mapping calls for them. On a Pro / lower-token plan, landing-only is a ~13K-token fetch instead of ~40K for the pre-v3 monolithic document.
 
 ---
 
@@ -76,6 +132,7 @@ Most projects are not single-layer. Identify all layers that apply:
 | **External integrations** | yes / no | Does the system talk to third-party services? (SharePoint, Slack, ERP, EDI) |
 | **Infrastructure / IaC** | yes / no | Is there infrastructure-as-code? (Terraform, Pulumi, CloudFormation, CDK) |
 | **Mobile app** | yes / no | Is there a native or cross-platform mobile app? (iOS, Android, React Native, Flutter) |
+| **Desktop app** | yes / no | Is there a desktop GUI application? Which toolkit? (GTK4, egui, Qt, Electron alternative) Which platform(s)? (Linux, macOS, Windows) Is it a native app or an SPA wrapper? |
 | **CMS** | yes / no | Is the project built on a CMS? Which one? (WordPress, Drupal, other) |
 
 **Observability is a cross-cutting concern**, not a separate layer. Every extension includes domain-specific observability guidance (what to monitor, how to alert, what to log). If the system has components running in production, observability practices apply — you don't need a separate "observability layer" in the system shape.
@@ -89,6 +146,7 @@ Most projects are not single-layer. Identify all layers that apply:
 | Which layers exist today vs. are planned? | Don't build guardrails for layers that don't exist yet. Add them when the layer starts. |
 | Is there existing code, data, or documentation? | Adapting guardrails to existing work is different from greenfield. Don't restructure a working codebase just to match a template. |
 | What has already been decided? (tech stack, hosting, patterns) | Settled decisions should be captured in ADRs immediately — not re-evaluated during onboarding. |
+| What is the trust posture? Perimeter-trust within a defined zone, zero-trust between services, or hybrid with documented handoffs? | Foundational decision that sets the depth target for §4 (security discipline, agent runtime, untrusted content), §16 (service-to-service auth, IAM), and §22 (compliance evidence). Two projects with identical layers can have wildly different security postures — and the choice belongs up front, not retrofitted. See §4 *Trust Posture* for the spectrum. |
 | What is explicitly out of scope? | Prevents scope creep. If the project won't have a mobile app, say so. |
 
 ### 0.4 Evolution Plan — "Where Is This Going?"
@@ -116,8 +174,12 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | [umami-scripting.md](umami-scripting.md) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
 | Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | [umami-compliance.md](umami-compliance.md) | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| Desktop app (native) | §1 (structure), §3 (unit + E2E tests), §3b (TDD), §6 (strict types, linting), §8 (acknowledged gaps — headless testing limitations), §11 (file size budgets) | [umami-desktop.md](umami-desktop.md) + platform file ([Linux](desktop/umami-linux.md)) | §3 visual regression (use headless E2E instead) |
+| Desktop app (SPA wrapper) | §1 (structure), §4 (security — navigation policy, session persistence), §6 (consistency), §8 (acknowledged gaps) | [umami-desktop.md](umami-desktop.md) + [Linux](desktop/umami-linux.md) + [SPA Wrapper](desktop/umami-spa-wrapper.md) | §2 (specs — you don't control the web app), §3 multi-layer testing |
 | Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
-| AI-assisted development (any project using agents) | §9 (token efficiency), §14 (agent orchestration — delegation, skills, parallel review, tool integration) | — | — |
+| AI-assisted development (any project using agents) | §3c (interactive decision planning when designs compound), §3d (code review at agentic velocity), §9 (token efficiency), §14 (agent orchestration — delegation, modes of AI use, skills, parallel review, tool integration) | — | — |
+| LLM-feature product (ships features that ingest external content via LLMs) | §4 (untrusted-content boundaries — typed wrapper, provenance, per-provider spotlighting, audit-on-add), §3d (add an "untrusted-content-surface" project-specific risk dimension), §9.6 (MCP and tool context costs apply to product-side LLM features), §14 (modes of AI use — products typically span all three) | — | §15 visual regression unless the product also has a UI |
+| Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI, scheduled remote agents) | §14 (orchestration building blocks), §9.7 (cost caps non-negotiable for autonomous workflows), §4 (kill switches, sandboxing, identity isolation), §3 (verification gates for closed-loop patterns) | [umami-agent-workflows.md](umami-agent-workflows.md) | — |
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
@@ -135,6 +197,8 @@ These practices cost almost nothing to adopt and prevent the most common sources
 |----------|---------|----------------------|
 | Project discovery | §0 | Know what you're building before applying guardrails |
 | Predictable project structure | §1 | Agents and humans find things without searching |
+| Phase / Session hierarchy for multi-sitting work | §1 | Gives commits, decisions, and roadmap a unit of work bigger than the commit and smaller than the milestone |
+| Preserving project structure (structure-as-contract discipline) | §1 | Once the project commits to a structure, restructuring it has compounding cost; codify the rule and pre-identify seams before urgency |
 | Development discipline | §3b | TDD and systematic debugging prevent "fix one, break another" cycles |
 | Security discipline | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
 | Enforced consistency | §6 | Types, linting, formatting, and dependency hygiene catch errors at build time |
@@ -148,10 +212,21 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Practice | Section | Adopt when... |
 |----------|---------|---------------|
 | Spec-first development | §2 | Features take more than one session to build |
+| Async channel contracts | §2b | Project has async surfaces (events, messages, worker output) and team has seen wrong-place message incidents (or is at risk of them — pre-adoption count = 0 means deferred) |
 | Multi-layer testing | §3 | The system has more than one layer (API + UI, pipeline + warehouse) |
+| Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
+| Refactoring discipline | §3e | Project has agents refactoring code at velocity, or refactoring is bundled with feature work creating reviewability problems |
+| Threat modeling | §4 | Project has security-relevant boundaries (external integrations, user input, agent tools touching privileged operations) past prototype phase |
+| Trust posture | §4 | Project has multiple services, multiple trust zones, or compliance/insurance requires documented posture |
+| DevEx / pipeline audit | §6b | Pipeline cycle time taxing every commit; contributors skipping local CI; identical gate configs across projects without local justification |
 | Runtime validation | §4 | The system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain later (including to future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
+| Status block in CLAUDE.md | §9.1 | The project ships in versions and a fresh session needs to know "where are we right now" |
+| Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or workflows orchestrate deterministic multi-step tasks |
+| Agent approval gate table | §14 | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) |
+| Recovery runbooks per stateful surface | §5 | Project has any persistent state surface that would be hard to reconstruct from scratch (config, credentials, sessions, working trees, indexed memory, etc.) |
+| Lifecycle hooks for automated behaviors | §14 | Project has any "from now on when X, do Y" rules that need to fire automatically (memory and process docs cannot enforce these — only hooks can) |
 | File size budgets | §11 | Files are long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -161,7 +236,19 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Practice | Section | Adopt when... |
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Stateful operations need rollback or audit trails |
-| Acknowledged gaps | §8 | Tech debt is accumulating faster than it's being addressed |
+| Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating faster than it's being addressed, or releases need a frozen "what was true at vX.Y" record |
+| Periodic dropped-item audit | §8 | Project has accumulated forward designs / explorations / POCs / "decide later" entries without a discipline for surfacing what's been forgotten |
+| Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
+| Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
+| Risk taxonomy with auto-merge thresholds | §3d | Auto-merge is on the table; team needs to agree explicitly on what merges without humans (most projects: 60–90% of changes are eligible) |
+| Cross-provider code review | §3d | Tier Medium+ changes on LLM-feature products where same-family blind spots are expensive; budget supports parallel review |
+| Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or has become rubber-stamping |
+| Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
+| Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
+| Architectural fitness functions | §3 | Project has clear architectural boundaries that linter rules can't express; team has been bitten by boundary violations |
+| Agent log discipline (5-layer log + retention + review cadence) | §4 | Project has agents taking consequential actions in production where audit trail matters for incident response, compliance, or operational debugging |
+| Cross-implementation research before foundational ADRs | §7 | Project is committing to a foundational architectural approach with meaningful trade-offs (agent loop, edit format, sub-agent model, auth framework, state-management pattern, etc.) |
+| Cost caps and budget gates (per-task / per-session / per-day with force-over-cap typed-confirm) | §9.7 | Project runs agents at scale and cost predictability matters; per-task or per-day spend has surprised the team |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -174,19 +261,42 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 
 When onboarding a project to umami — especially an existing codebase — watch for these patterns. If you identify any during discovery or an initial audit, flag them and recommend the mitigation.
 
-| Anti-pattern | How to spot it | Mitigation |
-|---|---|---|
-| **Adopting everything at once** | The agent (or team) tries to implement all 15 sections simultaneously. New projects get CLAUDE.md, change propagation maps, ADRs, multi-layer tests, and token efficiency practices before any application code exists. | Start with Tier 1 only (§0.6). Add higher-tier practices when specific pain points justify them, not preemptively. A project that doesn't ship code because it's busy setting up process has inverted its priorities. |
-| **Process without product** | Days spent building guardrail infrastructure (instruction files, documentation scaffolding, test harnesses) before writing any application code. Process exists to support delivery, not the reverse. | Build something first. Add structure as the project grows. A working prototype with no CLAUDE.md is better than a pristine process scaffold with no code. |
-| **Documentation theater** | ADRs, specs, and acknowledged gaps exist as files but no workflow references them. Decisions get re-litigated because nobody checks the ADRs. Acknowledged gaps grow but are never reviewed. | Every document should be referenced by at least one workflow. An ADR that isn't checked before making the same type of decision is overhead, not governance. If a document isn't being read, either integrate it into the workflow or delete it. |
-| **Cargo-culting practices** | Change propagation maps on a 3-file project. Formal specs for a 10-line script. Multi-layer testing on a single function. Agent orchestration for a solo developer with one assistant. | Every practice in the tier tables has an "adopt when..." trigger. If the trigger hasn't fired, the practice is premature. More process is not inherently better — only process that addresses a real problem earns its cost. |
-| **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
+**Use the "watch signal" column to convert each anti-pattern from a description into a diagnostic.** A symptom describes the steady state once the anti-pattern has set in. A watch signal is a falsifiable check — a specific event that, if it does or doesn't happen by a specific point, confirms or refutes the verdict. Without watch signals, anti-pattern audits become subjective and easy to wave away ("we're not *really* doing documentation theater"). With them, the audit can resolve.
+
+| Anti-pattern | How to spot it | Watch signal (falsifies / confirms) | Mitigation |
+|---|---|---|---|
+| **Adopting everything at once** | New project gets CLAUDE.md, change propagation maps, ADRs, multi-layer tests, and token efficiency practices before any application code exists. | Tier 2 + Tier 3 practices documented before Tier 1 has been exercised on real code. If the project is still adding process docs after session 5–10 without a runnable artifact, the verdict is confirmed. | Start with Tier 1 only (§0.6). Add higher-tier practices when specific pain points justify them, not preemptively. |
+| **Winchester Mansion sprawl** | *The mature-project cousin of "Adopting everything at once" (above) — same underlying failure to prune, different timeline.* The codebase has grown by accretion over many sessions / iterations / contributors. Features were added; few were removed. The result: rooms that don't connect (modules with no callers, endpoints with no consumers), stairs to nowhere (half-implemented features still in main, code paths that lead to dead ends), doors to walls (documented APIs that don't actually work, exports without imports, settings that no longer do anything). The system "works" — current features run — but nobody can hold the whole shape in their head, onboarding is brutal, and refactoring becomes impossible because nobody knows what's safe to touch. | Pick three features documented in README, marketing, or a feature list. For each: when did it last get exercised in production? When did its tests last run? Who owns it? If the answers are "I don't know" / "I don't know" / "no one" for 2+ features, the sprawl is real. Also: ratio of imported-but-never-called functions, dead routes, modules whose only caller is a test, settings keys nobody reads. | Periodic *architectural* pruning, not just code-level pruning. Combine §13 dead code hygiene (per-file) with a higher-level *feature inventory* pass (per-feature, quarterly default). For each feature: Keep (active use) / Deprecate (announce removal) / Remove (no users, no future). Apply §8 dropped-item-audit discipline to *features*, not just designs. Watch §1 Preserving Project Structure as the upstream protection. |
+| **Process without product** | Days spent building guardrail infrastructure (instruction files, documentation scaffolding, test harnesses) before writing any application code. | No runnable slice exists past the session count where one would normally appear (typically 3–9 sessions, project-shape-dependent). Pick the threshold up front; past it, the anti-pattern is real. | Build something first. Add structure as the project grows. A working prototype with no CLAUDE.md beats a pristine process scaffold with no code. |
+| **Documentation theater** | A heavy planning corpus exists, but subsequent sessions don't *consume* it. Decisions get re-litigated. Specs grow but aren't cited. The corpus exists; the workflow doesn't reference it. | Subsequent sessions re-derive what specs/ADRs/decisions already settle, instead of citing them. If you can't find the doc that drove the last 3 commits' decisions, it's theater. The signal is *consumption*, not volume — front-loaded planning is fine if it gets used. | Every document should be referenced by at least one workflow. Commits, PR descriptions, and session notes should cite the relevant ADR / spec / decision when one applies. If a document isn't being read, either integrate it into the workflow or delete it. |
+| **Cargo-culting practices** | Change propagation maps on a 3-file project. Formal specs for a 10-line script. Multi-layer testing on a single function. Agent orchestration for a solo developer with one assistant. | A practice was adopted because it appears in the template, not because a specific pain point surfaced. If you can't name the pain the practice addresses on this project, the trigger hasn't fired. | Every practice in the tier tables has an "adopt when..." trigger. If the trigger hasn't fired, the practice is premature. More process is not inherently better — only process that addresses a real problem earns its cost. |
+| **Made-up estimates** | The assistant offers calendar predictions ("this is ~2 weeks of work" / "10 sessions" / "we'll be done by Friday"). | Any time-based estimate appears in chat, commit messages, roadmap entries, or planning docs — sourced from the assistant. Calendar predictions are not the assistant's call. | Describe **scope**, not duration: subproblem count, relative size (S/M/L/XL vs. comparable past work), known-vs-unknown ratio. The user does velocity arithmetic — only they know their schedule, energy, and parallel commitments. Sessions are sized by goal, not by clock. |
+| **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Audit findings cite "non-conformance" with sections that don't fit the project shape, instead of recommending adapt or skip. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
+| **MCP tool sprawl** | The agent has 5–10+ MCP tools loaded "just in case." Tool metadata is consuming a large fraction of every turn's context, often without the developer realizing. | Measure tool-metadata-as-percent-of-context on a representative session. If tool schemas exceed ~30% of context, the verdict is confirmed. Most projects need 1–2 core MCP servers, not 10. | Apply §9.6: prune unused tools first, prefer lazy-load architectures (§9.5b), wrap static servers behind a proxy if needed. The cheapest tool schema is the one not loaded this turn. |
+| **Treats untrusted content as plain strings** | LLM-feature product reads external content (web pages, user messages, tool outputs, file contents) into untyped strings that flow directly to the model. New code paths frequently forget to sanitize; sanitize-on-read is scattered across the codebase. | If functions consuming external content take plain `String` parameters (rather than a typed `UntrustedContent<T>` wrapper), the verdict is confirmed. Audit-on-add doesn't catch it; the type system needs to make it uncompileable. | Apply §4 untrusted-content-boundary discipline: typed wrapper at every boundary, provenance tagging, per-provider spotlighting, audit-on-add at code review. |
+| **Leaky async interfaces** | Project has async surfaces (event bus, message queue, notification system, worker output) but those channels aren't part of the spec. Symptoms: a global event bus with no topic scoping; untyped payloads (`any`, raw JSON) that consumers route by guess; a catch-all UI notification surface receiving messages meant for scoped views; shared worker / stream output regions where multiple writers interleave. The leak manifests as *"a message appeared in the wrong part of the app"* — usually long after the emitting code was forgotten. | If grep finds a global event bus / `EventEmitter` at app scope / `pubsub` library wired at root with no topic discipline, AND the codebase has an `any`-typed or stringly-typed message payload, AND a single global notification / toast root receives traffic from >2 unrelated modules — at least one of those three is true in any leaky-async project. Confirmation: ask the team when they last had a "wrong-place message" incident; if the answer is "last month" or fresher, the verdict is real. | Apply §2b *Async Channel Contracts*: typed channel + origin tag + allowed-consumer list + audit-on-add at §3d code review. Promote to a §3 fitness function (cross-module subscriber not on allowed-consumer list = test fail) when audit-on-add proves insufficient at team pace. The four-part pattern parallels §4's untrusted-content boundary; cite the parallel, don't merge them. |
+| **No agent-approval gate table** | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) but no single document codifying which actions are gated, at what severity, with what audit trail. New contributors discover gates by tripping them. | If the project has consequential agent actions but no `docs/agent-approval-gates.md` (or equivalent), the gates are implicit. Even one HARD action without a tabulated gate is a sign. | Maintain a gate table per §14 "Agent Approval Gates": HARD/SOFT/NONE severity, action class, user-visible surface, audit trail location, implementation pointer. Group by category. |
+| **Runbooks-as-aspiration** | Per-stateful-surface runbooks exist on disk, but RTO/RPO targets are vague ("soon", "minimal") or restore steps haven't been exercised in >6 months. The runbook reads as policy, not procedure. | Pick the longest-untested runbook and run a recovery drill cold (without coaching). If it fails, the runbook is aspiration. RTO/RPO sections without numbers (just adjectives) are also a confirmed signal. | Apply §5 "Recovery Runbooks per Stateful Surface": numbered restore steps with prerequisites, concrete RTO/RPO numbers, quarterly drills rotating across surfaces. |
+| **"From now on when X" without a hook** | Project documents an automated behavior ("we always log Y", "we never let the agent touch Z") in CLAUDE.md or process docs but no hook implements it. The agent doesn't perform the behavior; humans assume it's being done. | Search the project's harness configuration (`settings.json` or equivalent) for the corresponding event and predicate. If the doc says "always do X" but no PreToolUse / PostToolUse / SessionStart / Stop hook fires X, the verdict is confirmed. | Apply §14 "Lifecycle Hooks": wire automated behaviors through the harness's hook layer. Doc-only "always do X" rules are aspiration unless they're hook-implemented. |
+| **Single-provider testing for multi-provider product** | LLM-feature product serves multiple providers (Anthropic / OpenAI / Gemini / etc.) but the behavioral bench / E2E suite runs against only one. Production paths through other providers ship without behavioral verification. | Count the providers the product serves vs. the providers covered in the bench matrix. If serves > covered, the gap is silent regression risk. Often surfaces post-incident: "we shipped a tool-schema change; it works on Anthropic but Gemini rejects it because we never tested." | Apply §3 "Multi-Provider Behavioral Testing": matrix of providers × substrate tiers; gate critical cells per commit; full matrix nightly or per-release. Real-provider RTT, not just mocks. |
+| **Agent logs without review** | Project ships agent activity logs to a sink (disk, observability platform, S3) but nobody actually reads them. The retention policy looks compliance-shaped; nothing ever gets queried. | Ask when the agent log was last queried for anything other than incident response. If "never" or "I don't know," the log is write-only. If retention is set in months but no review cadence is documented, the log exists for paperwork, not for audit. | Apply §4 "Agent Log Discipline" review-cadence guidance: weekly tool-call scan, per-release error-layer review, per-incident forensic reconstruction, quarterly field-utility review. If review doesn't happen, drop the logging cost. |
+| **ADR alternatives without research depth** | ADR has an "alternatives considered" section that names 1–3 alternatives in 1–2 sentences each. Reader can't tell what kind of audit went into the rejection — was it a deep read, a README skim, or just the assistant's training-data summary? | If an ADR doesn't cite a research doc, ask the author when the alternatives were last deep-read and what concrete dimensions were compared. If the answer is "we just knew" or "it's industry consensus," the audit didn't happen. | Apply §7 "Cross-Implementation Research": pair foundational ADRs with a dated research doc, comparison matrix, and tiered steal-list. The research doc gives the ADR's rejection reasoning auditable depth. |
+| **Cost caps in policy doc but not in code** | Project documentation states "max $X per day for agent operations" but no enforcement exists in the harness configuration. Cost overruns happen and post-hoc retros say "well we have a policy" — but the policy never blocked anything. | Search the harness configuration (`settings.json`, hook configurations, etc.) for cap enforcement. If the doc says max $X but no hook / setting / runtime check enforces it, the verdict is confirmed. Cap-without-enforcement is aspiration. | Apply §9.7 "Cost Caps and Budget Gates": enforce caps in the harness layer (hooks, settings constraints, runtime checks). Document the policy AND the enforcement, with the audit-trail entry recorded when a cap fires. |
+| **Fitness functions as documentation** | Architectural fitness functions exist in the test suite, but they assert constraints that are always trivially true. They never fail. They're aspirational descriptions of architecture, not active gates. | Run the fitness function suite in a deliberately broken state (introduce a known violation). If the suite still passes, the constraint is too loose or the test isn't actually checking what it claims. Functions that have never failed in their lifetime are also a sign — either the codebase has perfect compliance (unlikely) or the test is documentation. | Apply §3 "Architectural Fitness Functions": each function should be specific enough to fail when its invariant is violated. If you can't construct a violation case, the test is documentation, not a fitness function. |
+| **Refactoring without tests** | Code restructured "for clarity" without tests covering the affected behavior. Either no tests exist, or the tests were added/changed as part of the refactor commit. Behavior may have changed silently. | If a "refactor" commit also modifies tests in ways that aren't pure rename / move, it's not a refactor — it's a rewrite. If the codebase has refactor-style commits but the test suite doesn't run reliably, the safety net is missing. | Apply §3e "Refactoring Discipline": tests as the safety net are non-negotiable. If behavior isn't covered, write the test first; then refactor. If you can't write the test, you're not refactoring — you're rewriting. |
+| **Security as reactive — no threat model** | Project ships features with security controls in place (boundary validation, secrets management, auth) but no systematic threat model. Defenses cover threats the team happened to think of; threats they didn't think of slip through. Security incidents repeatedly surface "we should have caught this." | Ask the team to draw the system's trust-boundary data flow diagram on a whiteboard from memory. If they can't, the threat model doesn't exist. Look for a document mapping system boundaries → threats → mitigation decisions. If absent, security is reactive, not deliberate. | Apply §4 "Threat Modeling": the 5-step protocol (DFD → STRIDE → rate → decide mitigations → living document). One pass at project bootstrap; re-visit when boundaries change; per-release for compliance-bound projects. |
+| **Security investment outpaces threat model** | Team adopts Full-depth security practices (zero-trust posture, typed untrusted-content wrappers, multi-provider behavioral matrix, architectural fitness functions) before the threat model or incident history justifies the cost. Often driven by aspirational compliance, vendor headline anxiety, or rigor-signaling — security work feels rigorous and is hard to argue against. Carrying cost is invisible until the project ships late. | Count §4 / §3 Full-depth practices in flight vs. specific threats they address (named in the threat model or incident postmortems). If Full-depth practices > documented threats, the investment is outpacing the model. Also: if weeks of security infra are landing before the features that earn user trust ship, the verdict is confirmed. | Default to Starter / Working depth across §4 practices. Deepen when a threat-model finding, incident, compliance trigger, or vendor/customer requirement justifies the cost — not when the practice sounds rigorous. The §0.6 "Adopting everything at once" anti-pattern applies to security specifically; flag aspirational Full-depth work in §8 acknowledged gaps with an explicit "why now" check. |
+| **Pipeline cargo cult — slow CI as accepted reality** | Project's CI pipeline takes 20+ minutes for what should be a 5-minute pass. Gates were added per incident over time; none have been removed. Contributors stopped complaining months ago because the slowness is treated as immutable. New contributors inherit the slow pipeline and add their own gates without re-justifying existing ones. Pipeline configuration is often copy-pasted from another project. | Measure cycle time P50 / P99 over 30 days. If trending up over consecutive months without remediation, the verdict is confirmed. List every gate; if 3+ have "I don't know" or "never that I remember" answers to "when did this last catch a regression?", the cargo cult is real. Identical pipeline configs across multiple projects with different threat models is the strongest confirmation signal. | Apply §6b "Pipeline Audit": quarterly gut check on cycle time + per-gate purpose + last-caught-something date. Each gate gets a disposition (keep / move local / demote nightly / remove). Inner-loop feedback budgets documented in CLAUDE.md. Cargo-culted pipeline configs re-justified per gate against current threat model and feature surface. |
+| **Aesthetic restructure** | Someone proposes (or an agent quietly executes) a directory / file-layout reorganization framed as "cleaner" or "more consistent." The change breaks paths referenced from downstream `CLAUDE.md` files, skill files, tests, change-propagation maps, or external documentation. Coordination cost was not enumerated. | When a restructure is proposed, ask the proposer to enumerate the external contracts that will break (tests, docs, downstream `CLAUDE.md` references, skill paths, propagation maps). If they can't or won't, the change is aesthetic and the coordination cost is invisible to them. Often the current layout is fine and the structural rule just needs codification. | Apply §1 "Preserving Project Structure": codify the rule (CLAUDE.md), encode invariants as §3 fitness functions, flag structural changes in §3d code review. Restructure only at appropriate phases (discovery, pre-shipping, major-version boundary, or trigger-fired per §8). |
+| **Deferred decisions that never get decided** | Project has decisions-log entries / ADRs / design docs marked "decide later", "TBD", "deferred", or "Proposed" status that persist across multiple phases without resolution. The gap registry tracks these implicitly but they're not in it; they're in the middle ground of "we'll get to it" that never gets gotten to. | Count decisions-log entries / ADRs in "deferred" or "Proposed" state with no follow-up resolution. If the count grows over time (or stays flat across multiple phases without items resolving), the discipline is missing. Old `docs/designs/` files without recent updates and no archive move are the same pattern in design-doc form. | Apply §8 "Periodic Dropped-Item Audit" (typically quarterly). For each dropped item, force a disposition: Revive (still relevant, schedule it) / Archive (was relevant, preserve in `_archive/`) / Delete (truly dead) / Re-decide (the deferred decision gets a real decision now). Default to archive unless revival is justified. |
 
 **For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
 
+**When you flag a borderline case, name the watch signal explicitly.** "Borderline documentation theater: 14 specs and 8 ADRs before any application code. Watch signal: if Phase 0 stretches past 9 sessions without code progress, the anti-pattern is real." A verdict without a falsifier becomes opinion; a verdict with one becomes a checkpoint.
+
 ### 0.7 Audit Protocol — How to Review Efficiently
 
-Auditing the full document against a project is expensive — both in tokens and in time. A comprehensive audit of the core template plus extensions can consume 50,000+ tokens, most of which is wasted if the project is early-stage and only needs Tier 1 guidance. Use a tiered audit approach instead.
+Auditing the full document against a project is expensive — both in tokens and in time. A comprehensive audit of every umami file (landing + 4 core companions + relevant extensions) can consume 40,000+ tokens. The umami v3 architecture is designed so most audits don't need that much: a Tier 1 audit needs only the landing document (~13K tokens); a Tier 2 audit pulls in the one or two companion files that match the audit scope (~25K tokens). Use a tiered audit approach.
 
 **For AI assistants performing an audit:**
 
@@ -198,9 +308,9 @@ Auditing the full document against a project is expensive — both in tokens and
 
 3. **Focus on gaps, not compliance.** The output should be: "Here are 3-5 specific practices from the next tier that would address problems you're currently experiencing." Not: "Here are 47 recommendations across all sections."
 
-4. **Read selectively.** You do NOT need to read the entire document for every audit. Read §0 (discovery) to understand the framework, then read only the sections relevant to the tier you're auditing. The tier tables above tell you which sections to check.
+4. **Read selectively. Use the Section Navigation Map.** You do NOT need to fetch every umami file for every audit. Always fetch the landing document (`umami.md`) first — it carries §0 (discovery + framework), the Navigation Map, and Tier 1 practices. Consult the Navigation Map to identify which core companion files apply to the tier you're auditing. Tier 1 audits use landing alone; Tier 2 audits typically fetch one or two companions; Tier 3 audits may fetch more.
 
-5. **Extensions only when relevant.** Only fetch extension files if the project has that domain layer AND is at Tier 2+. A Tier 1 web project doesn't need an audit against `umami-web.md` — it needs to get its basic testing and structure right first.
+5. **Extensions only when relevant.** Only fetch domain extension files if the project has that domain layer AND is at Tier 2+. A Tier 1 web project doesn't need an audit against `umami-web.md` — it needs to get its basic testing and structure right first. The same principle applies to core companions: don't fetch `umami-agents.md` if the project isn't running agents at scale.
 
 **Audit output format:**
 
@@ -215,14 +325,24 @@ Auditing the full document against a project is expensive — both in tokens and
 
 ### Recommended next practices (priority order)
 1. [Practice] (§X) — [why this addresses a current pain point]
+   - **Impact:** [specific improvement, tied to a watch signal or measurable signal where possible — e.g., "closes the §3d rubber-stamping watch signal; merge rate currently 8× human engagement", "eliminates ~14 contributor-hours/week per §6b tax", "resolves gap-registry entry X"]
+   - **Effort:** Agent-autonomous / Operator-required / Specialist · Hours/Days/Weeks/Months · One-time / Recurring / Architectural / Spend (per §4 *Reading the cost profiles*)
+   - **Quick win** *(flag only when Impact is documented anti-pattern / gap-registry entry / measurable pain reduction AND Effort is Hours)*
    - **Changes required:** [which files would be created, modified, or restructured]
    - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
 2. [Practice] (§X) — [why this addresses a current pain point]
-   - **Changes required:** [which files would be created, modified, or restructured]
-   - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
+   - **Impact:** [...]
+   - **Effort:** [...]
+   - **Changes required:** [...]
+   - **Conflict risk:** [low/medium/high]
 3. [Practice] (§X) — [why this addresses a current pain point]
-   - **Changes required:** [which files would be created, modified, or restructured]
-   - **Conflict risk:** [low/medium/high — likelihood of affecting concurrent work]
+   - **Impact:** [...]
+   - **Effort:** [...]
+   - **Changes required:** [...]
+   - **Conflict risk:** [low/medium/high]
+
+### Latent practices observed
+- [Practice X] — evidence: [hook / script / file / pattern showing the team exercises this]. Currently uncodified in [target doc / spec section]. Recommendation: codify in [the project's CLAUDE.md / a process doc / surface for umami contribution if universally applicable].
 
 ### Not yet relevant
 - [Practices that were checked but don't apply yet, with the trigger that would make them relevant]
@@ -230,19 +350,102 @@ Auditing the full document against a project is expensive — both in tokens and
 
 This format keeps the audit focused and actionable. A project should come away with 3-5 concrete next steps, not a wall of recommendations.
 
-**After the audit — describe changes, then ask:**
+**After the audit — describe changes, then present a four-option dialog:**
 
 Each recommendation in the audit report must describe the specific changes it would require — which files would be created, modified, or restructured, and what the modification involves. This lets the team assess impact, spot conflicts with in-progress work, and make informed decisions before any code is touched.
 
-Once the report is complete, ask the user how they want to proceed:
+Once the report is complete, present a structured dialog asking how to proceed. Use the harness's structured-prompt mechanism (e.g., `AskUserQuestion` or equivalent) so the question is self-contained in its UI surface without requiring chat scroll-back — see §3b "Make each prompt self-contained."
 
-1. **Save to file for team review** — write the findings report to a file (e.g., `umami-audit-findings.md`) so the team can review, discuss, and prioritize together. **This is the default.** When multiple engineers are working on the codebase, uncoordinated changes create merge conflicts and break concurrent work.
-2. **Apply all recommendations** — implement all findings. Only appropriate when the user has sole ownership or has already coordinated with their team.
-3. **Selective application** — walk through recommendations one at a time, letting the user choose which to apply, skip, or defer.
+| Option | What happens |
+|---|---|
+| **Apply all recommendations** | Execute every finding without further dialog. Appropriate when the user has sole ownership or has coordinated with their team. |
+| **Selective walkthrough** | Step through each finding one at a time per §3c (Interactive Decision Planning). For each: present the recommendation, let the user choose apply / skip / defer / modify, lock the disposition before moving on. |
+| **Do something else** (free-text prompt) | The user describes a different action — save findings to a file for team review, branch and apply, escalate to a teammate, defer to a specific date, narrow the scope, etc. The catch-all when none of the structured options fit. |
+| **Skip** | Discard the findings without action. The audit was informational. |
 
-Default to option 1 unless the user explicitly requests otherwise. If the user chooses to apply changes (option 2 or 3), ask about active branches and in-progress work first. Use a dedicated branch for remediation. Prefer small, focused changes over sweeping refactors.
+The four options compose: *all / selective / other / none*. They cover the full disposition space without forcing a default the audit cannot know is right — *"save findings to a file"* is now an instance of "do something else," not a built-in default, because the right disposition depends on the user's situation (solo vs. team, urgency, branch state, coordination needs).
+
+If the user chooses **Apply all** or **Selective walkthrough**, ask about active branches and in-progress work first. Use a dedicated branch for remediation. Prefer small, focused changes over sweeping refactors.
+
+**This dialog pattern applies beyond audits.** Any workflow that produces a list of recommendations (code review, security review, pruning passes, dependency audits) should end with the same four-option dialog. The pattern is the standard disposition affordance for "here are N findings" reports.
 
 **Standardize the invocation.** Create an `umami-audit` skill in your project's skill library (§14) so the audit is always triggered the same way — `/umami-audit` or equivalent — regardless of who runs it or which agent tool they use. The skill should embed the raw URLs and reference this protocol so the agent doesn't improvise the process.
+
+**Skill drift detection.** The audit skill is a snapshot of this protocol frozen at skill-creation time; the canonical source is whatever §0.7 says when freshly fetched. To prevent silent drift between snapshot and source, every audit run performs two checks before finalizing the report:
+
+- **Structural drift.** Compare the skill's embedded bootstrap against the freshly-fetched §0.7. Specifically: number of disposition options in the four-option dialog, number of hard rules, shape of the output-format block. If any differ, structural drift is present — the skill is mechanically out of sync with the published protocol.
+- **Calendar drift.** Skill bodies should include a `**Last synced:** YYYY-MM-DD` line near the top, recording when the skill was last derived from §0.7. If that date is older than ~3 months, calendar drift is present — the skill may be substantively current, but the date warrants a sync check.
+
+When either check trips, append a single non-blocking line to the audit report under a `### Skill drift` heading:
+
+> *"Audit skill body diverges from §0.7 ({structural / calendar / both}). Re-sync recommended — derive a fresh `umami-audit.md` from the current §0.7."*
+
+This callout sits **outside** the priority-ordered recommendations list and does **not** count against the ≤5 recommendations rule. It's a maintenance signal about the audit infrastructure itself, separate from process findings about the project.
+
+**Hard rules for the audit skill** — encode these as non-negotiable constraints in the skill body, not just as suggestions in the audit text. Skills drift when their constraints are advisory; they hold when constraints are stated as rules:
+
+- **Read-only.** Never modify code or docs during the audit. Even obvious cleanup belongs in a follow-up, not in the audit itself.
+- **Always fetch the landing document fresh from the canonical URL** (`https://raw.githubusercontent.com/.../umami.md`). Never cache locally. The framework evolves; cached copies go stale silently.
+- **Consult the Section Navigation Map.** Identify which core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`) and which domain extensions apply before fetching anything beyond the landing document. Fetch only what the audit scope requires.
+- **If the fetch fails, tell the user and stop.** Do not fall back to a stale local copy. An audit against three-month-old guidance is worse than no audit — it produces confident, wrong recommendations.
+- **Never recommend more than 5 things.** A wall of recommendations is not actionable. Prioritize ruthlessly.
+- **Cite a file path or doc reference for every observation.** "The project lacks ADRs" is an opinion; "no files exist under `docs/decisions/`" is a finding.
+- **Don't fetch companion or extension files unless they apply.** A Tier 1 audit doesn't need any companion file. A web project doesn't need `umami-data.md`. Confirm scope relevance before pulling.
+- **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
+- **Every recommendation cites Impact and Effort.** Impact names a specific improvement (anti-pattern closed, gap-registry entry resolved, measurable pain reduced — ideally with a falsifiable signal). Effort uses the §4 *Reading the cost profiles* scheme (Who · Magnitude · Shape). Both are required; vague impact ("improves quality") and vague effort ("not too bad") defeat prioritization. **Flag Quick win** only when Impact is concrete AND Effort is Hours; the flag dilutes if applied to medium-effort items. Unflagged recommendations are still actionable — readers prioritize from the Impact/Effort dimensions themselves.
+- **Surface latent practices.** Beyond tier-gap recommendations, look for practices the team is *already exercising* that aren't yet codified — either in the project's own `CLAUDE.md` / process docs, or in umami's spec. Evidence: hooks doing something the docs don't describe, scripts doing operations not captured in process, conventions visible across commits but not in `CLAUDE.md`, gap-registry entries pre-staging work that isn't reflected in any tier-table practice. When found, recommend codification.
+
+When the audit flags an anti-pattern, name the watch signal that would confirm or refute the verdict (see §0.6). Verdicts without falsifiers become opinion.
+
+**Latent-practice findings are often the highest-leverage recommendations** because the team is *already paying the cost* of the discipline without getting the *benefit* of having it named — cross-referenceable in code review, teachable to new contributors, encodable as §3 fitness functions, citeable in commit messages, durable when contributors rotate. Codifying makes tacit knowledge into a contract.
+
+### 0.7b Initialization Protocol — Bootstrapping Umami in a New Project
+
+§0.7 covers recurring audits. This section covers the first-time setup — bringing umami into a project that doesn't yet reference it, or upgrading a partial setup.
+
+**Bootstrap entrypoint (self-installing).** A project with no umami presence pastes one instruction into their agent:
+
+> *"Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md and follow §0.7b."*
+
+The agent fetches the spec, follows this section, and during the apply phase installs `umami-init` and `umami-audit` skills locally. Subsequent runs use slash commands.
+
+**This is a lightweight setup, not a framework install.** Init writes only URL references and small invocation-aid skill files. There is no framework copy, no runtime dependency, no library to keep updated. The umami spec stays at its canonical URL and is fetched fresh on every run; the local artifacts are just a way to make access to umami consistent and harness-recognized as commands.
+
+**What gets stored locally vs. fetched fresh:**
+
+- **Stored locally:** URL *references* to the canonical umami spec (in instruction files like `CLAUDE.md`) and *skill files* (`.claude/skills/umami-init.md`, `.claude/skills/umami-audit.md`) that describe *how to invoke* the protocol.
+- **Never stored locally:** the umami spec itself. Always fetched fresh from the canonical URL on every audit/init run.
+
+Skill files are invocation aids — they encode procedure shape, hard rules, and bootstrap text so the harness recognizes `/umami-init` and `/umami-audit` as commands. They do **not** contain a copy of umami.md. Drift between an installed skill and the canonical spec is detected per §0.7 (structural + calendar drift checks).
+
+**Procedure for AI assistants performing initialization:**
+
+1. **Detect current state.** Grep instruction file(s) (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.) for umami URLs. Determine starting state:
+   - **None** — first-time setup.
+   - **Partial** — some umami URLs present; missing relevant companion files, missing relevant domain extensions, or referencing extensions for layers the project doesn't have.
+   - **Complete** — references match the project shape; recommend `/umami-audit` instead.
+
+2. **Run §0.1–§0.4 discovery** interactively, one decision at a time per §3c when answers compound.
+
+3. **Derive recommended URL set** via §0.5 mapping. The URL block always includes the **landing document** (`umami.md`). Core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`) and domain extensions are added based on the tier the project is targeting and which concerns apply. For Tier 1 / first-pass adoption, the URL block may legitimately list only the landing document plus relevant domain extensions — companion files can be added when the project escalates to Tier 2.
+
+4. **Compute the diff:** adds (companion files + domain extensions to add to URL list), removes (rare; usually flag-only), and skill installations (`.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md`, each with `**Last synced:** YYYY-MM-DD` set to today).
+
+5. **Show the user the proposed changes, then present the four-option dialog.** Enumerate every file that would be modified or created — paths, line counts, the exact URL block that would land in each instruction file, which skill files would be created or updated and at what `Last synced:` date. The user must be able to read the diff before deciding. Then surface the dialog (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
+
+6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first.
+
+7. **On apply, auto-chain into the first audit.** When step 6 actually wrote files, immediately invoke `/umami-audit` to produce a baseline process audit against the freshly-installed configuration. Announce the transition (*"Init complete — wrote {file list}. Running first process audit now…"*) and proceed without further confirmation; the user already consented to the workflow at the four-option dialog. The audit runs its full §0.7 procedure — read-only fetch, findings report, and its own four-option findings-disposition dialog at the end — so the user still chooses interactively what to act on. Init's job isn't done when the skills are on disk; it's done when the user has seen where they stand. If init was skipped at the dialog (no files written), do not auto-chain; hand off with *"Init skipped — re-invoke `/umami-init` when you're ready."*
+
+**Hard rules** mirror §0.7:
+
+- Read-only by default. The four-option dialog gates every write; no destructive changes without explicit approval.
+- Always fetch the landing document (`umami.md`) fresh from the canonical URL. Never cache locally.
+- For Tier 2+ scope, fetch the companion files identified by the Section Navigation Map. Don't fetch companions speculatively.
+- If the fetch fails, tell the user and stop. Don't fall back to a stale local copy.
+- Cite a file path or doc reference for every observation.
+- Drift detection applies to installed skills (see §0.7).
+- **Auto-chain into `/umami-audit` on successful apply** (step 7). Printing a hand-off message and stopping leaves the user with installed skills but no view of their baseline; the bootstrap one-liner ends in a finding-bearing audit, not a confirmation message. Auto-chain only when files were written — skip the audit if the user chose **Skip** at the four-option dialog.
 
 ### 0.8 Example: Onboarding a Multi-Layer System
 
@@ -352,103 +555,117 @@ project-root/
 - Tests run independently: `pytest tests/` for the application, `cd analysis && pytest tests/` for analysis.
 - Discovery work is done when it's done. Don't restructure it retroactively to match application conventions — just wall it off.
 
----
+### Phase / Session Structure for Long-Running Effort
 
-## 2. Specification-First Development
+Projects that outlive a single sitting need a unit-of-work hierarchy. Without one, work fragments into a stream of commits that have no narrative, scope creeps because nobody can name what was *supposed* to happen, and the assistant has no clean point to stop and re-orient. The discipline is small but pays off across weeks.
 
-Every feature starts with a written spec, not code. Architecture documents and diagrams define system behavior, component contracts, and design constraints before implementation begins. These serve as the source of truth for all contributors.
+```
+Project
+ └── Milestones    (semantic version bumps: v0.x → v1.0 → v2.0)
+      └── Phases   (numbered groups of related work, named by capability)
+           └── Sessions (atomic, single-goal, one-or-more-commits)
+```
 
-**This section establishes spec discipline, not a spec framework.** There are many spec frameworks and methodologies (RFC-style documents, Gherkin/BDD, design docs, shape-up pitches, PRDs, etc.). This template is compatible with any of them — and deliberately doesn't recommend one. The high-value practice is *having* a spec process that forces thinking before coding. Which format you use matters far less than whether you use one at all. Pick a format that fits your team and project, then apply the discipline below to it.
+| Unit | What it is | Sizing | Naming |
+|------|-----------|--------|--------|
+| **Milestone** | A version boundary where the product becomes a different thing. v1.0 is feature-complete baseline; v2.0 is next-generation capability. | Set by *what shipped*, not by a calendar. Don't tag a milestone for incremental work — that's what phase boundaries are for. | Semver tag (`v0.10.0`, `v1.0`). |
+| **Phase** | A cohesive group of sessions that delivers one named capability. | Sized to fit a coherent body of work, not a target session count. A small phase is 4 sessions; a large phase is 12. Either is fine. | "Annotations & Markup", "Form Filling", "Save / Export / Reduce" — the capability, not a number alone. |
+| **Session** | The atomic unit of work — one focused sitting. Has a single goal stated in one sentence. Produces working, tested code (not scaffolding). Results in one or more commits, each addressing one concern. | Sized by goal, not by clock. "However long it takes to deliver one focused goal." | Globally numbered across phases (S1, S2, S3...) so commits can reference them in git log. "Phase 9 S5d: AcroForm AP regen". |
 
-### What to Specify
+**Why global session numbering:** a commit message like `Phase 9 S5d-2 + S5d-3: separate-widget-kid AP regen + DR-aware fonts` is searchable, traceable, and survives roadmap renumbering. Per-phase session numbers collide every time you reshuffle.
 
-- **System architecture** — how components connect and communicate.
-- **Component contracts** — typed inputs, outputs, and configuration schemas.
-- **Design system** — enforced visual language (colors, typography, spacing) so the UI stays consistent regardless of who writes the code.
-- **Data contracts** — data shapes validated at design time, catching mismatches before runtime.
+**One goal per session.** If a tangent emerges, capture it as a TODO or audit gap; don't expand the session. Scope discipline at this layer is what keeps phases honest.
 
-### How Specs Prevent Waste
+**Sessions can have sub-sessions** when a session's single goal naturally breaks into staged sub-deliverables that share the goal. Number them `S4 Session 1`, `S4 Session 2`, `S4 Session 3a`, `S4 Session 3b`. Don't use sub-sessions to smuggle in extra goals.
 
-A spec that takes 30 minutes to write prevents hours of rework. For AI contributors specifically, a spec means the AI implements to a target rather than inferring intent from context clues — fewer clarification questions, fewer wrong-direction implementations.
+**Renumbering is normal, not a failure mode.** Phases get reordered when priorities shift. When you renumber:
 
-### When Not to Specify
+1. Document the change in a `## Renumber note (date)` block in the roadmap, explaining what moved and why.
+2. Sweep all cross-references in the roadmap for stale phase numbers.
+3. Add a decisions-log entry capturing the rationale.
 
-Specs have diminishing returns. Over-specifying is its own form of waste — a spec that takes longer to write than the implementation it describes is overhead, not discipline.
+This audit trail is how you avoid "wait, was Phase 5 the search work or the print work?" a year later.
 
-**Skip the spec when:**
-- The change is trivial — typo fixes, config tweaks, adding a log line, updating a dependency version.
-- The implementation is smaller than the spec would be — if describing the work takes more effort than doing the work, just do the work.
-- The behavior is already fully specified by an existing test — writing a new spec that restates what the test already captures adds no value.
-- You're prototyping to learn — write the spec *after* the prototype clarifies the requirements, not before. Specifying unknowns produces fiction, not contracts.
+### Multiple Surfaces, One Primitive
 
-**The signal:** If you find yourself writing a spec and realizing you can't specify the behavior because you don't understand the problem well enough, stop specifying and start prototyping. A prototype that reveals the right spec is more valuable than a spec that encodes the wrong assumptions.
+When an application exposes multiple interfaces — a GUI, a CLI, an AI tool surface (MCP, function calling, etc.), a public API — the temptation is to implement each interface against the underlying engine independently. Don't. Force every public write operation through a single typed primitive that all surfaces build and submit.
 
----
+```
+GUI ─┐
+CLI ─┼──→ Patch (typed) ──→ apply_patches(engine) ──→ result
+MCP ─┘
+```
 
-## 3. Multi-Layer Test Infrastructure
+**Why this matters:**
 
-Testing spans the full stack across complementary layers:
+- **One test surface.** Test the patch type and `apply_patches`; the surfaces become thin adapters that build patches and forward them. You don't need to re-test "does saving work" three times in three different shapes.
+- **Invariants in one place.** Validation, undo/redo, transaction boundaries, security checks live on the primitive. Surfaces can't bypass them, even by accident, because the primitive is the only path.
+- **New surfaces are cheap.** Adding a fourth interface (a webhook, a daemon, a scripting bridge) means writing a thin adapter that builds the existing patch type. The engine doesn't change.
+- **Inverse / undo for free.** If the primitive defines a forward operation and its inverse, every surface gets undo support without each one implementing it.
 
-| Layer | Purpose | Catches |
-|-------|---------|---------|
-| **Unit tests** | Logic correctness | Regressions in parsers, validators, state management, utility functions |
-| **Property-based tests** | Invariant correctness across generated inputs | Edge cases you didn't think of — boundary values, empty inputs, unicode, overflow |
-| **E2E browser tests** | User flow integrity | Broken interactions, navigation failures, data persistence issues |
-| **Visual regression** | Pixel-level UI stability | Unintended cosmetic changes; baselines updated only for intentional changes |
-| **API/service tests** | Contract adherence | Protocol violations, serialization errors, edge cases in data handling |
+**The discipline:** before exposing a new write capability through any surface, define it as a variant of the patch type first. The surface code should never call the engine directly; it should always go through the primitive.
 
-### Property-Based Testing
+This generalizes beyond write operations. Read operations can also benefit from a single typed query primitive — but the cost-benefit is weaker for reads (they don't have invariants or undo). Apply this rule strictly to writes; selectively to reads when it earns its keep.
 
-Example-based tests verify the cases you thought of. Property-based tests find the cases you didn't. Instead of specifying individual inputs and expected outputs, you define *properties* (invariants) that must hold for *any* valid input, and the framework generates hundreds or thousands of test cases automatically.
+### Preserving Project Structure
 
-**When to use:**
-- **Parsers and serializers** — "parse(serialize(x)) should equal x for any x."
-- **Data transforms** — "output row count should equal input row count" or "no nulls in required fields after transform."
-- **Business rules** — "discount never exceeds the item price" or "account balance never goes negative."
-- **API contracts** — "response schema is valid for any combination of query parameters."
+§1's other sub-sections cover what to *set up* — directory layout, workspace partitioning, the phase/session hierarchy, multi-surface routing. This sub-section covers how to *preserve* what you've set up. Once a project commits to a structure, that structure becomes an **external contract** — for tests that reference paths, for documentation that mentions modules, for change-propagation maps (§10), for skills and automation that reference file locations, for downstream consumers if the project is a library or shared spec. Restructuring late has costs that compound with project age.
 
-**When not to use:** UI interactions, integration tests with external services, or any test where the property is harder to state than the individual cases.
+**The core principle: structural commitments are contracts.** The same reasoning §11 applies to spec-section identifiers (external contracts; don't renumber) applies to file paths, module names, and directory layouts. Changing them means breaking every reference. The cost is real and recurring.
 
-**Frameworks:** Hypothesis (Python), fast-check (JavaScript/TypeScript), QuickCheck (Haskell/Erlang), Proptest (Rust), jqwik (Java).
+**When structural changes are appropriate:**
 
-**Token impact for AI development:** Property-based tests are especially valuable when agents write code, because agents tend to test the happy path and common edge cases but miss unusual input combinations. A property-based test suite catches bugs the agent (or human) would never think to write example tests for.
+| Phase | Why it's OK to restructure |
+|---|---|
+| **Discovery (§0)** | No commitments have formed yet; this is when to get the structure right |
+| **Pre-shipping** | No external consumers exist; internal refactoring is local |
+| **Major-version boundaries** | Breaking changes are scheduled and communicated; downstream consumers expect adjustment |
+| **Trigger-driven (per §8 watch signals)** | A pre-identified seam fires its trigger; restructure has been pre-staged |
 
-### Testing Principles
+**When structural changes are expensive and should be avoided:**
 
-- **Baselines are version-controlled artifacts** — screenshots and snapshots checked into git, not generated on the fly.
-- **Update baselines only for intentional changes** — this prevents cosmetic drift and makes every visual change a deliberate decision.
-- **Run tests before committing UI changes** — always. No exceptions.
-- **Hard timeouts on all test layers** — per-test timeout, global kill switch, and memory caps prevent runaway processes.
-- **Document pre-existing failures** — known failures that aren't your bugs should be listed so contributors don't waste time diagnosing them.
+- After publication, when downstream `CLAUDE.md` files / skills / automation reference paths
+- When the change is *aesthetic* ("cleaner layout") rather than driven by a real constraint
+- Mid-version, when external contracts haven't been renegotiated
+- Bundled with feature work (per §3e: structure changes are refactorings; same atomic-commit rules apply)
 
-### Test Doubles for External Dependencies
+**Protecting structure from drift:**
 
-Production code should target production infrastructure. Tests should run without that infrastructure. The solution is a thin adapter in the test suite — not conditional branches in production code.
+| Tool | What it catches |
+|---|---|
+| **Codified rules in CLAUDE.md / instruction files** | New contributors and agents follow the explicit rule instead of inventing or inferring one |
+| **§3 architectural fitness functions** | Module import-direction violations, file-location-rule violations, naming-pattern violations |
+| **§3d code review classifications** | New files outside the canonical layout flagged HIGH for human review |
+| **§10 change propagation maps** | Capture "files that move together"; restructures that split them get flagged |
+| **§8 acknowledged gaps — seam pre-identification** | When a trigger fires (file size, growth pattern), the restructure is pre-staged with execution plan |
 
-**Wrong:** Scattering `if test_mode then ... else ...` throughout production code so it works with both a real service and a test substitute. This doubles maintenance, masks integration issues, and makes production code harder to read.
+**Watch signals:**
 
-**Right:** Write production code for the production target only. In `tests/`, create a lightweight adapter that conforms to the same interface but translates to a simpler backend. The adapter is never imported by production code.
+| Signal | What it catches |
+|---|---|
+| New files added in inconsistent directories | The structural rule isn't being followed; either codify it more visibly or train contributors |
+| Code review repeatedly flags "where does this file go?" | The structural rule isn't internalized; documentation gap |
+| Structural changes batched with feature work | §3e refactoring discipline violated; structure changes should be their own commit |
+| Restructure proposed without external-contract analysis | The proposer doesn't see the coordination cost; ask them to enumerate what breaks |
 
-**When to use:** Any dependency that requires infrastructure to run — databases, HTTP services, message brokers, file storage, email providers. The adapter pattern lets unit and integration tests run instantly without containers or network access.
+**Failure modes:**
 
-**When NOT to use:** Integration tests that are specifically validating the real infrastructure. Mark those tests separately (e.g., `@pytest.mark.integration`) and run them against the real thing in CI or manually.
+| Failure mode | Symptom | Fix |
+|---|---|---|
+| Aesthetic restructure | "Cleaner layout" reorg that breaks external contracts | The cleanest layout is the one with the lowest aesthetic-improvement-to-coordination-cost ratio. Often the current layout is fine; codify the rule instead |
+| Structural drift via small changes | No single change is a restructure but the cumulative effect is one | §3e refactoring discipline + §3d code review flagging at the structural level |
+| No codified rules | New contributors guess at conventions; inconsistency accumulates | Codify rules in CLAUDE.md (file layout, directory conventions, naming, import patterns) |
+| Treating structure as forever-frozen | Project grows; structure no longer fits; team says "we can't change it" | Major-version boundaries are the right time. Pre-identify seams in §8 *before* urgency; when the trigger fires, execute the staged plan |
+| Restructuring driven by an agent that doesn't see external contracts | Agent "tidies" the layout in a refactor; downstream consumers break silently | §3d Layer 2 (AI pre-screen) flags structural changes for human review |
 
-### Type Assumptions at System Boundaries
-
-When data crosses a boundary between two tools (export → import, API response → client model, serialization → deserialization), type coercion failures are the most common source of integration bugs. Each tool has its own default type representations, and they rarely agree.
-
-**The pattern:** Tool A exports data in a format that looks correct to Tool A. Tool B imports it and fails because its type expectations are stricter, looser, or simply different.
-
-**The discipline:** Every time data crosses a tool boundary, audit the type assumptions on both sides. Don't assume that "it worked in Tool A" means it will load cleanly into Tool B. Test the boundary explicitly — ideally with a small representative sample — before running the full pipeline.
-
-Common failure categories:
-- **Nullability differences** — one side allows nulls, the other doesn't, or null is represented differently (empty string vs. `NULL` vs. omitted field).
-- **Numeric precision** — one side uses integers, the other uses floats, or precision/scale constraints differ.
-- **Sentinel values in typed columns** — source data uses human-readable markers (text) in columns the schema declares as numeric or boolean.
-- **Auto-generated fields** — one side includes them in exports, the other expects them to be auto-populated on import.
-- **Temporal types** — native datetime objects vs. ISO strings vs. Unix timestamps. Timezone-aware vs. naive.
-
-**The fix is always the same:** make the boundary contract explicit. Specify column lists, validate types before crossing, and test with real data samples — not just the happy path.
+**Cross-references:**
+- §1 above — the setup sub-sections this protects
+- §3 architectural fitness functions — encode structural rules as automated tests
+- §3d code review — structural changes get HIGH-flagged
+- §3e refactoring discipline — structural changes are refactorings; same atomic-commit rules apply
+- §8 acknowledged gaps — pre-identify seams before urgency
+- §10 change propagation maps — capture structural patterns
+- §11 file size budgets — the spec-ID-as-external-contract exemption is the same logic applied to one specific structural element
 
 ---
 
@@ -467,6 +684,34 @@ For new features and bug fixes, write a failing test before writing implementati
 **Why this order matters:** Writing the test first forces you to think about the interface before the implementation. It also guarantees that every behavior has a test — coverage is a side effect, not a separate task.
 
 **When to skip:** Trivial changes where the test would be more complex than the code (typo fixes, config tweaks, comment edits, adding a log line).
+
+### Surface Ambiguity, Don't Guess
+
+When a request is ambiguous, the wrong response is to pick an interpretation and proceed silently. The right response is to name the ambiguity and let the requester resolve it.
+
+**The protocol:**
+
+1. **Identify the ambiguity explicitly.** Not "I'll assume you meant X" but "this could mean X or Y — which did you intend?"
+2. **Present multiple interpretations when they exist.** List 2–3 plausible readings. Briefly note the trade-off for each. Let the user pick.
+3. **State confusion rather than guessing.** If the request conflicts with observed code, with an earlier instruction, or with itself, stop and say so. Guessing wastes tokens on rework when the guess is wrong.
+4. **Distinguish questions worth asking from questions worth answering.** Trivial ambiguities (variable naming, formatting of a log line) can be decided inline with a quick note. Architectural or scope ambiguities must be surfaced — guessing at scope produces the worst kind of rework.
+
+**Why this matters for token economy:** A 200-token clarification round is cheaper than a 5,000-token misdirected implementation followed by a revert and redo. The cost asymmetry is why surfacing ambiguity early is the dominant strategy.
+
+**Make each prompt self-contained.** When the question is surfaced via an interactive dialog tool (e.g., `AskUserQuestion`-style structured prompts) rather than inline chat, the user may answer without seeing the surrounding conversation — many agent UIs render the dialog in a separate panel from the chat history. Write the question text so the user can answer cold:
+
+- State *what* is being decided in the prompt itself ("Which auth library should we use for the new login flow?"), not just "Which one?" or "What do you think?"
+- Carry the relevant context — what was already decided, what depends on this choice, what the trade-off is — into the prompt body, not into the chat that preceded it.
+- Give option labels and descriptions enough substance to stand alone. "Option A" / "Option B" forces the user back to the chat to remember what those mean; "PostgreSQL — supports JSON columns natively" / "SQLite — zero-ops, file-based" stands on its own.
+- The bar: a user opening the dialog without reading any prior message should be able to answer without re-reading anything.
+
+This applies equally to inline questions in chat — but the cost of getting it wrong is much higher when the prompt is rendered in a separate UI surface, because scroll-back may not even be available without dismissing the dialog.
+
+### Map before proposing changes (brownfield)
+
+When working on existing systems — especially legacy code or systems older than the current contributors — don't let the AI greenfield a brownfield problem. The first step on any non-trivial change in an established codebase is *mapping*: ask the AI to summarize how the affected layer currently works (what calls what, what state lives where, what invariants hold) before proposing what to change. A proposal grounded in actual current behavior is far more useful than a proposal grounded in a generic "what should this look like."
+
+This applies broadly: refactors, migrations, integrations with existing systems, debugging in unfamiliar code. The cost of one mapping pass is small; the cost of a proposal that doesn't account for what's already there is usually a discarded implementation.
 
 ### Systematic Debugging
 
@@ -530,162 +775,23 @@ Before marking any task as done — whether it's a feature, a bug fix, or a refa
 - [ ] New behavior has test coverage (from the RED step above)
 - [ ] No unrelated files were modified (scope discipline)
 - [ ] Changes match what was requested — nothing more, nothing less
+- [ ] **Every changed line traces directly to the request.** If you can't explain why a specific line exists by pointing to something the user asked for, that line is scope creep — remove it.
 
 This checklist is not bureaucracy. It catches the two most common sources of wasted follow-up work: regressions from untested side effects, and scope creep that the requester didn't ask for.
 
----
+### Litmus Tests for Self-Correction
 
-## 4. Runtime Validation
+Short self-check phrases agents can apply inline without needing a full review pass. These are not a substitute for the checklist above — they're faster filters that catch common failure modes before they compound.
 
-The system validates structural correctness on every edit, not just before execution.
+| Litmus test | When to apply | What it catches |
+|-------------|---------------|-----------------|
+| **"Would a senior engineer say this is overcomplicated?"** | Before finalizing any non-trivial implementation | Premature abstractions, speculative generality, unneeded configuration knobs |
+| **"Does every changed line trace to the request?"** | Before marking a task complete | Scope creep, incidental cleanup, "while I was here" edits |
+| **"Can I state why this fix works?"** | Before committing a bug fix | Programming by coincidence (see "Don't Program by Coincidence" above) |
+| **"If I removed this comment, would anything be lost?"** | Before writing a comment | Noise comments that restate what well-named code already says |
+| **"Would this still make sense to a reader who doesn't have the conversation context?"** | Before writing commit messages, PR descriptions, or in-code comments that reference the current task | Task-scoped phrasing that rots as the codebase evolves |
 
-### Categories of Checks
-
-- **Missing or excess connections** between components.
-- **Unconfigured components** with required fields left empty.
-- **Cycle detection** in directed graphs or pipelines.
-- **Orphaned components** with no connections.
-- **Type mismatches** at connection boundaries.
-- **Schema compatibility** — warn on mismatch, block on incompatibility.
-
-### Severity Model
-
-| Level | Behavior |
-|-------|----------|
-| **Error** | Blocks execution. Must be resolved. |
-| **Warning** | Informs the user. Does not block. |
-| **Info** | Logged for observability. No user action required. |
-
-Enforcement belongs in the engine, not the UI. The UI reflects validation state; it doesn't own it.
-
-### Production Observability
-
-Testing (§3) and validation (above) catch problems before and during deployment. Observability catches everything that slips through — the slow queries, the cascading failures, the silent data corruption. It's the production-time counterpart to development-time validation.
-
-**Three signals, correlated:**
-- **Metrics** tell you *something is wrong* (error rate spiked).
-- **Logs** tell you *what went wrong* (specific error with context).
-- **Traces** tell you *where it went wrong* (which service in the chain failed).
-
-These only work together if they share correlation identifiers — a trace ID in every log line, service name on every metric. Without correlation, you have three separate piles of data instead of one coherent picture.
-
-**Structured logging rules:**
-- Use structured format (JSON) in production. Human-readable format is fine for local development.
-- Include trace IDs in every log line — this is the bridge between logs and traces.
-- Use consistent log levels across services: DEBUG (never in production by default), INFO (normal operations), WARN (handled unexpected conditions), ERROR (failures needing attention).
-- **Never log sensitive data.** Passwords, tokens, PII, credit card numbers. Sanitize before logging. This is not optional.
-- Log at boundaries, not everywhere. Log when data enters or leaves your service, when operations complete or fail. Don't log inside tight loops.
-
-**Instrumentation discipline:**
-- Instrument inbound requests, outbound calls, and business-critical operations. Capture method, status, and duration.
-- Instrumentation is part of the "definition of done" — not a follow-up task. When removing a feature, remove its instrumentation too (§13).
-- Don't instrument every function call. Instrumentation has overhead. Excessive instrumentation creates noise and inflates costs.
-
-Each domain extension includes specific observability guidance for its context — what to monitor, what to alert on, and what tools to consider.
-
-### Security Discipline
-
-Security is a cross-cutting concern, like observability. Every project that accepts input, communicates over a network, or manages user data has a threat surface — whether the team thinks about it or not. The goal isn't to become a security expert; it's to build the habit of considering security as part of the development process rather than as an afterthought or a separate phase.
-
-**This section establishes security discipline, not a security framework.** Like spec-first development (§2), the high-value practice is *having* a security thought process. Which tools or frameworks you use matters less than whether you think about security at all.
-
-**Validate at system boundaries, trust internal code.**
-- Untrusted data enters at the edges — HTTP requests, file uploads, webhook payloads, user input, external API responses, CSV imports. Validate and sanitize at these entry points.
-- Once data has passed boundary validation, internal code can trust it. Don't scatter defensive validation through every function — it adds noise without adding safety.
-- Treat deserialized data as untrusted. JSON from an API, data from a queue, objects from a cache — anything that crossed a serialization boundary could have been tampered with or malformed.
-
-**Secrets management:**
-- **No secrets in code. Ever.** Not in source files, not in config files committed to git, not in comments, not in variable names that hint at the value. Use environment variables, secret stores, or encrypted config files that are excluded from version control.
-- **Scan for leaked secrets.** Use pre-commit hooks or CI checks that detect patterns like API keys, tokens, and passwords in committed code. Tools exist for every ecosystem — the specific tool matters less than having the check in place.
-- **Rotate, don't just revoke.** When a secret is exposed, rotating it (issuing a new one) is safer than just revoking the old one, because you can't be sure the old one wasn't already captured.
-
-**Authentication and authorization:**
-- If the system has users, authentication (who are you?) and authorization (what can you do?) are not optional features — they're structural requirements. Decide on the approach early and document it in an ADR (§7).
-- Apply the principle of least privilege. Users, services, and agents should have the minimum access needed for their function.
-- Don't build custom auth unless you have a specific reason. Established libraries and services exist for every platform. Custom auth implementations are a leading source of security vulnerabilities.
-
-**Dependency security:**
-- Every dependency is code you don't control. Each one expands your threat surface. Audit new dependencies before adding them — check maintenance status, known vulnerabilities, and how many transitive dependencies they introduce.
-- Run automated vulnerability scanning in CI. `npm audit`, `pip-audit`, `cargo audit`, Dependabot, Snyk — the tool matters less than the habit.
-- Don't ignore vulnerability alerts. Triage them: patch immediately (critical/high), schedule a fix (medium), or document the acceptance and rationale in acknowledged gaps (§8) if the risk is genuinely low.
-
-**For AI-assisted development:**
-- Agents generate code without a security threat model in mind. They'll use `eval()`, concatenate SQL strings, log sensitive data, and disable CORS — not maliciously, but because they optimize for "make it work" unless instructed otherwise.
-- Include security constraints in your project instruction file (CLAUDE.md or equivalent): "Never use eval. Always use parameterized queries. Never log PII." These are low-cost instructions that prevent the most common agent-generated vulnerabilities.
-- Review agent-generated code for security the same way you review it for correctness. A passing test suite doesn't mean the code is secure.
-
-**Build output hygiene:**
-
-Build processes can silently leak source code, internal architecture, and secrets into production or version control. Source maps are the highest-profile example — they expose the entire original source tree to anyone with browser devtools — but the problem is broader.
-
-| Leak vector | What it exposes | Prevention |
-|---|---|---|
-| **Source maps in production** | Full original source code, file paths, internal comments | Disable source maps in production builds, or upload them only to your error-tracking service (Sentry, Datadog) and block public access |
-| **Debug builds deployed** | Verbose error messages, stack traces, component names, internal state | Enforce `NODE_ENV=production` (or equivalent) in build pipelines; fail the build if debug flags are detected in production config |
-| **Secrets baked into client bundles** | API keys, tokens, internal URLs | Never reference secrets in client-side code; use server-side proxies or backend-for-frontend patterns; scan build output for known secret patterns |
-| **Internal comments in production** | Architecture hints, TODO notes, developer names, internal URLs | Strip comments during minification (default for most bundlers — verify it's not disabled) |
-| **Build output committed to git** | Compiled code, bundles, generated files in repo history | `.gitignore` covers `dist/`, `build/`, `out/`, `*.map`; pre-commit hook rejects commits that add files matching build output patterns |
-| **Environment files in build context** | Database credentials, API keys, service URLs | `.dockerignore` and `.gitignore` cover `.env*`; build pipelines inject secrets at runtime, not via committed files |
-
-**Rules:**
-- **`.gitignore` is your first line of defense.** At minimum: `dist/`, `build/`, `out/`, `*.map`, `.env*`, `node_modules/`, `__pycache__/`. Audit it when adding new build tools — each tool may produce output in a different directory.
-- **Scan build output before deploy.** A CI step that greps the build directory for source maps, `.env` patterns, known secret formats, or unexpectedly large files catches leaks before they reach production.
-- **Treat build output like a public artifact.** Anything in the deploy directory should be safe for anyone to read. If it wouldn't be safe on a public CDN, it shouldn't be in the build output.
-- **Pre-commit hooks for build artifacts.** Block commits that add files matching `*.map`, `dist/**`, `build/**`, or other build output patterns. Accidental commits are the most common path for build artifacts entering git history — and once in history, they persist even after deletion.
-
-Each domain extension includes specific security guidance for its context — WordPress escaping and nonces (§20.1), Drupal access control and Form API (§21.1), source map discipline for web frontends (§17.9), etc. For projects handling regulated data (PHI, PII, payment cards), the compliance extension covers data classification, handling procedures, and audit readiness (§22.2–22.3).
-
-### Agent Runtime Security
-
-The "For AI-assisted development" guidance above covers code the agent *generates*. This subsection covers risks from the agent *itself* — the runtime environment where the agent operates, the tools it can invoke, and the trust boundaries around its actions.
-
-**Why this matters:** An AI agent with shell access, network access, and filesystem access is a privileged process. If it reads hostile input (a poisoned repo, a malicious PDF, a manipulated MCP tool response), the compromise isn't theoretical — it's shell execution, secret exfiltration, or silent data modification. Treat agent security as infrastructure, not as an afterthought.
-
-**Identity isolation:**
-- Do not give agents your personal credentials. Use dedicated bot accounts, scoped tokens, and purpose-specific API keys. If the agent is compromised, the blast radius should be the agent's identity — not yours.
-- Short-lived credentials are better than long-lived ones. Prefer tokens that expire (OAuth with short TTLs, temporary STS credentials) over static API keys.
-- If the agent connects to external services (Slack, GitHub, email, databases), each connection should use a service account with minimum necessary permissions — not a developer's personal account.
-
-**Sandbox untrusted work:**
-- When reviewing untrusted repositories, processing external documents, or working with foreign content, run the agent in an isolated environment — a container, devcontainer, VM, or remote sandbox with no egress by default.
-- The principle: if the agent gets compromised, the blast radius must be small. No access to the host filesystem, no access to credentials outside the workspace, no network access unless explicitly allowed.
-
-**Tool and path restrictions:**
-- If your agent harness supports permission policies, start with deny rules for sensitive paths: `~/.ssh/`, `~/.aws/`, `**/.env*`, credential stores. Deny outbound network commands (`curl | bash`, `ssh`, `scp`, `nc`) unless the workflow explicitly requires them.
-- Restrict the agent's toolset to what the task requires. An agent performing code review doesn't need write access. An agent running tests doesn't need network egress.
-
-**Approval boundaries:**
-- The model should not be the final authority on shell execution, network egress, writes outside the workspace, secret access, or deployment. These actions need a human approval boundary — either interactive confirmation or a policy layer between the model and the action.
-- This applies especially to autonomous and unattended workflows (see §23.10 for scripting-specific guidance). The more autonomous the agent, the stricter the approval boundaries should be.
-
-**Kill switches:**
-- For long-running or autonomous agent sessions, implement a heartbeat mechanism. If the agent stops checking in, terminate the process group — not just the parent process, but all child processes.
-- Know the difference between graceful shutdown (the agent finishes its current step) and hard kill (immediate termination). Have both available. Don't rely on a potentially compromised process to stop itself.
-
-**Memory and persistence hygiene:**
-- Persistent agent memory is useful but also a vector. A payload that gets written into memory during one session can influence behavior in all future sessions.
-- Keep memory narrow — don't store secrets, don't store raw content from untrusted sources. Rotate or reset memory after sessions that involve untrusted content.
-- For compliance-bound projects, see §22.11 for additional agent-as-attack-surface guidance.
-
-**Supply chain awareness for agent tooling:**
-- Skills, hooks, MCP server configurations, and agent descriptors are supply chain artifacts. A malicious skill can contain prompt injection. A compromised MCP server can exfiltrate data while appearing to provide context.
-- Review agent tooling with the same rigor you apply to code dependencies (§6). Don't install skills, hooks, or MCP configurations from untrusted sources without inspection.
-- Agents installing software dependencies are vulnerable to typosquatting and dependency confusion — they'll install whatever a tutorial or error message suggests without verifying the package name. See §6 Supply Chain Attack Defenses for the full set of controls.
-
----
-
-## 5. State Tracking & Recoverability
-
-Every state mutation is tracked through content-addressable hashing or equivalent versioning.
-
-- **Change detection** — diffs computed at field level, not "the whole file changed."
-- **Undo/redo** — navigable version history, not a naive stack.
-- **Deduplication** — identical states produce identical hashes, no redundant storage.
-- **Debounced persistence** — frequent edits batched to avoid write storms, with forced caps to prevent data loss.
-
-The result: every edit is recoverable, and you can always answer "what changed and when."
-
-For production systems, recoverability extends beyond code versioning to disaster recovery and incident response — RTO/RPO targets, backup verification, and restore procedures. The IaC extension covers infrastructure recovery (§16.12). The compliance extension covers the procedural layer — incident response plans, DR testing, and communication plans (§22.4).
+Apply these inline during work, not just at the end. Catching a violation mid-edit costs a few tokens; catching it during review costs a rewrite.
 
 ---
 
@@ -722,261 +828,30 @@ Typosquatting, dependency confusion, and package compromise are real attack vect
 
 ---
 
-## 7. Documentation as Constraint
+## Security Essentials (Tier 1 floor)
 
-Documentation is prescriptive, not descriptive. It defines what is allowed, not what exists.
+The day-one security floor lives here so a Tier 1 fetch (`umami.md` alone) carries the must-knows. The **full security discipline** — threat modeling, trust posture, agent runtime security, untrusted-content boundaries, agent log discipline — lives in **§4 in [`umami-runtime.md`](umami-runtime.md)**, which the agent should fetch when crossing into Tier 2+ security work.
 
-### Living Audit Files
+**Day-one rules (universal):**
 
-- **Style/CSS audit** — what patterns are allowed, what's banned, what's been fixed. Updated as issues are resolved.
-- **UX audit** — inventory of known issues by severity, with resolution status.
-- **Critical rules** — mandatory behaviors stated as imperatives: "visually inspect generated assets before reporting success," "read before editing," "run tests before committing UI changes."
+- **No secrets in code. Ever.** Not in source files, config files committed to git, comments, or variable names that hint at the value. Use environment variables, secret stores, or encrypted config excluded from version control.
+- **Scan for leaked secrets.** Pre-commit hook or CI check that detects API keys, tokens, and passwords in committed code. Specific tool matters less than having the check in place.
+- **Run automated vulnerability scanning in CI.** `npm audit`, `pip-audit`, `cargo audit`, Dependabot, Snyk — pick what fits the ecosystem. Don't ignore alerts; triage them.
+- **Validate untrusted input at system boundaries.** HTTP requests, file uploads, webhook payloads, user input, external API responses, CSV imports. Trust internal code within a defined trust zone — don't scatter defensive validation through every function.
+- **Treat deserialized data as untrusted.** JSON from an API, data from a queue, objects from a cache — anything that crossed a serialization boundary could have been tampered with.
+- **For AI-assisted development:** Include security constraints in the project instruction file (`CLAUDE.md` or equivalent): *"Never use eval. Always parameterize queries. Never log PII."* These are low-cost instructions that prevent the most common agent-generated vulnerabilities. Review agent-generated code for security the same way you review for correctness.
+- **Don't build custom auth unless you have a specific reason.** Established libraries and services exist for every platform. Custom auth implementations are a leading source of security vulnerabilities.
+- **Build output hygiene** is part of §6 above: `.gitignore` covers `dist/`, `build/`, `out/`, `*.map`, `.env*` at minimum; scan build output before deploy.
 
-### Architecture Decision Records (ADRs)
+**When to fetch §4 in [`umami-runtime.md`](umami-runtime.md):**
 
-For every non-obvious choice, document:
-- **Context** — what problem prompted the decision.
-- **Decision** — what was chosen.
-- **Alternatives considered** — what was rejected and why.
-- **Consequences** — what this decision makes easier and harder.
+- You're identifying threats deliberately (threat modeling — STRIDE / OWASP / LINDDUN / PASTA framework picker)
+- You're choosing between perimeter-trust and zero-trust postures (NIST 800-207 / CISA ZTMM alignment)
+- The project ships LLM features that ingest external content (untrusted-content boundary discipline)
+- The project gives agents tools that touch privileged operations (agent runtime security: kill switches, sandboxing, identity isolation)
+- The project needs agent log discipline for compliance, incident response, or operational debugging
 
-This prevents re-litigation of settled decisions by future contributors (including AI).
-
----
-
-## 8. Acknowledged Gaps
-
-Transparency about what isn't automated yet is itself a guardrail. Document these explicitly:
-
-- CI/CD pipeline status (local-only vs. automated).
-- Linting/formatting automation (manual vs. tooled).
-- Pre-commit hooks (present, planned, or intentionally absent).
-- Coverage thresholds (enforced or aspirational).
-- Known technical debt with severity and ownership.
-
-Documenting gaps prevents false confidence and makes the cost of each gap visible to decision-makers.
-
----
-
-## 9. Token Efficiency Practices
-
-AI-assisted development bills by the token. Every search the AI runs, every file it reads to orient itself, every clarification question — that's spend. These practices minimize waste without reducing output quality.
-
-### 9.1 Front-Load Context via Project Instructions
-
-Provide a project instruction file (e.g., `CLAUDE.md`) at the repo root. This is injected into every AI session automatically. It should contain:
-
-| Section | Why It Saves Tokens |
-|---------|-------------------|
-| **Exact versions** (runtime, package manager, language) | Eliminates "let me check what version" exploration |
-| **Common commands** (copy-paste-ready) | No tokens spent figuring out how to run tests or start a dev server |
-| **Project structure** (directory tree with one-line descriptions) | AI navigates directly instead of globbing |
-| **Critical rules** (non-negotiable constraints) | Stated once, followed everywhere — no re-discovery |
-| **Doc index with file paths** (topic → exact path) | AI reads the right doc on the first try instead of searching |
-
-### 9.2 Persistent Memory Across Sessions
-
-Maintain a memory file that carries learnings between conversations:
-
-- **Known pitfalls** — framework quirks, API limitations, broken assumptions. Without this, the AI rediscovers the same dead ends every session.
-- **Selector/API workarounds** — hard-won knowledge about what doesn't work and what to do instead.
-- **Architecture patterns** — e.g., "adding a new component type requires updates in these 6 files." Prevents a codebase search every time.
-- **Pre-existing failures** — known test failures that aren't your bugs. Prevents the AI from spending tokens diagnosing out-of-scope issues.
-
-### 9.3 Pre-Derived Codebase Understanding
-
-The most expensive repeated cost is not file reads — it's the agent re-deriving the same conclusions about your codebase every session. "This is an Express app, routes go here, services call the db layer, config lives in env vars" — that understanding gets rebuilt from scratch each time unless you write it down as statements of fact.
-
-Maintain a **codebase understanding document** (e.g., `CODEBASE.md` at the repo root). This is not architecture docs, not a directory map — it's the conclusions the agent would reach after exploring, written in advance so it never has to.
-
-**What to capture:**
-
-| Category | Example |
-|----------|---------|
-| **How to do common tasks** | "To add a new API endpoint: create a route file in `src/api/`, a service in `src/services/`, and a migration in `db/migrations/`. Register the route in `src/api/index.ts`." |
-| **Where things live and why** | "All database queries go through `src/db/` — never call the DB directly from a route handler. This is enforced by convention, not tooling." |
-| **How components connect** | "Routes call services. Services call db. Services never import from routes. DB functions return plain objects, not ORM models." |
-| **Runtime behavior** | "The app reads config from environment variables at startup. No hot-reload for config — restart required." |
-| **Non-obvious constraints** | "The `users` table has a unique constraint on email, but the app validates uniqueness in the service layer before hitting the DB to return a friendlier error." |
-| **Testing patterns** | "Integration tests use a separate test database, created fresh per suite via `scripts/reset-test-db.sh`. Unit tests mock the db layer." |
-
-**What NOT to capture:**
-
-- Things that change every sprint (use Active Change blocks for that)
-- Opinions or aspirations ("we should refactor X") — only capture what IS, not what should be
-- Anything already in MEMORY.md — no duplication
-
-**When to update it:**
-
-- After completing a feature that changes how the codebase works (new layer, new pattern, new convention)
-- After an agent session where the agent had to re-derive something that should have been pre-written
-- As part of the "Before Every PR/Merge" checklist
-
-**The key instruction in CLAUDE.md:**
-
-```
-Read CODEBASE.md before starting any task. Treat it as ground truth for how this project works.
-Do not re-derive what is already stated there. Only explore files you plan to modify.
-```
-
-The goal is zero "let me understand the codebase" processing. The agent reads the document and already understands. When the codebase evolves, the document evolves with it.
-
-### 9.4 Documentation That Replaces Exploration
-
-Every doc the AI doesn't have to search for is tokens saved:
-
-- **Audit files with resolution status** — the AI checks whether an issue is already fixed instead of re-investigating.
-- **Convention docs** — the AI follows a documented pattern instead of inferring one from scattered examples.
-- **Decision records** — "we chose X over Y because Z." Prevents re-evaluation of settled decisions.
-
-### 9.5 Structural Habits
-
-- **Link docs to specific file paths** — `see [tools/definitions.ts](src/tools/definitions.ts)` not "see the definitions file." Eliminates glob/grep round-trips.
-- **Pin environment details** — fixed ports, fixed paths, fixed versions. Each ambiguity resolved costs a tool call.
-- **Delegate broad searches to subagents** — use cheaper/smaller models for exploration; keep the primary context focused on implementation.
-- **Keep instruction files concise** — a 200-line memory file costs less per session than a 2000-line one. Link to detail files rather than inlining everything.
-
-### 9.6 Context Window Optimization
-
-Beyond reducing per-lookup cost, there are structural strategies for getting more value from the context window itself — the finite budget of tokens the model can hold at once.
-
-**Model routing for subagents:**
-
-Not every task needs your most capable (and most expensive) model. When your tooling supports model selection for delegated tasks, match the model to the task complexity:
-
-| Task type | Model tier | Rationale |
-|-----------|-----------|-----------|
-| File search, codebase exploration | Lightweight (fast/cheap) | Pattern matching doesn't need deep reasoning |
-| Single-file edits, formatting, simple refactors | Lightweight | Clear instructions, bounded scope |
-| Multi-file implementation, feature work | Standard | Balances capability with cost for typical coding |
-| Complex architecture, cross-cutting refactors | Most capable | Needs to hold multiple subsystems in context simultaneously |
-| Security analysis, compliance review | Most capable | Can't afford to miss vulnerabilities or misinterpret requirements |
-
-Default to the standard tier for most coding. Upgrade when the first attempt fails, the task spans 5+ files, or the task involves security or architectural decisions.
-
-**Strategic compaction:**
-
-Most agent harnesses automatically compact conversation history when the context window fills. This is usually better than hitting the limit and losing context abruptly, but automatic compaction can discard context you still need. When your tooling supports it:
-
-- Compact manually at logical boundaries — after completing a feature, after exploration, before switching to a different area of the codebase. This preserves context coherence better than automatic mid-task compaction.
-- Before compacting, save important intermediate state to files (session summaries, investigation findings, partial plans). The agent can re-read these cheaply; re-deriving them is expensive.
-- If your workflow involves heavy exploration followed by focused implementation, compact between the two phases — the exploration context is no longer needed once you've captured the conclusions.
-
-**MCP and tool context costs:**
-
-External tool integrations (MCP servers, database connections, API integrations) consume context window space for their tool definitions, schemas, and response payloads. This cost is ongoing — every tool's schema is present in context even when not in use.
-
-- Prefer CLI wrappers bundled into skills over always-loaded MCP servers when the CLI is equally capable. The skill loads on demand; the MCP server's tool definitions occupy context permanently.
-- If you need many integrations, enable only the ones required for the current task. An agent doing code review doesn't need database and deployment integrations loaded.
-- Tool responses from external integrations can be verbose. When designing skills that wrap external tools, extract only the information needed rather than passing raw tool output into context.
-
-### 9.7 The Math
-
-A typical "let me find that file" cycle costs ~2,000–5,000 tokens (glob, read results, maybe grep, read file). A single line in a project instruction file pointing to the exact path costs ~20 tokens. Over a session with dozens of file lookups, front-loaded context can reduce token consumption by 30–50%.
-
----
-
-## 10. Change Propagation Maps
-
-For every recurring change type, document which files must be updated and in what order. This is the single highest-value token optimization: without it, the AI rediscovers the dependency chain every session through grep and file reads (~15,000 tokens). With it, zero search cost.
-
-```
-| Change type         | Files touched (in order)                              |
-|---------------------|-------------------------------------------------------|
-| New component type  | types → definitions → renderer → main → i18n → gallery |
-| New API endpoint    | backend/routes → middleware/proxy → frontend/api-client |
-| New UI element      | component file → styles → main integration             |
-| Schema change       | types → validation → affected configs                   |
-```
-
-**Maintain this table in the project instruction file** (e.g., CLAUDE.md) or the persistent memory file — wherever the AI reads it at session start.
-
-Update it whenever a new recurring pattern emerges. If you've done the same type of change three times and touched the same files each time, it belongs in the map.
-
----
-
-## 11. File Size Budgets
-
-Large files are the primary driver of both token cost and technical debt:
-
-- A 500-line file costs ~1,500 tokens per read. If the AI reads it 3 times per session, that's 4,500 tokens on one file.
-- A 2,000-line file costs ~6,000 tokens per read. Three reads = 18,000 tokens.
-- A 4,000-line file costs ~12,000 tokens per read. Three reads = 36,000 tokens — on a single file.
-
-**Budget: files over 400 lines are candidates for extraction.** Not a hard rule, but a signal to evaluate whether the file has accrued multiple responsibilities.
-
-Signs a file needs splitting:
-- It appears in every change propagation map (it does too many things).
-- Multiple unrelated functions live in the same file.
-- The AI regularly reads the whole file but only modifies 10-20 lines.
-- Merge conflicts happen frequently in the file.
-
-Splitting large files also reduces blast radius: a change to one extracted module doesn't require the AI to re-read 3,000 unrelated lines for context.
-
----
-
-## 12. Lightweight Change Tracking
-
-Per-feature discipline without framework overhead.
-
-### Starting a Feature
-
-Write 5-10 lines in the persistent memory file:
-
-```markdown
-## Active Change
-Branch: feat/feature-name
-Scope: What this change does (one line)
-OUT: What is explicitly not in scope
-Magnitude: S / M / L / XL
-Acceptance:
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Tests pass, baselines updated (if UI)
-```
-
-**Magnitude estimates** prevent the most common planning failure: starting a "small change" that turns out to touch 15 files across 3 layers. This is not a time estimate — it's a scope estimate.
-
-| Size | Meaning | Signal to stop and re-scope |
-|------|---------|----------------------------|
-| **S** | 1–3 files, one layer, no new patterns | You're past 5 files |
-| **M** | 4–10 files, one layer, or a new pattern within existing architecture | You're past 12 files or touching a second layer |
-| **L** | 10+ files, multiple layers, or a new architectural pattern | Scope is growing beyond the original acceptance criteria |
-| **XL** | Cross-cutting change affecting most of the codebase | Consider splitting into multiple smaller changes |
-
-If the actual magnitude exceeds the estimate by more than one step (estimated S, actually L), stop and re-scope before continuing. The estimate was wrong, which means the understanding was wrong, which means the acceptance criteria may also be wrong.
-
-The AI sees this at session start and knows the target. No clarification questions, no re-scoping.
-
-### Finishing a Feature
-
-Move one paragraph to a decisions log (`docs/decisions.md`), append-only, reverse chronological:
-
-```markdown
-## YYYY-MM-DD — Feature Name (branch → main)
-Decision: What was chosen and why.
-Rejected: What was considered and why it was rejected.
-Files changed: List of key files modified.
-```
-
-This is your archival trail. It costs ~50 tokens per entry when the AI scans the file, and it prevents re-litigation of settled decisions.
-
-### Session Handoff
-
-When a session ends mid-work, write a handoff block in the memory file:
-
-```markdown
-## Session Handoff
-Branch: feat/feature-name
-Last completed: What was finished this session
-Next: What should happen next (with file paths and line numbers)
-Blocked: Any blockers, or "None"
-Test status: Which layers have been run, which haven't
-```
-
-The next session reads this and resumes in ~200 tokens instead of spending 5,000+ tokens re-orienting through git log, git diff, and file reads.
-
-Remove the handoff block once the next session has picked up the work.
+See the *Section Navigation Map* near the top of this document for full per-section fetch triggers.
 
 ---
 
@@ -992,127 +867,14 @@ Unused code is invisible debt that compounds. It inflates files (increasing toke
 - **Delete, don't comment out.** Commented-out code is noise that costs tokens to read and never gets uncommented. Git history preserves anything you might need back.
 - **POC artifacts have a lifecycle too.** Proof-of-concept and exploratory code (§3b) should be reviewed periodically. If a POC has been fully integrated or the approach was abandoned, delete the directory. If it documents a useful rejected approach, keep it with a README — but don't let `poc/` become a graveyard of unexplained experiments.
 
----
+### Task-Scoped Deletion vs. Incidental Findings
 
-## 14. Agent Orchestration
+Dead code discipline does not override scope discipline (§3b). The rule is:
 
-When your AI tooling supports multi-agent workflows — a lead agent delegating to specialist workers — the same guardrail principles apply, but the coordination model introduces new opportunities for token efficiency and new risks for waste.
+- **Task-scoped deletion:** If your change makes code unused (removed a function's last caller, replaced a helper with a shared utility, deleted a feature), delete the now-dead code in the same commit. That dead code was produced *by your change* — cleaning it up is part of the change, not scope creep.
+- **Incidental findings:** If you notice unrelated dead code while working on an unrelated task — a function nobody calls, a commented-out block, an unused import in a file you didn't touch — **mention it, don't delete it.** Report findings in the PR description, a follow-up issue, or a TODO in the audit file (§7). Deleting unrelated dead code inflates the diff, mixes concerns, and makes the PR harder to review.
 
-This section is tool-agnostic. The patterns apply whether you're using Claude Code, Cursor, Windsurf, Copilot Workspace, or any agentic framework that supports delegation.
-
-### The Orchestration Model
-
-Most multi-agent systems follow the same pattern:
-
-```
-Human
-  └─→ Lead Agent (full context, all tools)
-        ├─→ Worker A (restricted context, read-only tools)
-        ├─→ Worker B (restricted context, specific tools)
-        └─→ Worker C (own context, own tools)
-```
-
-Each worker gets its own context window, a restricted toolset, and focused instructions. Results are summarized back to the lead. The lead's context stays clean — it never sees the 50 files Worker A read during exploration, only the 3-sentence conclusion.
-
-### Delegation Principles
-
-**Delegate when:**
-
-- The task is **exploratory** — searching, reading, profiling. Worker context is disposable; don't pollute the lead's context with search results.
-- Tasks are **independent and parallelizable** — security review, performance review, and test coverage review can run simultaneously.
-- The task produces **verbose output** that only needs a summary — test suite runs, linting reports, dependency audits.
-- A **cheaper/faster model** can handle it — codebase search and file reading don't need your most capable model.
-
-**Don't delegate when:**
-
-- The task requires **back-and-forth with the user** — delegation adds latency to every exchange.
-- The task is **trivially small** — spawning a worker for a single grep adds overhead without savings.
-- The task **depends on the lead's accumulated context** — if the worker would need the full conversation history to do its job, delegation doesn't save tokens; it duplicates them.
-
-### Skill Libraries
-
-A **skill** is a reusable set of instructions for a recurring agent task. Different tools call these different things — custom prompts, system instructions, agent templates, slash commands — but the concept is universal: pre-written instructions that replace per-session re-derivation.
-
-```
-project-root/
-├── .ai/                          # Or .claude/, .cursor/, etc.
-│   └── skills/
-│       ├── umami-audit/
-│       │   └── instructions.md   # Tiered process audit (§0.7)
-│       ├── security-review/
-│       │   └── instructions.md   # What to check, how to report
-│       ├── pr-summary/
-│       │   └── instructions.md   # How to summarize a PR
-│       └── data-migration/
-│           └── instructions.md   # Pre-flight checks, rollback steps
-```
-
-**Standard skill — `umami-audit`:** Every project using umami should have an `umami-audit` skill that fetches the core document (and relevant extensions), follows the tiered audit protocol (§0.7), and outputs the standard audit format. This ensures the audit is invoked the same way in every project — `/umami-audit` or equivalent — rather than being phrased differently each time. The skill should include the raw URLs from the project's `CLAUDE.md` so the agent doesn't need to search for them.
-
-**What makes a good skill:**
-
-- Encodes domain knowledge that would otherwise be re-derived every session.
-- Defines a clear output format so results are consistent and comparable across runs.
-- Specifies which tools the agent needs (and which it doesn't — restricting tools reduces risk and token spend).
-- Can inject dynamic context (current git diff, recent errors, open issues) so the agent starts with fresh state, not stale instructions.
-
-**When to create a skill:** You've given the same instructions to an agent 3+ times, or a task requires domain-specific checklists (security review, accessibility audit, compliance check).
-
-**Token impact:** A skill that pre-loads a 200-token instruction set replaces the 2,000–5,000 tokens the agent would spend figuring out the same approach through exploration. Skills stored in the project repo also ensure every team member's agents behave consistently — same review standards, same output format, same checklists.
-
-### Parallel Work Patterns
-
-The highest-value use of multi-agent orchestration is **parallel review and analysis**:
-
-| Pattern | Workers | Output |
-|---------|---------|--------|
-| **Multi-angle code review** | Security + Performance + Test coverage | Three independent reports, synthesized by lead |
-| **Exploratory research** | One per subsystem (auth, database, API) | Each worker maps its subsystem; lead assembles the full picture |
-| **Test execution** | One per test layer (unit, integration, E2E) | Parallel test runs; lead aggregates pass/fail |
-| **Competing hypotheses** | One per theory for a bug | Each investigates one theory; strongest result wins |
-
-**Coordination rules:**
-
-- Each worker should operate on **non-overlapping scope**. Two agents editing the same file is a merge conflict waiting to happen.
-- Workers should report in a **structured format** so the lead can synthesize without re-reading raw output.
-- Use a **shared task list** if your tooling supports it — workers claim tasks, preventing duplicate effort.
-
-### External Tool Integration
-
-Most AI development tools support connecting agents to external services — issue trackers, monitoring, databases, CI/CD. The agent equivalent of giving a developer tool access.
-
-**High-value integrations:**
-
-| Integration | Token savings |
-|-------------|--------------|
-| **Issue tracker** | Agent reads issue directly (~200 tokens) instead of you copy-pasting descriptions + comments (~2,000+ tokens) |
-| **Error monitoring** | Agent queries recent errors to prioritize bugs instead of you describing symptoms |
-| **Database schema** | Agent queries schema directly instead of you describing table structures |
-| **CI/CD pipeline** | Agent reads build logs and test results instead of you pasting terminal output |
-
-**Configuration scope matters:**
-
-- **Personal** — your credentials, your preferences. Not committed to the repo.
-- **Project** — shared team integrations. Committed to the repo (without secrets) so every team member's agents have the same access.
-
-### Agent Orchestration Anti-Patterns
-
-| Anti-Pattern | Symptom | Fix |
-|--------------|---------|-----|
-| **Over-delegation** | Spawning workers for single-grep tasks | Only delegate when overhead (spawn + summarize) < doing it inline |
-| **Duplicate exploration** | Lead and worker both searching the same files | Delegate exploration OR do it yourself — never both |
-| **Context duplication** | Passing the full conversation to every worker | Workers get focused instructions, not the whole history |
-| **Unsupervised destruction** | Worker deletes files or pushes code without review | Restrict worker toolsets; require human approval for destructive actions |
-| **Skill rot** | Skills reference outdated file paths or deprecated APIs | Review skills when you update the change propagation map (§10) or codebase understanding doc (§9.3) |
-
-### Team Coordination (Human + Agent)
-
-When multiple developers work with AI agents on the same codebase, coordinate the humans — the agents will follow.
-
-- **Shared conventions file, not per-developer memory.** Project instruction files (CLAUDE.md, CODEBASE.md) are the team's shared understanding. Individual agent memory files hold personal preferences. Don't let critical project knowledge live only in one developer's agent memory — if that developer leaves, the knowledge leaves with them.
-- **Review agent-generated code like any other code.** Code review discipline doesn't change because an agent wrote it. The reviewer is responsible for understanding what they approve — "the agent wrote it" is not a justification for merging code no human understands (§3b — Don't Program by Coincidence).
-- **Avoid parallel agent edits to the same files.** Two agents editing the same file in separate branches produces merge conflicts that are hard to resolve because neither developer fully understands the other agent's changes. Coordinate scope before starting, not after conflicting.
-- **Converge on shared skills.** If two developers create different agent skills for the same task (e.g., two different security review prompts), consolidate them into the project skill library. Inconsistent agent behavior across the team produces inconsistent output.
+**The test:** "Did my change make this code dead, or was it already dead?" If already dead, it's a separate task. Both matter; don't conflate them.
 
 ---
 

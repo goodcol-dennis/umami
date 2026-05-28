@@ -1,0 +1,19 @@
+# Claude Code local state — settings.local.json holds per-developer permission grants
+# and other transient state that should never be shared. The shared settings.json,
+# skills/, and similar are intentionally tracked.
+.claude/settings.local.json
+
+# MCP server configuration — typically contains per-developer server bindings, paths,
+# and (potentially) API tokens. Treat as per-developer state; never commit.
+.mcp.json
+.mcp.local.json
+mcp.json
+.claude/mcp.json
+.claude/mcp.local.json
+
+# IDE / editor local config — per-developer preferences, not framework content.
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

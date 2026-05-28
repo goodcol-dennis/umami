@@ -8,7 +8,39 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 ## What is this?
 
-[`umami.md`](umami.md) is a comprehensive development guardrails document designed to be consumed by both humans and LLM coding agents (like Claude Code, Cursor, Copilot, etc.). It covers project discovery, specification-first development, multi-layer testing, runtime validation, state tracking, documentation discipline, token efficiency, agent orchestration, and more.
+[`umami.md`](umami.md) is the **landing document** for a multi-file development guardrails framework, designed to be consumed by both humans and LLM coding agents (like Claude Code, Cursor, Copilot, etc.). The landing carries the framework, the Section Navigation Map, and Tier 1 (Foundation) practices: project discovery, project structure, development discipline, enforced consistency, dead code hygiene, security essentials, and the pre-commit checklist.
+
+**Tier 2+ practices live in four focused core companion files** under `core/`, grouped by concern. The agent fetches them on demand based on the project's tier and which concerns apply:
+
+| Core companion | Covers (§) | When to fetch |
+|---|---|---|
+| [`core/umami-quality.md`](core/umami-quality.md) | §2 Specs · §2b Async Channel Contracts · §3 Multi-Layer Testing · §3c Decision Planning · §3d Code Review · §3e Refactoring | Tier 2+ correctness work |
+| [`core/umami-runtime.md`](core/umami-runtime.md) | §4 Runtime Validation, threat modeling, trust posture, security disciplines, agent runtime security, untrusted content, agent log · §5 State Recovery · §6b Pipeline Health | Tier 2+ security / operational / pipeline work |
+| [`core/umami-process.md`](core/umami-process.md) | §7 Documentation · §8 Gap registry + retros + dropped-item audit · §10 Change Propagation · §12 Change Tracking | Tier 2+ process / docs / tracking work |
+| [`core/umami-agents.md`](core/umami-agents.md) | §9 Token Efficiency · §11 File Size Budgets · §14 Agent Orchestration | Tier 2+ agent-infrastructure work |
+
+This architecture is the v3 reframe: **landing doc is the index, deeper practices are fetched by concern.** A Pro / lower-token-plan adopter pays ~13K tokens for the landing fetch (was ~40K for the v2 monolith). Section numbers (§N) are stable identifiers across all five files; the file location is metadata. The landing's Section Navigation Map tells the agent which file holds each section.
+
+**Repo layout:**
+
+```
+umami/
+├── umami.md                  ← landing (always at root — never moves)
+├── core/                     ← core companions (Tier 2+ of core sections)
+│   └── umami-{quality,runtime,process,agents}.md
+├── ext/                      ← domain extensions
+│   ├── umami-{web,data,iac,mobile,...}.md
+│   ├── cms/                  ← shared+variant cluster
+│   │   └── umami-{cms,wordpress,drupal}.md
+│   └── desktop/
+│       └── umami-{desktop,linux,spa-wrapper}.md
+└── recipes/                  ← drop-in implementation artifacts (cross-cutting features)
+    └── *.md                  ← e.g., consulting-timesheet, adr-template, gitignore-stack-*
+```
+
+**About `recipes/`:** Drop-in artifacts for cross-cutting features (e.g., a consulting timesheet pipeline, an ADR template, a status-block starter). Extensions tell you *why* you'd want a discipline; recipes tell you *exactly what to type / copy* to implement it. See [`recipes/README.md`](recipes/README.md) for the catalog and contribution model. Recipes are independent of the §0–§30 numbering — they're implementation aids, not numbered practices.
+
+**Backwards compatibility — v3.0 → v3.1.** Deprecation stubs remain at the pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory). Existing projects fetching legacy paths get a clear migration message rather than a 404. These stubs are deprecated and **will be removed in v3.1**. The `/umami-init` skill detects legacy paths in instruction files and offers automatic migration to the new paths.
 
 > **A note on `CLAUDE.md`:** This template references `CLAUDE.md` as the project instruction file because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
 
@@ -16,47 +48,82 @@ Umami is the fifth taste — the one you can't quite name but immediately notice
 
 | Extension | Covers |
 |-----------|--------|
-| [`umami-web.md`](umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets, frontend observability (RUM, error tracking), source map and build output discipline |
-| [`umami-data.md`](umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, data observability (pipeline tracing, structured logging), backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
-| [`umami-iac.md`](umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management), CI/CD pipeline discipline, security governance, platform engineering, common anti-patterns |
-| [`umami-mobile.md`](umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance, mobile observability (crash reporting, release health) |
-| [`umami-cms.md`](umami-cms.md) | Extension inventory and audits, update management, CMS security fundamentals, content/config/code separation, core integrity, theme architecture, deployment discipline, production monitoring |
-| [`cms/umami-wordpress.md`](cms/umami-wordpress.md) | WordPress-specific: escaping functions, nonces, capabilities, plugin conflicts, hook discipline, wp_options performance, WP-CLI |
-| [`cms/umami-drupal.md`](cms/umami-drupal.md) | Drupal-specific: Twig escaping, Form API, config management, caching architecture, Composer discipline, Drush, service architecture |
-| [`umami-compliance.md`](umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, agent-as-attack-surface (prompt injection, supply chain, memory poisoning), cyber liability insurance readiness |
-| [`umami-scripting.md`](umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
-| [`umami-integration.md`](umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
-| [`umami-homelab.md`](umami-homelab.md) | Living documentation, secrets discipline, script-based provisioning, snapshot culture, private DNS, VPN overlay, edge device firewalls, monitoring/alerting, incremental hardening, DHCP reservations, network segmentation, backup strategy, update management, TLS certificates, storage architecture, power management |
+| [`ext/umami-web.md`](ext/umami-web.md) | Visual regression, design systems, E2E browser testing, accessibility, performance budgets, frontend observability (RUM, error tracking), source map and build output discipline |
+| [`ext/umami-data.md`](ext/umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, data observability (pipeline tracing, structured logging), backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
+| [`ext/umami-iac.md`](ext/umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management), CI/CD pipeline discipline, security governance, platform engineering, common anti-patterns |
+| [`ext/umami-mobile.md`](ext/umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance, mobile observability (crash reporting, release health) |
+| [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) | Extension inventory and audits, update management, CMS security fundamentals, content/config/code separation, core integrity, theme architecture, deployment discipline, production monitoring |
+| [`ext/cms/umami-wordpress.md`](ext/cms/umami-wordpress.md) | *(Planned rollup into §25 in v3.1 — the dedicated WordPress sub-extension will fold into `ext/cms/umami-cms.md`.)* WordPress-specific: escaping functions, nonces, capabilities, plugin conflicts, hook discipline, wp_options performance, WP-CLI |
+| [`ext/cms/umami-drupal.md`](ext/cms/umami-drupal.md) | *(Planned rollup into §25 in v3.1 — the dedicated Drupal sub-extension will fold into `ext/cms/umami-cms.md`.)* Drupal-specific: Twig escaping, Form API, config management, caching architecture, Composer discipline, Drush, service architecture |
+| [`ext/umami-compliance.md`](ext/umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, agent-as-attack-surface (prompt injection, supply chain, memory poisoning), cyber liability insurance readiness |
+| [`ext/umami-scripting.md`](ext/umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
+| [`ext/umami-integration.md`](ext/umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
+| [`ext/umami-homelab.md`](ext/umami-homelab.md) | Living documentation, secrets discipline, script-based provisioning, snapshot culture, private DNS, VPN overlay, edge device firewalls, monitoring/alerting, incremental hardening, DHCP reservations, network segmentation, backup strategy, update management, TLS certificates, storage architecture, power management |
+| [`ext/desktop/umami-desktop.md`](ext/desktop/umami-desktop.md) | GUI thread models, event loop discipline, headless E2E testing (F11/F12 protocol), single-file app discipline, app identity and packaging, data directory conventions, permission models, build/run discipline |
+| [`ext/desktop/umami-linux.md`](ext/desktop/umami-linux.md) | GTK4/libadwaita, immediate-mode toolkits, Wayland vs X11, XDG base directories, DBus integration (dock badges, notifications), cage + wtype E2E toolchain, FFI patterns, Cargo workspace shapes. Currently the only OS-specific sub-extension under §27 — see scope note. |
+| [`ext/desktop/umami-spa-wrapper.md`](ext/desktop/umami-spa-wrapper.md) | WebKitGTK session persistence (ITP, cookies, IndexedDB), clipboard bridge (GTK ↔ JS), notification forwarding, navigation policy (domain allow-lists), SSO/OAuth in-app handling, dock badge wiring, audio/media permissions, context menu suppression. Narrowest extension in the corpus — a worked example of §27 + §28 for one specific build pattern, not a domain peer. |
+| [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) | Agent-as-substrate workflow patterns. Closed-loop auto-remediation (the observe → diagnose → fix → verify loop), production agentic CI (placeholder pre-staged), workflow cost patterns (loop / recursion / fallback / polling / bench / idle shapes), workflow-specific anti-patterns. Peer to §14 (orchestration building blocks); this extension covers what you *compose* from them. |
 
 **Observability is a cross-cutting concern.** Rather than a separate extension, each domain extension includes its own observability guidance — what to monitor, how to alert, what to log — tailored to that domain's specific failure modes. The core template (§4) covers the foundational concepts (three signals, structured logging, instrumentation discipline).
 
 The core template is **not** tied to any specific project. You reference it (and the relevant extensions) from your project and let your AI agent adapt the guidance to your codebase.
 
-## How to use it
+## Get started — one-liner bootstrap
 
-### 1. Copy the raw URLs
+Paste this into your AI assistant (Claude Code, Cursor, Copilot, etc.):
+
+> **Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md and follow §0.7b.**
+
+The agent fetches the spec, runs §0 discovery interactively (asking which kind of project this is, whether you have a data layer, frontend, mobile app, etc.), and proposes the right core + extension set per §0.5.
+
+**Before any file is written, you'll see exactly what's changing** — every file touched, the URL block that would land in your instruction files, and any skill files that would be created. With your approval — via a four-option dialog (apply all / selective walkthrough / do something else / skip) — the changes are applied. Nothing happens to your project until you say so.
+
+**On successful apply, init auto-chains into `/umami-audit`** so the bootstrap ends with a baseline process audit rather than just a "skills installed" message — you see where the project actually stands against the §0.6 tier framework on day one. The audit runs read-only and ends with its own four-option findings-disposition dialog (apply all / selective / other / skip), so you stay in control of what to act on. If you chose **Skip** at the init dialog (no files written), the audit does not auto-chain.
+
+**This is a lightweight setup, not a framework install.** Init writes only URL references (so your agent knows where to fetch the spec) and small skill files (so the harness recognizes `/umami-init` and `/umami-audit` as commands). The umami spec itself is never stored locally — it's fetched fresh on every audit/init run from the canonical URL, which is a hard rule (§0.7) so the framework's evolution always reaches every project. There's no dependency to maintain, no library to upgrade.
+
+After init, ongoing use:
+
+- **`/umami-init`** — re-run when project shape changes (added a frontend, became multi-layer, added compliance requirements).
+- **`/umami-audit`** — periodic process-maturity review against the §0.6 tier framework.
+- **`/umami-auto-review`** — PR-level code review per §3d (three-layer model with AI pre-screen, risk taxonomy, optional cross-provider verification).
+- **`/umami-pipeline-audit`** — quarterly CI/CD pipeline audit per §6b (cycle time, gate purposes, guardrails-vs-needs fit against team / risk / deploy model / velocity).
+- **`/umami-drift-audit`** — periodic dropped-item audit per §8 (designs, POCs, decisions that fell off the radar).
+
+### Manual setup (fallback)
+
+If your harness can't write files, or you prefer manual control, paste this URL list into your project's `CLAUDE.md` (or equivalent) — keeping only the extensions that match your project shape (see §0.5 for the mapping):
 
 ```
-# Core guardrails (always)
+# Landing document (always — carries §0 framework + Tier 1 practices + Section Navigation Map)
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
 
-# Extensions (pick the ones that match your project)
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-web.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-cms.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-wordpress.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-drupal.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-homelab.md
+# Core companion files (add as the project escalates to Tier 2+ in each concern)
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-quality.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-runtime.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-process.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-agents.md
+
+# Domain extensions (pick the ones that match your project)
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-web.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-data.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-mobile.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
+# WordPress and Drupal sub-extensions below — planned rollup into umami-cms.md in v3.1
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-wordpress.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-drupal.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-compliance.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-scripting.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-integration.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-homelab.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-desktop.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-linux.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-spa-wrapper.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-workflows.md
 ```
 
-### 2. Give it to your LLM agent
-
-Paste the core URL (and any relevant extension URLs) into a conversation with your AI coding assistant and ask something like:
+Then ask the agent:
 
 > Here are my development guardrails: [paste URL]
 >
@@ -65,9 +132,9 @@ Paste the core URL (and any relevant extension URLs) into a conversation with yo
 > 2. Determine our current adoption tier (§0.6) based on what practices we already follow.
 > 3. Recommend 3-5 specific next practices from the next tier up that address problems we're currently experiencing.
 
-The agent will fetch the document, explore your project, and give you a focused set of recommendations — not a wall of 50 things to fix. Subsequent audits should follow the same tiered approach (§0.7), getting progressively more targeted as your process matures.
+The agent will explore your project and give you a focused set of recommendations — not a wall of 50 things to fix. Subsequent audits should follow the same tiered approach (§0.7), getting progressively more targeted as your process matures.
 
-### 3. Start with the tier that fits, not the whole document
+## Start with the tier that fits, not the whole document
 
 Umami is a toolkit, not a mandate. Adopting everything at once on a new project adds process drag that outweighs the benefit. Instead, adopt in tiers — start with the foundations, then add practices when specific problems or project growth make them valuable.
 
@@ -79,6 +146,8 @@ These practices cost almost nothing to adopt and prevent the most common sources
 |----------|---------|----------------------|
 | Project discovery | §0 | Know what you're building before applying guardrails |
 | Predictable project structure | §1 | Agents and humans find things without searching |
+| Phase / Session hierarchy for multi-sitting work | §1 | Gives commits, decisions, and roadmap a unit of work bigger than the commit and smaller than the milestone |
+| Preserving project structure (structure-as-contract) | §1 | Project committed to a structure; restructuring would break downstream references and accumulated tooling |
 | Development discipline (TDD, systematic debugging) | §3b | Prevents "fix one thing, break another" cycles that burn tokens |
 | Security discipline (boundaries, secrets, dependencies) | §4, §6 | Security bugs are the most expensive bugs — catch them by habit, not by audit |
 | Enforced consistency (types, linting, formatting) | §6 | Catches errors at build time, not in production or code review |
@@ -92,10 +161,21 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Practice | Section | Adopt when... |
 |----------|---------|---------------|
 | Spec-first development | §2 | You're building features that take more than a session |
+| Async channel contracts | §2b | Project has async surfaces (events, messages, worker output) and team has seen wrong-place message incidents — or wants to prevent them before scale |
 | Multi-layer testing | §3 | You have more than one layer (API + UI, pipeline + warehouse) |
+| Interactive decision planning | §3c | A design has 3+ load-bearing decisions that compound on each other |
+| Refactoring discipline | §3e | Agents refactor at velocity, or refactoring bundled with feature work hurts reviewability |
+| Threat modeling | §4 | Project has security-relevant boundaries past prototype; you want security to be deliberate, not reactive |
+| Trust posture | §4 | Project has multiple services or trust zones, or compliance/insurance requires documented posture |
+| DevEx / pipeline audit | §6b | Pipeline cycle time is taxing every commit; contributors skipping local CI; identical gate configs across projects without local justification |
 | Runtime validation | §4 | Your system handles external input or runs in production |
 | Documentation / ADRs | §7 | You make a decision you'll need to explain to someone later (including future you) |
 | Token efficiency | §9 | Agent sessions are re-deriving the same codebase understanding |
+| Status block in CLAUDE.md | §9.1 | Project ships in versions and a fresh session needs to know "where are we right now" |
+| Progressive disclosure of context | §9.5b | MCP/tool count exceeds ~10, tool metadata > 30% of context, or deterministic multi-step workflows |
+| Agent approval gate table | §14 | Project has agents taking consequential actions (write files, run commands, network, sub-agent dispatch) |
+| Recovery runbooks per stateful surface | §5 | Project has persistent state that would be hard to reconstruct from scratch |
+| Lifecycle hooks for automated behaviors | §14 | Project has "from now on when X, do Y" rules that need to fire automatically |
 | File size budgets | §11 | Files are getting long enough that agents truncate or miss context |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
@@ -105,7 +185,19 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Practice | Section | Adopt when... |
 |----------|---------|---------------|
 | State tracking & recoverability | §5 | Your system manages stateful operations that need rollback |
-| Acknowledged gaps | §8 | Tech debt is accumulating and you need visibility into what's known vs. unknown |
+| Acknowledged gaps + per-release retros | §8 | Tech debt is accumulating, or releases need a frozen "what was true at vX.Y" record alongside the rolling gap registry |
+| Periodic dropped-item audit | §8 | Forward designs / explorations / POCs / deferred decisions are accumulating without a discipline for surfacing forgotten items |
+| Measuring efficiency over time (ET, run-frequency) | §9.7 | Optimizing across recurring agent workflows or model tiers; need apples-to-apples cost comparison |
+| Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review; team is rubber-stamping or bottlenecking on review |
+| Risk taxonomy with auto-merge thresholds | §3d | Auto-merge is on the table; team needs to agree explicitly on what merges without humans |
+| Cross-provider code review | §3d | Tier Medium+ changes on LLM-feature products; budget supports parallel review across two model families |
+| Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or rubber-stamping |
+| Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
+| Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior |
+| Architectural fitness functions | §3 | Project has clear architectural boundaries linter rules can't express; team has been bitten by boundary violations |
+| Agent log discipline (layers / retention / review cadence) | §4 | Agents take consequential actions in production; audit trail matters for incident response, compliance, or debugging |
+| Cross-implementation research before foundational ADRs | §7 | Committing to a foundational architectural approach with meaningful trade-offs |
+| Cost caps and budget gates (3-layer + force-over-cap typed-confirm) | §9.7 | Project runs agents at scale; cost predictability matters; spend has surprised the team |
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
@@ -128,24 +220,33 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 
 ```markdown
 ## Process Audit Reference
-- Development guardrails (core): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
-- Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-web.md
-- Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-data.md
-- Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-iac.md
-- Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-mobile.md
-- Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-cms.md
-- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-wordpress.md
-- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/cms/umami-drupal.md
-- Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-compliance.md
-- Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-scripting.md
-- Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-integration.md
-- Extension — Homelab: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami-homelab.md
+- Development guardrails (landing — start here): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md
+- Core companion — Quality: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-quality.md
+- Core companion — Runtime: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-runtime.md
+- Core companion — Process: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-process.md
+- Core companion — Agents: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-agents.md
+- Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-web.md
+- Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-data.md
+- Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
+- Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-mobile.md
+- Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
+- Extension — WordPress (*planned rollup into §25 in v3.1*): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-wordpress.md
+- Extension — Drupal (*planned rollup into §25 in v3.1*): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-drupal.md
+- Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-compliance.md
+- Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-scripting.md
+- Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-integration.md
+- Extension — Homelab: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-homelab.md
+- Extension — Desktop (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-desktop.md
+- Extension — Desktop Linux: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-linux.md
+- Extension — SPA Wrapper: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-spa-wrapper.md
+- Extension — Agent Workflows: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-workflows.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
-  When the user asks you to audit the development process, fetch the core document and
-  follow the tiered audit protocol in §0.7 — determine the project's current adoption tier,
-  then audit one tier above. Do NOT read every section or fetch every extension. Focus on
-  3-5 actionable recommendations, not comprehensive compliance. Audits are READ-ONLY —
-  report findings and describe what changes each recommendation requires, but do not modify
+  When the user asks you to audit the development process, fetch the landing document
+  (umami.md) and consult its Section Navigation Map. Follow the tiered audit protocol
+  in §0.7. Tier 1 audits typically need only the landing; Tier 2+ audits pull in the
+  one or two companion files matching the audit scope. Focus on 3-5 actionable
+  recommendations, not comprehensive compliance. Audits are READ-ONLY — report
+  findings and describe what changes each recommendation requires, but do not modify
   code or project files until the user explicitly chooses which recommendations to apply.
 ```
 
@@ -153,43 +254,54 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 
 ## What the document covers
 
-### Core (`umami.md`)
+### Core (landing + 4 companion files)
 
-| Section | Topic |
-|---------|-------|
-| §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol |
-| §1 | Project structure — predictable layouts, workspace partitioning |
-| §2 | Specification-first development — specs before code |
-| §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests |
-| §3b | Development process discipline — TDD, systematic debugging, verification |
-| §4 | Runtime validation — structural correctness, observability, security discipline, agent runtime security |
-| §5 | State tracking & recoverability — versioned, undoable state |
-| §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene |
-| §7 | Documentation as constraint — living audits, ADRs |
-| §8 | Acknowledged gaps — transparency about what isn't automated |
-| §9 | Token efficiency — front-loaded context, persistent memory, pre-derived understanding, context window optimization |
-| §10 | Change propagation maps — which files to touch for recurring changes |
-| §11 | File size budgets — keep files small to reduce token cost and complexity |
-| §12 | Lightweight change tracking — active change blocks, session handoffs |
-| §13 | Dead code hygiene — delete, don't comment out |
-| §14 | Agent orchestration — delegation, skills, parallel review, tool integration |
-| §15 | Checklist — before starting, during dev, before commit, before merge |
+The core spans 5 files in v3. Section numbers are stable across files; the **File** column tells you which file holds each section. Landing (`umami.md`) is always fetched first; companion files are fetched on demand.
+
+| § | Topic | File |
+|---|-------|------|
+| §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol, init protocol | `umami.md` |
+| §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy, multi-surface/one-primitive pattern, preserving project structure (structure-as-contract discipline) | `umami.md` |
+| §2 | Specification-first development — specs before code; relationship to Spec-Driven Development (SDD) as the closest movement | `core/umami-quality.md` |
+| §2b | Async channel contracts — typed channel + origin tag + allowed-consumer list + audit-on-add at code review; structural parallel to §4 untrusted-content discipline applied to *reachability scope* instead of trust scope; addresses leaky-async-interface failure modes (global bus, untyped payload, catch-all UI notification surface, shared worker-output display) | `core/umami-quality.md` |
+| §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products | `core/umami-quality.md` |
+| §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes | `umami.md` |
+| §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline | `core/umami-quality.md` |
+| §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); risk taxonomy with auto-merge thresholds (Trivial → Critical, each with default disposition); cross-provider review (adversarial-eye principle: review with a model from a different family than the author); flags-document format; spot-check sampling; watch signals | `core/umami-quality.md` |
+| §3e | Refactoring discipline — tests as safety net (non-negotiable); named transformations; small atomic commits; refactoring vs. cleanup distinction; agentic-velocity refactoring patterns | `core/umami-quality.md` |
+| §4 | Runtime validation — structural correctness, observability, threat modeling (DFD + STRIDE / OWASP / MITRE ATT&CK / LINDDUN / PASTA), trust posture (perimeter-trust vs. zero-trust; NIST 800-207 / CISA ZTMM alignment), security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence). Tier 1 security floor lives in landing's *Security Essentials* sidebar. | `core/umami-runtime.md` (Tier 1 floor in landing) |
+| §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) | `core/umami-runtime.md` |
+| §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene, supply chain attack defenses | `umami.md` |
+| §6b | Developer experience and pipeline health — periodic pipeline audit (cycle time + per-gate purpose + last-caught-something date), inner-loop feedback budgets, cargo-cult detection | `core/umami-runtime.md` |
+| §7 | Documentation as constraint — living audits, ADRs, audience targeting (with Diátaxis as a complementary content-type lens), cross-implementation research (research doc ↔ ADR pairing) | `core/umami-process.md` |
+| §8 | Acknowledged gaps — rolling gap registry, point-in-time per-release retros, periodic dropped-item audit (surfaces designs/explorations/POCs/deferred decisions/shipped features that fell off the radar) | `core/umami-process.md` |
+| §9 | Token efficiency — front-loaded context (incl. CLAUDE.md status block), persistent memory, pre-derived understanding, progressive disclosure (lazy schema load, top-K tool retrieval, summaries-then-detail, workflow-as-code), context window optimization, effective-tokens metric, cost caps and budget gates | `core/umami-agents.md` |
+| §10 | Change propagation maps — which files to touch for recurring changes | `core/umami-process.md` |
+| §11 | File size budgets — keep files small to reduce token cost and complexity | `core/umami-agents.md` |
+| §12 | Lightweight change tracking — active change blocks, session handoffs | `core/umami-process.md` |
+| §13 | Dead code hygiene — delete, don't comment out | `umami.md` |
+| §14 | Agent orchestration — modes of AI use (implementation / thinking / reviewing), delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria, agent approval gate tables (HARD/SOFT/NONE), lifecycle hooks (PreToolUse / PostToolUse / SessionStart / Stop) | `core/umami-agents.md` |
+| §15 | Checklist — before starting, during dev, before commit, before merge | `umami.md` |
 
 ### Extensions
 
 | File | Sections | When to apply |
 |------|----------|---------------|
-| [`umami-web.md`](umami-web.md) | §17.1–17.9 | Project has a web frontend |
-| [`umami-data.md`](umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
-| [`umami-iac.md`](umami-iac.md) | §16.1–16.19 | Project has infrastructure-as-code or cloud provisioning |
-| [`umami-mobile.md`](umami-mobile.md) | §19.1–19.7 | Project has a native or cross-platform mobile app |
-| [`umami-cms.md`](umami-cms.md) | §25.1–25.9 | Project is built on any CMS |
-| [`cms/umami-wordpress.md`](cms/umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress (loads with §25) |
-| [`cms/umami-drupal.md`](cms/umami-drupal.md) | §21.1–21.9 | Project is built on Drupal (loads with §25) |
-| [`umami-compliance.md`](umami-compliance.md) | §22.1–22.11 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
-| [`umami-scripting.md`](umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
-| [`umami-integration.md`](umami-integration.md) | §24.1–24.10 | Project integrates with external services, APIs, or message-based systems |
-| [`umami-homelab.md`](umami-homelab.md) | §26.1–26.17 | Project is a homelab or small-scale self-hosted infrastructure |
+| [`ext/umami-web.md`](ext/umami-web.md) | §17.1–17.9 | Project has a web frontend |
+| [`ext/umami-data.md`](ext/umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
+| [`ext/umami-iac.md`](ext/umami-iac.md) | §16.1–16.19 | Project has infrastructure-as-code or cloud provisioning |
+| [`ext/umami-mobile.md`](ext/umami-mobile.md) | §19.1–19.7 | Project has a native or cross-platform mobile app |
+| [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) | §25.1–25.9 | Project is built on any CMS |
+| [`ext/cms/umami-wordpress.md`](ext/cms/umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress (loads with §25). **Planned rollup into §25 in v3.1** — this file will be removed; content folds into `ext/cms/umami-cms.md`. |
+| [`ext/cms/umami-drupal.md`](ext/cms/umami-drupal.md) | §21.1–21.9 | Project is built on Drupal (loads with §25). **Planned rollup into §25 in v3.1** — this file will be removed; content folds into `ext/cms/umami-cms.md`. |
+| [`ext/umami-compliance.md`](ext/umami-compliance.md) | §22.1–22.11 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
+| [`ext/umami-scripting.md`](ext/umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
+| [`ext/umami-integration.md`](ext/umami-integration.md) | §24.1–24.10 | Project integrates with external services, APIs, or message-based systems |
+| [`ext/umami-homelab.md`](ext/umami-homelab.md) | §26.1–26.17 | Project is a homelab or small-scale self-hosted infrastructure |
+| [`ext/desktop/umami-desktop.md`](ext/desktop/umami-desktop.md) | §27.1–27.9 | Project has a desktop GUI application |
+| [`ext/desktop/umami-linux.md`](ext/desktop/umami-linux.md) | §28.1–28.10 | Desktop app targets Linux (loads with §27) |
+| [`ext/desktop/umami-spa-wrapper.md`](ext/desktop/umami-spa-wrapper.md) | §29.1–29.12 | Desktop app wraps a web app in WebKitGTK (loads with §27 + §28) |
+| [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) | §30.1–30.5 | Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI, workflow cost patterns, closed-loop PR review with risk-tiered auto-merge) — not just as interactive coding assistants |
 
 ## Compliance and regulated environments
 
@@ -233,8 +345,6 @@ The key differences:
 
 **The core philosophical difference:** Superpowers assumes the agent will misbehave unless actively constrained in every session. Umami assumes the agent will behave well if the project is set up with the right structure, documentation, and context — so it invests in making the project self-explanatory rather than policing the agent at runtime.
 
-A major motivation for umami was **token efficiency across sessions.** Regressions, tech debt, and the agent re-deriving the same understanding of your codebase every session are expensive. Umami addresses this with change propagation maps (§10), pre-derived codebase understanding (§9.3), session handoffs (§12), file size budgets (§11), and front-loaded context (§9.1) — all of which reduce the per-session cost of working with AI agents. These aren't topics Superpowers covers, because its focus is on what happens *during* a session, not what happens *between* them.
-
 **Can you use both?** Yes. Superpowers keeps the agent disciplined during execution. Umami keeps the project structured so that disciplined execution doesn't get wasted on a disorganized codebase. They address different layers of the same problem.
 
 ## How is this different from Everything Claude Code?
@@ -261,9 +371,28 @@ Umami and ECC solve different problems at different layers. They're complementar
 
 **Can you use both?** Yes. Umami structures the project so the agent starts each session with clear context and minimal re-derivation. ECC gives the agent better tools for the work it does within that session. A project with umami's guardrails and ECC's operational tooling gets both layers — the project is well-structured *and* the agent is well-equipped.
 
-## Relationship to The Pragmatic Programmer
+## How is this different from Anthropic's official Claude Code best practices?
 
-Umami operationalizes many of the principles from *The Pragmatic Programmer* by Andy Hunt and Dave Thomas. Rather than leaving those ideas as abstract advice, umami encodes them into concrete guardrails, checklists, and project structures.
+[Anthropic's Claude Code documentation](https://docs.claude.com/en/docs/claude-code) is the official guidance for using Claude Code effectively — covering hooks, slash commands, MCP servers, settings, agent skills, model routing, and more. It's the comprehensive reference for what the tool can do.
+
+Umami is the **opinionated process layer above the tool**. The official docs answer *"what does Claude Code do?"* Umami answers *"given a tool like Claude Code, how should the project be structured to make every session efficient and every output high-quality?"*
+
+| | Umami | Anthropic Claude Code docs |
+|---|---|---|
+| **What it is** | A process discipline framework | Official tool documentation |
+| **Scope** | Project-level practices that work across harnesses | Tool-level capabilities and configuration |
+| **Stance** | Opinionated (tiers, anti-patterns with watch signals, audit protocol) | Reference-shaped (here's what the tool does; here's how to configure it) |
+| **Audience** | Teams adopting AI-coding discipline at the project level | Anyone using Claude Code |
+| **AI-tool agnostic?** | Yes — works with Claude Code, Cursor, Codex, Goose, etc. | Claude-Code-specific (some practices generalize) |
+| **Lifecycle** | Periodic audits + version-tracked process maturity | Always-current reference |
+
+**They compose.** Anthropic's docs tell you what Claude Code can do; umami tells you what your *project* should do to make any harness most effective. A team using both gets the tool-level capabilities (from Anthropic) plus the process-level discipline (from umami).
+
+**Where they overlap:** practices around hooks, skills, MCP servers, and instruction files appear in both. Umami's §0.7 audit protocol and §0.7b init protocol depend on harness-supported skills — the underlying mechanism is what Anthropic documents. Where they diverge: tier-based adoption, anti-pattern watch signals, extension ecosystem, and cross-harness portability aren't Anthropic's job to provide — Anthropic ships the tool; umami ships the process discipline above it.
+
+**Should you read both?** Yes. Anthropic's docs first if you're new to Claude Code; umami when you're past the "how do I make this work" phase and into "how do I structure the project for sustained good output across many sessions."
+
+## Relationship to The Pragmatic Programmer
 
 | Pragmatic Programmer Principle | Where Umami Operationalizes It |
 |---|---|
@@ -280,11 +409,7 @@ Umami operationalizes many of the principles from *The Pragmatic Programmer* by 
 | **Pragmatic Teams** | Agent orchestration (§14) — coordination patterns for human + AI teams |
 | **Your Knowledge Portfolio** | Token efficiency (§9) — pre-derived understanding, persistent memory, front-loaded context |
 
-The mapping isn't one-to-one — umami extends these ideas into the AI-assisted development era, where token cost, session handoffs, and agent coordination are first-class concerns that the book (written before LLMs) couldn't anticipate.
-
 ## Relationship to Designing Data-Intensive Applications
-
-The data and infrastructure extensions draw heavily from the principles in *Designing Data-Intensive Applications* by Martin Kleppmann. Where Kleppmann teaches *why* these concepts matter, umami encodes *what to do about them* in your project guardrails.
 
 | DDIA Concept | Where Umami Operationalizes It |
 |---|---|
@@ -300,6 +425,21 @@ The data and infrastructure extensions draw heavily from the principles in *Desi
 | **Data Quality & Validation** | Data quality testing (§18.1) — completeness, uniqueness, freshness, referential integrity |
 
 Kleppmann's book focuses on *understanding* distributed systems. Umami translates that understanding into checklists, rules, and review practices that prevent the failure modes the book describes.
+
+## Relationship to Software Architecture: The Hard Parts
+
+| The Hard Parts Concept | Where Umami Operationalizes It |
+|---|---|
+| **Trade-off analysis as discipline** | Interactive decision planning (§3c) — six-step protocol with explicit alternatives, recommendations, and rationale |
+| **Architectural fitness functions** | Fitness functions as a test layer (§3) — automated tests that verify architecture invariants, distinct from unit / integration / linter / behavioral tests |
+| **Architecture quanta and bounded contexts** | Workspace partitioning (§1) — partition by lifecycle, not by language; quanta are the lifecycle units |
+| **Service granularity decisions** | Multiple surfaces, one primitive (§1) — single typed primitive forces consistency across granularity choices |
+| **Decomposition decisions (monolith vs. services)** | Interactive decision planning (§3c) + cross-implementation research (§7) — pair decomposition decisions with research docs and the §3c protocol |
+| **Distributed-system contracts** | Systems integration extension (§24) — circuit breakers, retries, contract testing, rate limiting, idempotency keys |
+| **Data ownership and sovereignty** | Data extension (§18) — derived data discipline, source-of-truth contracts, schema evolution per §18.3 / §18.8 |
+| **The First Law of Software Architecture** ("everything is a trade-off") | §3c failure mode "skipping the recommendation" + the entire interactive-decision protocol — explicit trade-off framing is the work, not a side concern |
+
+The Hard Parts focuses on *the analytic discipline* of architectural trade-offs in distributed systems. Umami operationalizes that discipline at the project-process layer: when to apply it (§3c triggers), how to capture the analysis (§7 research docs paired with ADRs), and how to verify the architectural invariants survive in code (§3 fitness functions).
 
 ## Contributing
 

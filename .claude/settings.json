@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(awk -F: '$2 ~ /^## 8/{p=1} p{print}')",
+      "Bash(git mv *)",
+      "Bash(grep -E \"^\\\\.mcp\\\\.json$|^\\\\.claude/settings\\\\.json$|^\\\\.vscode\")",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('.mcp.json'\\)\\); print\\('\\\\n'.join\\(d.keys\\(\\)\\) if isinstance\\(d, dict\\) else 'not a dict'\\)\")",
+      "Bash(grep -n \"^\\\\| \\\\[\\\\`umami-\" /home/dennis/projects/umami/README.md)",
+      "Bash(gh repo *)",
+      "Bash(chmod +x /home/dennis/projects/umami/tools/check-refs.sh)",
+      "Bash(/home/dennis/projects/umami/tools/check-refs.sh)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(./tools/check-refs.sh)",
+      "Bash(bash tools/check-refs.sh)"
+    ]
+  }
+}

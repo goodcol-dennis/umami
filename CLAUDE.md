@@ -17,21 +17,23 @@ A **process template**, not a software project. There are no tests, no builds, n
 - Risk taxonomy with auto-merge thresholds + Cross-provider review (§3d, 2026-05-16); Closed-Loop PR Review workflow (§30.5, 2026-05-16)
 - Velocity-balance anti-patterns: "Security investment outpaces threat model", "Pipeline cargo cult", "Winchester Mansion sprawl"
 - `recipes/` directory seeded with `consulting-timesheet.md` and `closed-loop-pr-review.md` placeholders
-- 14 deprecation stubs at pre-v3 paths (removed in v3.1)
+- 14 deprecation stubs at pre-v3 paths (removed in v3.1, see below)
 - **Init auto-chains into `/umami-audit` on successful apply** (§0.7b step 7, 2026-05-22) — bootstrap ends with a baseline findings report instead of a "skills installed" hand-off message. Audit's own four-option findings-disposition dialog still runs. Skipped when user picks **Skip** at the init dialog. Surfaced from a real bootstrap where init completed but no audit fired.
 - **§2b Async Channel Contracts** (`core/umami-quality.md`, 2026-05-22) — typed channel + origin tag + allowed-consumer list + audit-on-add. Structural parallel to §4 untrusted-content discipline (same four-part pattern, different scope: reachability instead of trust). Addresses four leaky-async failure shapes (global bus / untyped payload / catch-all UI surface / shared worker-output display). Tier 3 escalation = fitness function. New `Leaky async interfaces` anti-pattern in §0.6 with watch signal. Surfaced from an adopter project where async messages surfaced in the wrong part of the app.
+
+**Just shipped (v3.1 → develop):**
+- **All 14 v3.0 deprecation stubs removed** (2026-05-27) — root-level extension stubs (`umami-web.md`, `umami-data.md`, etc.) plus `cms/` and `desktop/` subdir stubs are gone. Legacy pre-v3 paths now 404. The §0.5 mapping table in `umami.md` and the URL list in `README.md` were updated to point at `ext/` paths; `/umami-init` still detects legacy paths in adopter `CLAUDE.md` files and offers migration. Also fixed already-broken sibling refs in `ext/cms/` and `ext/desktop/` that shipped in v3.0 (`../umami-cms.md` and `../umami-desktop.md` patterns).
 
 **Active gaps** (tracked in [`audits/gaps.md`](audits/gaps.md)):
 - `v3 multi-file architecture not yet validated at scale by external adopters` — closes on first external adopter completing the bootstrap flow
 - `§3d risk taxonomy + cross-provider review + §30.5 closed-loop PR review not yet validated across projects` — closes when ≥2 projects run the full pattern for ≥1 release cycle
 - Plus ~15 "not yet validated across projects" entries for individual v3.0 practices (Trust Posture, §6b, untrusted-content boundaries, etc.) — same shape, awaiting field validation
 
-**v3.1 scheduled work** (per `audits/v3.0-retro.md`):
-- Remove all 14 deprecation stubs at pre-v3 paths
+**v3.1 scheduled work** (remaining; per `audits/v3.0-retro.md`):
 - Roll up §20 (WordPress) and §21 (Drupal) content into §25 (CMS); delete `ext/cms/umami-wordpress.md` and `ext/cms/umami-drupal.md` entirely (section numbers stay reserved)
 - Refine v3.0 practices based on external-adopter feedback
 
-**Next planned tag:** v3.1 — CMS rollup + stub removal + first-pass external-adopter refinements.
+**Next planned tag:** v3.1 — CMS rollup + first-pass external-adopter refinements (stub removal already landed on develop).
 
 **v3 file architecture:**
 - `umami.md` — Landing (framework + Section Navigation Map + §0 + §1 + §3b + §6 + §13 + §15 + Security Essentials sidebar)
@@ -68,7 +70,6 @@ See [`audits/v3.0-retro.md`](audits/v3.0-retro.md) for the v3 architectural deci
 | `ext/desktop/umami-linux.md` | Desktop Linux extension — §28 (loads with §27) |
 | `ext/desktop/umami-spa-wrapper.md` | SPA wrapper extension — §29 (loads with §27 + §28) |
 | `ext/umami-agent-workflows.md` | Agent workflows extension — §30 (closed-loop auto-remediation, production agentic CI, workflow cost patterns, anti-patterns, closed-loop PR review with risk-tiered auto-merge) |
-| Deprecation stubs at pre-v3 paths | Short markdown files at the old root-level / `cms/` / `desktop/` locations that point readers back to `umami.md`. **Removed in v3.1.** Exist to keep legacy URL fetches from returning 404 during the v3.0 grace period. |
 | `recipes/` | Drop-in implementation artifacts (cross-cutting features). Distinct from extensions: extensions guide *what to think about*, recipes provide *what to type / copy*. Independent of §0–§30 numbering. See [`recipes/README.md`](recipes/README.md). |
 | `docs/decisions/` | Architecture Decision Records (ADRs) — individual records of significant architectural decisions. Distinct from `audits/` retros: ADRs cover one decision; retros cover a release window. See [`docs/decisions/README.md`](docs/decisions/README.md). |
 | `tools/check-refs.sh` | Architectural fitness function (§3) — verifies every `§N` cross-reference resolves to a defined section. Run before commits per the pre-commit checklist below. |
@@ -98,7 +99,7 @@ The repo follows a three-tier layout:
 - `core/` and `ext/` paths are external contracts too: moving a file means breaking every downstream `CLAUDE.md` that references it. Restructure only at major-version boundaries.
 - Section numbers (`§N`) are independent of file location. Cross-references use plain `§N`; file is metadata.
 
-**Deprecation stubs (v3.0 → v3.1 transition):** Stubs remain at the pre-v3 paths (root-level extensions, `cms/`, `desktop/`) pointing readers back to the landing. These are deprecated and removed in v3.1.
+**Legacy paths (v3.1+):** Pre-v3 paths (root-level extensions, `cms/`, `desktop/`) no longer exist — the v3.0 deprecation stubs were removed in v3.1 and legacy URL fetches now 404. Adopters carrying old `CLAUDE.md` URL lists need to migrate to the `ext/` paths; `/umami-init` detects and offers automatic migration.
 
 ## Change Propagation Map
 

@@ -1,8 +1,8 @@
 # Drupal Guardrails
 
-**Extension of [CMS Guardrails](../umami-cms.md) (§25), which extends [Rapid Development Guardrails](../umami.md) — §21**
+**Extension of [CMS Guardrails](umami-cms.md) (§25), which extends [Rapid Development Guardrails](../../umami.md) — §21**
 
-> **Planned rollup:** §21 will be folded into the more generalized [CMS extension](../umami-cms.md) (§25) in a future release. New guidance should land in §25 where possible; Drupal-specific implementation detail will remain, but as a thinner layer rather than a standalone extension. Existing references to §21 will continue to resolve.
+> **Planned rollup:** §21 will be folded into the more generalized [CMS extension](umami-cms.md) (§25) in a future release. New guidance should land in §25 where possible; Drupal-specific implementation detail will remain, but as a thinner layer rather than a standalone extension. Existing references to §21 will continue to resolve.
 
 This extension covers Drupal-specific development — custom and contributed modules, themes, configuration management, and site builds. It builds on the shared CMS guardrails (§25) with Drupal-specific implementation details. For general CMS practices (extension audits, update management, security fundamentals, deployment discipline), see §25.
 
@@ -11,8 +11,8 @@ Drupal differs from other CMS platforms in key architectural ways: Symfony-based
 **Apply this extension when** the §0.2 system shape questionnaire identifies a CMS / Drupal layer.
 
 **Loading order:** Load all three layers:
-1. [`umami.md`](../umami.md) — core guardrails
-2. [`umami-cms.md`](../umami-cms.md) — CMS-generic practices (§25)
+1. [`umami.md`](../../umami.md) — core guardrails
+2. [`umami-cms.md`](umami-cms.md) — CMS-generic practices (§25)
 3. This file — Drupal-specific implementation
 
 ---

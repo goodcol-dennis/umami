@@ -4,7 +4,7 @@
 
 This extension covers practices common to all content management systems — WordPress, Drupal, and others. CMS platforms share a distinct risk profile: a large ecosystem of third-party extensions (plugins, modules, themes), a culture of composing sites from pre-built components, content/configuration/code boundaries that blur easily, and production environments where non-developers make changes through admin UIs.
 
-**Apply this extension when** the §0.2 system shape questionnaire identifies a CMS layer. Then apply the platform-specific sub-extension ([WordPress](cms/umami-wordpress.md) §20, [Drupal](cms/umami-drupal.md) §21) for implementation details.
+**Apply this extension when** the §0.2 system shape questionnaire identifies a CMS layer. Then apply the platform-specific sub-extension ([WordPress](umami-wordpress.md) §20, [Drupal](umami-drupal.md) §21) for implementation details.
 
 > **Planned consolidation:** The standalone WordPress (§20) and Drupal (§21) extensions are being rolled into this file in a future release. The shared CMS practices already cover most of the surface area; platform-specific implementation detail will move here as thinner subsections rather than separate documents. Section numbers §20 and §21 will be retained for traceability.
 

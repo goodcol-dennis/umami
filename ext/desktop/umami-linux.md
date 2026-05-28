@@ -1,16 +1,16 @@
 # Desktop Linux Guardrails
 
-**Extension of [Desktop Application Guardrails](../umami-desktop.md) — §28**
+**Extension of [Desktop Application Guardrails](umami-desktop.md) — §28**
 
 This extension covers Linux-specific desktop development — GTK4/libadwaita, Wayland/X11 input handling, XDG compliance, DBus integration, and the Linux-specific E2E testing toolchain. It applies to both native GUI apps and SPA wrappers running on Linux.
 
-**Apply this extension when** the project is a desktop application targeting Linux. Load it alongside the parent [umami-desktop.md](../umami-desktop.md) (§27). If the project wraps a web app in WebKitGTK, also load [umami-spa-wrapper.md](umami-spa-wrapper.md) (§29).
+**Apply this extension when** the project is a desktop application targeting Linux. Load it alongside the parent [umami-desktop.md](umami-desktop.md) (§27). If the project wraps a web app in WebKitGTK, also load [umami-spa-wrapper.md](umami-spa-wrapper.md) (§29).
 
 > **Scope note:** Linux is currently the only OS-specific sub-extension under §27. That asymmetry reflects contributor experience, not a claim that Linux deserves special treatment. Projects targeting macOS or Windows should still load §27 for cross-platform desktop guardrails; OS-specific patterns for those platforms belong in new sibling sub-extensions, not in this file. PRs welcome.
 
 **Loading order:**
-1. [umami.md](../umami.md) — core guardrails
-2. [umami-desktop.md](../umami-desktop.md) — desktop-generic practices (§27)
+1. [umami.md](../../umami.md) — core guardrails
+2. [umami-desktop.md](umami-desktop.md) — desktop-generic practices (§27)
 3. This file (`desktop/umami-linux.md`) — Linux platform details (§28)
 4. Optionally, [desktop/umami-spa-wrapper.md](umami-spa-wrapper.md) — SPA wrapper pattern (§29)
 

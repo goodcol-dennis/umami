@@ -9,8 +9,8 @@ This extension covers the specific pattern of wrapping a web application in a na
 > **Status — narrowest extension in the corpus.** §29 documents one specific build pattern, not a generic application domain on equal footing with §17 (web), §18 (data), §27 (desktop). Most desktop projects do not need §29; they should stop at §27 (and optionally §28). Load this file only when the project literally is a WebKitGTK SPA wrapper. It exists in the public template because the trade-offs it documents (session persistence, ITP, navigation policy, clipboard bridge, notification forwarding, dock badge wiring) recur for everyone who builds this kind of app, and the failure modes are non-obvious enough to be worth recording. Treat it as a worked example of how §27 and §28 compose for a concrete pattern rather than a peer extension.
 
 **Loading order:**
-1. [umami.md](../umami.md) — core guardrails
-2. [umami-desktop.md](../umami-desktop.md) — desktop-generic practices (§27)
+1. [umami.md](../../umami.md) — core guardrails
+2. [umami-desktop.md](umami-desktop.md) — desktop-generic practices (§27)
 3. [desktop/umami-linux.md](umami-linux.md) — Linux platform details (§28)
 4. This file (`desktop/umami-spa-wrapper.md`) — SPA wrapper pattern (§29)
 

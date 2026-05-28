@@ -40,7 +40,7 @@ umami/
 
 **About `recipes/`:** Drop-in artifacts for cross-cutting features (e.g., a consulting timesheet pipeline, an ADR template, a status-block starter). Extensions tell you *why* you'd want a discipline; recipes tell you *exactly what to type / copy* to implement it. See [`recipes/README.md`](recipes/README.md) for the catalog and contribution model. Recipes are independent of the §0–§30 numbering — they're implementation aids, not numbered practices.
 
-**Backwards compatibility — v3.0 → v3.1.** Deprecation stubs remain at the pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory). Existing projects fetching legacy paths get a clear migration message rather than a 404. These stubs are deprecated and **will be removed in v3.1**. The `/umami-init` skill detects legacy paths in instruction files and offers automatic migration to the new paths.
+**Legacy paths (v3.1+).** Pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory) **no longer resolve** — the v3.0 deprecation stubs were removed in v3.1. Adopter projects still referencing those paths get a 404 on fetch; update to the `ext/` paths shown in the URL list below, or run `/umami-init` (it detects legacy paths and offers automatic migration to the v3 layout).
 
 > **A note on `CLAUDE.md`:** This template references `CLAUDE.md` as the project instruction file because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
 

@@ -12,7 +12,7 @@ This file is part of umami v3's concern-based file architecture. The landing doc
 
 **Cross-references** in this file use plain `§N` notation. File location is metadata; section numbers are stable identifiers across all umami files.
 
-**Related extension:** [umami-agent-workflows.md](umami-agent-workflows.md) (§30) covers agent-*workflow* patterns (closed-loop auto-remediation, production agentic CI). This file covers agent-*infrastructure* building blocks.
+**Related extension:** [umami-agent-workflows.md](../ext/umami-agent-workflows.md) (§30) covers agent-*workflow* patterns (closed-loop auto-remediation, production agentic CI). This file covers agent-*infrastructure* building blocks.
 
 ---
 

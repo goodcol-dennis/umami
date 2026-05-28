@@ -30,7 +30,7 @@ The gap registry tracks items everyone *knows* are open. This audit catches item
 ## Hard rules
 
 - **Read-only.** Never delete, archive, or restructure files during the audit. The output is a findings report with proposed dispositions; the user decides.
-- **Always fetch the landing document fresh** from `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md` (or `refs/heads/main` for downstream-stable consumers). Never cache locally.
+- **Always fetch the landing document fresh** from the canonical URL `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md` (use `refs/heads/develop` only for bleeding-edge, not-yet-released practices). Never cache locally.
 - **Consult the Section Navigation Map** in the landing to identify §8's home (`core/umami-process.md`). Fetch that companion for the full audit protocol (scan-location categories, disposition options, post-ship shipped-features extension). Drift-audit scope always requires the process companion.
 - **If any fetch fails, tell the user and stop.** Do not fall back to a stale local copy.
 - **Each item gets a proposed disposition.** Findings without dispositions are theater. Disposition options: Revive / Archive / Delete / Re-decide (pre-ship items); Keep / Deprecate / Remove (post-ship features).

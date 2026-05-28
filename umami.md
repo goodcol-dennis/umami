@@ -405,7 +405,7 @@ When the audit flags an anti-pattern, name the watch signal that would confirm o
 
 **Bootstrap entrypoint (self-installing).** A project with no umami presence pastes one instruction into their agent:
 
-> *"Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md and follow §0.7b."*
+> *"Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md and follow §0.7b."*
 
 The agent fetches the spec, follows this section, and during the apply phase installs `umami-init` and `umami-audit` skills locally. Subsequent runs use slash commands.
 

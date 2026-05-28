@@ -64,7 +64,7 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
 These are not advisory. The skill drifts when constraints are advisory; it holds when they're rules.
 
 - **Read-only by default.** The four-option dialog gates every write; no destructive changes without explicit approval.
-- **Always fetch the landing document fresh** from the canonical URL (`https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md`). Never cache locally. Skill files don't count — they're invocation aids, not copies.
+- **Always fetch the landing document fresh** from the canonical URL (`https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md`; use `refs/heads/develop` only for bleeding-edge, not-yet-released practices). Never cache locally. Skill files don't count — they're invocation aids, not copies.
 - **For Tier 2+ scope, fetch the companion files identified by the landing's Section Navigation Map.** Don't fetch companions speculatively.
 - **If any fetch fails, tell the user and stop.** Do not fall back to a stale local copy. Init against three-month-old guidance produces wrong recommendations.
 - **Cite a file path or doc reference for every observation.** "The project lacks the data extension" is an opinion; "no `ext/umami-data.md` URL is referenced in `CLAUDE.md` despite the project containing `lib/pipeline/`" is a finding.

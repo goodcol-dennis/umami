@@ -33,7 +33,7 @@ Reviews a code change and produces a **flags document** that routes human attent
 These are not advisory.
 
 - **Read-only.** Never modify code. The output is a flags document; the human decides what to act on.
-- **Always fetch the landing document fresh** from `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md` (or `refs/heads/main` for downstream-stable consumers). Never cache locally.
+- **Always fetch the landing document fresh** from the canonical URL `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md` (use `refs/heads/develop` only for bleeding-edge, not-yet-released practices). Never cache locally.
 - **Consult the Section Navigation Map** in the landing to identify §3d's home (`core/umami-quality.md`). Fetch that companion for the full review discipline (risk taxonomy, cross-provider review, three-layer model, output format). Auto-review scope always requires the quality companion.
 - **If any fetch fails, tell the user and stop.** Do not fall back to a stale local copy.
 - **Cite `file:line` for every finding.** "The auth code has issues" is opinion; "src/auth/middleware.ts:42 — token validation skipped before lookup" is a finding.

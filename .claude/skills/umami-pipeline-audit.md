@@ -43,7 +43,7 @@ The pipeline is the operational substrate that runs every change. When it's heal
 - **Both dimensions matter.** Don't skip the guardrails-vs-needs fit check just because the technical health looks fine. A pipeline can be fast and clean but mismatched to the team.
 - **Default disposition leans against keeping debt.** If a gate has caught nothing meaningful in N months and the team can't name its purpose, default is Remove or Demote nightly — not Keep.
 - **Never recommend more than 5 dispositions per audit run.** Larger lists overwhelm; batch the rest into the next quarterly run.
-- **Always fetch the landing document fresh** from `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md` (or `refs/heads/main` for downstream-stable consumers). Never cache locally.
+- **Always fetch the landing document fresh** from the canonical URL `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md` (use `refs/heads/develop` only for bleeding-edge, not-yet-released practices). Never cache locally.
 - **Consult the Section Navigation Map** in the landing to identify §6b's home (`core/umami-runtime.md`). Fetch that companion for the full audit protocol. Tier 1 / discovery only needs the landing; pipeline-audit scope requires the runtime companion.
 - **If any fetch fails, tell the user and stop.** Do not fall back to a stale local copy.
 

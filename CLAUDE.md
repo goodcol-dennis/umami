@@ -8,7 +8,7 @@ A **process template**, not a software project. There are no tests, no builds, n
 
 ## Status
 
-`v3.0` merged into `develop` 2026-05-13 (architectural reframe: landing + 4 core companions + repo reorg into `core/`, `ext/`, `recipes/`). **Currently shipping on `develop`; `main` tag pending validation against external projects.** Last updated: 2026-05-22.
+`v3.0` released to `main` 2026-05-27 (tag `v3.0`; architectural reframe: landing + 4 core companions + repo reorg into `core/`, `ext/`, `recipes/`). **`main` now carries v3.0; canonical bootstrap + skill-fetch URLs point at `refs/heads/main`.** `develop` is the active branch for v3.1 work. The "not yet validated across projects" gaps below remain open — release doesn't gate on them; they close as external adopters report. Last updated: 2026-05-27.
 
 **Just shipped (v3.0 → develop):**
 - Landing-doc-as-index architecture; Tier 1 fetch now ~13K tokens (was ~40K monolithic)
@@ -162,7 +162,7 @@ The checklist isn't a CI gate — there's no CI on this repo. It's a manual disc
 
 ## Branching
 
-- `main` — released, tagged versions (currently v1.0)
+- `main` — released, tagged versions (currently v3.0; tags v1.0, v2.0, v2.1, v3.0)
 - `develop` — active work, merged to main for releases
 
 ## What NOT to do

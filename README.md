@@ -72,7 +72,7 @@ The core template is **not** tied to any specific project. You reference it (and
 
 Paste this into your AI assistant (Claude Code, Cursor, Copilot, etc.):
 
-> **Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/develop/umami.md and follow §0.7b.**
+> **Set up umami in this project. Fetch https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md and follow §0.7b.**
 
 The agent fetches the spec, runs §0 discovery interactively (asking which kind of project this is, whether you have a data layer, frontend, mobile app, etc.), and proposes the right core + extension set per §0.5.
 

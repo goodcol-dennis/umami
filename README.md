@@ -260,11 +260,11 @@ The core spans 5 files in v3. Section numbers are stable across files; the **Fil
 
 | § | Topic | File |
 |---|-------|------|
-| §0 | Project discovery — onboarding questionnaire, adoption tiers, onboarding anti-patterns, tiered audit protocol, init protocol | `umami.md` |
+| §0 | Project discovery — onboarding questionnaire, adoption tiers, AI-discipline spectrum (vibe coding ↔ structured AI-assisted ↔ agentic engineering, after Osmani/Saboo/Kartakis 2026), onboarding anti-patterns, tiered audit protocol, init protocol | `umami.md` |
 | §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy, multi-surface/one-primitive pattern, preserving project structure (structure-as-contract discipline) | `umami.md` |
 | §2 | Specification-first development — specs before code; relationship to Spec-Driven Development (SDD) as the closest movement | `core/umami-quality.md` |
 | §2b | Async channel contracts — typed channel + origin tag + allowed-consumer list + audit-on-add at code review; structural parallel to §4 untrusted-content discipline applied to *reachability scope* instead of trust scope; addresses leaky-async-interface failure modes (global bus, untyped payload, catch-all UI notification surface, shared worker-output display) | `core/umami-quality.md` |
-| §3 | Multi-layer test infrastructure — unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products | `core/umami-quality.md` |
+| §3 | Multi-layer test infrastructure — tests vs. evals as verification's two halves (deterministic + non-deterministic), unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products | `core/umami-quality.md` |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes | `umami.md` |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline | `core/umami-quality.md` |
 | §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); risk taxonomy with auto-merge thresholds (Trivial → Critical, each with default disposition); cross-provider review (adversarial-eye principle: review with a model from a different family than the author); flags-document format; spot-check sampling; watch signals | `core/umami-quality.md` |

@@ -157,6 +157,22 @@ Testing spans the full stack across complementary layers:
 
 Sub-sections below carry **Cost profile** annotations (Who · Magnitude · Shape — see §4 *Reading the cost profiles* for the scheme). The §0.6 tier table places each practice in Foundation / Structure / Scale; the cost profile tells you what adopting one looks like in time, expertise, and money.
 
+### Tests and Evals — verification's two halves
+
+The test types in the table above cover **deterministic verification**: given a known input, the system produces a known output, and a piece of code checks that. AI-feature products introduce a second verification problem: **non-deterministic agent behavior** — did the agent take the right trajectory, choose the right tools, produce output meeting the quality bar? You can't unit-test "the agent reasoned well." But you can *evaluate* it.
+
+| | Tests | Evals |
+|---|---|---|
+| **What it verifies** | Deterministic parts: function input → function output | Non-deterministic parts: agent trajectory, tool choice, response quality |
+| **Checked by** | Code (assertion libraries, property generators, runtime fixtures) | Labelled datasets, scoring rubrics, LLM judges |
+| **Failure shape** | Function returns the wrong value | Agent skipped a step, used the wrong tool, or fluently produced a confident wrong answer that looks right at a glance |
+| **CI integration** | Standard test runner; per-commit | Eval suite as a separate job; gate Tier-1 cells per commit, full matrix nightly or per-release (see *Multi-Provider Behavioral Testing* below) |
+| **Cost shape** | Hours per test; Days per layer | Days per eval suite + ongoing token cost per run; expect 10–100× the per-run cost of a unit-test suite |
+
+Tests and evals are **complementary, not interchangeable**. A product that ships with only tests verifies the deterministic skeleton but not the AI-driven flesh; a product with only evals catches the agent's behavior but misses correctness regressions in the surrounding code. **Without both, the development posture sits closer to vibe coding regardless of how sophisticated the prompts are** — see §0.6b *AI-Discipline Spectrum* for why this matters for billable / production / compliance-bound work, and Osmani/Saboo/Kartakis 2026 (*The New SDLC with Vibe Coding*) for the original framing.
+
+For LLM-feature products specifically, see *Multi-Provider Behavioral Testing* below for the eval-side discipline (provider × substrate-tier matrix, real-provider RTT, gate cells by tier).
+
 ### Property-Based Testing
 
 Example-based tests verify the cases you thought of. Property-based tests find the cases you didn't. Instead of specifying individual inputs and expected outputs, you define *properties* (invariants) that must hold for *any* valid input, and the framework generates hundreds or thousands of test cases automatically.

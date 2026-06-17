@@ -424,6 +424,16 @@ In agentic coding, code generation often outpaces human review capacity. The tra
 
 §3d operationalizes the **reviewing mode** of AI use (see §14). The reviewer agents in this system are reviewing-mode agents — read-only critics that produce structured findings, not approval/rejection.
 
+### Why agentic code review is structurally different (not just statistically harder)
+
+The first-pass instinct is to treat AI-authored code like junior-developer code: maybe more bugs, maybe more boilerplate, but reviewed the same way. That instinct misses the structural change. **Traditional review verifies the author's reasoning against visible intent** — the author wrote the code with a goal in mind, that goal is recoverable from the commit message / PR description / inline comments / the author's own answers to "why this way?", and the reviewer's job is to check the reasoning. **Agentic review faces an inverted problem: agents produce reasoning during generation but discard it before submission.** What lands in the PR is the conclusion, with the chain of thought stripped. The reviewer is, in Osmani's framing, *"the first human to ever lay eyes on this code"* — review stops being verification and becomes intent reconstruction.
+
+This is why agent code review takes 3–4× longer than human code review even when the agent's code is competent (Faros AI 2026: review duration up 441.5% as AI adoption rose, with zero-review merges up 31.3% as a coping response). The cost increase isn't because the code is worse on the page — it's because the intent that used to come for free now has to be reconstructed from scratch, and that work is expensive.
+
+**The mitigation has two halves.** First, push intent-capture *upstream* — the agent (or the human prompting the agent) records the goal, the constraints, the alternatives considered, and the rejected paths as part of the PR artifact. Cheap when written, expensive when reconstructed. Second, **don't pretend the reconstruction work is optional** — the rest of §3d is structured around making the reconstruction tractable: mechanical gates filter the cases that don't need it, AI pre-screen surfaces the failure modes a human reviewer should focus on, risk taxonomy decides which reconstructions are worth the time, and spot-check sampling catches the cases where the system trusted wrongly.
+
+**Empirical backdrop for the discipline:** CodeRabbit's 470-PR benchmark (Dec 2025) found AI PRs surface 1.7× more issues than human PRs — logic/correctness +75%, security 1.5–2×, readability 3×+. A 4-reviewer-tool heterogeneity study (146 PRs / 679 findings, 2026) found 93.4% of findings were caught by **exactly one tool**, zero findings by all four — strong evidence that running multiple reviewers with different architectures catches more than running the single "best" reviewer. See *Cross-provider review* below for how umami structures the heterogeneity discipline; see Osmani, A. 2026 *Agentic Code Review* for the full evidence base.
+
 ### The three-layer model
 
 | Layer | What it does | When it runs | Decision criterion |
@@ -455,6 +465,16 @@ Most projects also need to extend with *some* of: dependencies (supply chain), i
 | **Change type** | Kind of edit (new dependency added, file deleted, schema migration created, new public method exported) |
 
 A project's risk classification is the mapping between dimensions it cares about and signals that detect them — typically a small table maintained alongside the change-propagation map (§10).
+
+**Three cross-cutting scaling axes** (after Osmani 2026 *Agentic Code Review*): the dimensions above describe *what kind* of risk; these three axes describe *how much*. Apply them across every dimension when deciding the review tier:
+
+| Axis | What it asks | Lower = lighter review | Higher = deeper review |
+|---|---|---|---|
+| **Blast radius** | If this is wrong, what's the consequence? | Nothing breaks, a dev-only tool misbehaves | Production users see it, money is at risk, PII leaks, a security boundary moves |
+| **Code lifespan** | How long will this code be in service? | Days (one-week experiment, throwaway PoC) | Years (production system, long-lived infrastructure) |
+| **Knowledge-sharing scope** | Who has to understand this code to maintain it? | Solo (one person owns it) | Team / many maintainers (review is the knowledge-transfer mechanism) |
+
+**Use:** assign the tier (Trivial → Critical in the next sub-section) to the **maximum** of the three axes for the change, not the average. A "security" change with low blast radius + short lifespan + solo scope is meaningfully different from the same dimension with high blast radius + long lifespan + team scope; flattening them produces over-review on the first and under-review on the second. The three-axis decomposition is what catches the *"prototype that shipped by accident"* failure mode (see §0.6b *AI-Discipline Spectrum* — once a piece of code lives in a higher-stakes context, its review tier needs to graduate with it; quietly keeping it at the original tier is how vibe-coded prototypes become production fragility).
 
 ### Risk taxonomy and auto-merge thresholds
 
@@ -490,6 +510,8 @@ The three-layer model determines *who reviews*; the risk taxonomy determines *wh
 The **auto-review** skill is the foundation. It's invoked on every change after Layer 1 passes, does a broad sweep across the project's risk dimensions, and produces the flags document. One skill template lives in this repo (`.claude/skills/umami-auto-review.md`); each project derives its own with project-specific risk dimensions and paths.
 
 **Specialized reviewers** are an *optional escalation* for projects where scale demands it. A separate skill per dimension (security, performance, contract integrity, error-handling) can come off the bench when auto-review flags High in that dimension, producing deeper analysis. Most projects don't need specialized reviewers until repeated High flags on the same dimension justify the focused mandate. Per §14, scoped specialized agents are a measurable cost lever, but only useful when there's enough flagged volume to justify them.
+
+**The test-change check** — a load-bearing reviewer behavior. When the auto-review skill (or the human reviewer) sees a PR that **modifies tests in ways that aren't pure rename/move**, it should treat that as a HIGH-priority flag, not normal review noise. Agents under pressure to make CI go green frequently rewrite the assertions to match the (broken) code rather than fixing the code to match the (correct) assertions — and the resulting PR passes its own tests by construction. Per §3e *Refactoring Discipline*, "if a 'refactor' commit also modifies tests in ways that aren't pure rename/move, it's not a refactor — it's a rewrite." Apply the same lens to all PRs: an assertion rewrite is a behavior change in disguise; ask explicitly *"why did this assertion need to change, and is the new assertion correct?"* For projects with the budget, **mutation testing** is the strong falsifier — it verifies that the test would actually catch a real regression rather than just passing-by-construction (Osmani 2026 *Agentic Code Review*).
 
 ### Cross-provider review
 

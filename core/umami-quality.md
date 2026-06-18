@@ -1,6 +1,6 @@
 # Umami — Quality / Correctness Extension
 
-This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *quality / correctness* concern cluster — specs, multi-layer testing, decision planning, code review, refactoring.
+This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](../umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *quality / correctness* concern cluster — specs, multi-layer testing, decision planning, code review, refactoring.
 
 **When to fetch this file:** When an audit, init, or implementation task hits a Tier 2+ practice in any of §2 / §3 / §3c / §3d / §3e. The landing document's *Section Navigation Map* maps each section to its file.
 
@@ -24,7 +24,7 @@ Every feature starts with a written spec, not code. Architecture documents and d
 
 **Spec-Driven Development (SDD) frameworks worth considering.** SDD is an emerging movement around making specs executable or machine-checkable contracts the AI agent works against. Umami doesn't try to invent an SDD methodology — it points at existing ones and provides the process-discipline wrapper around whichever you pick.
 
-Categories of compatible approaches. Each carries a **Cost profile** (Who · Magnitude · Shape — see §4 *Reading the cost profiles* for the scheme).
+Categories of compatible approaches. Each carries a **Cost profile** (Who [Agent / Operator / Specialist] · Magnitude [Hours / Days / Weeks / Months] · Shape [One-time / Recurring / Architectural / Spend] — full scheme in §4 *Reading the cost profiles*).
 
 | Approach | Category | Cost profile |
 |---|---|---|
@@ -76,6 +76,16 @@ Specs have diminishing returns. Over-specifying is its own form of waste — a s
 §2b makes the async surface a first-class spec artifact, sitting alongside the data dictionary and source registry that §2 already covers. **Same discipline as static interfaces; different artifact shape.**
 
 **Cost profile:** Agent-with-review · Days per module (first-time migration) / Hours per new channel (steady state) · Architectural + Recurring discipline
+
+**§2b vs. §4 untrusted-content boundaries — same shape, different problem.** Both use a four-part pattern (typed wrapper + origin/provenance + allowed-list + audit-on-add), so they are easy to confuse. They are *not* interchangeable:
+
+| | §2b Async Channel Contracts | §4 Untrusted-content boundaries |
+|---|---|---|
+| **Problem solved** | *Reachability* — which code may receive this message | *Trust* — whether this content is safe to act on |
+| **Guards against** | A message surfacing in the wrong part of the app | Injected / malicious external content reaching the model |
+| **Applies to** | Internal async surfaces (events, worker output) | Externally-sourced content (web, user input, tool output) |
+
+Apply §2b to internal async surfaces; apply §4 to externally-sourced content. A single channel can need both.
 
 ### The four parts
 
@@ -155,7 +165,9 @@ Testing spans the full stack across complementary layers:
 | **Visual regression** | Pixel-level UI stability | Unintended cosmetic changes; baselines updated only for intentional changes |
 | **API/service tests** | Contract adherence | Protocol violations, serialization errors, edge cases in data handling |
 
-Sub-sections below carry **Cost profile** annotations (Who · Magnitude · Shape — see §4 *Reading the cost profiles* for the scheme). The §0.6 tier table places each practice in Foundation / Structure / Scale; the cost profile tells you what adopting one looks like in time, expertise, and money.
+The layers above cover **deterministic** verification. For LLM-feature products, *Tests and Evals* (next sub-section) adds **non-deterministic** (eval) verification, and *Multi-Provider Behavioral Testing* (further below) adds the provider × substrate-level matrix.
+
+Sub-sections below carry **Cost profile** annotations (Who [Agent / Operator / Specialist] · Magnitude [Hours / Days / Weeks / Months] · Shape [One-time / Recurring / Architectural / Spend] — full scheme in §4 *Reading the cost profiles*). The §0.6 tier table places each practice in Foundation / Structure / Scale; the cost profile tells you what adopting one looks like in time, expertise, and money.
 
 ### Tests and Evals — verification's two halves
 
@@ -301,7 +313,7 @@ Distinguishing feature: fitness functions test *structural and quality propertie
 
 For LLM-feature products whose correctness depends on the model's behavior — tool-calling shape, structured-output adherence, instruction-following, refusal behavior — test across the providers you actually serve in production. A test that passes only on one provider is silent regression risk for the product's other code paths.
 
-§3 above covers test layers (unit, integration, E2E, property-based); this sub-section adds the *provider matrix* and *substrate tiers* dimensions specific to LLM-feature products.
+§3 above covers test layers (unit, integration, E2E, property-based); this sub-section adds the *provider matrix* and *substrate levels* dimensions specific to LLM-feature products. (*Substrate levels* are an axis of test complexity — unrelated to §0.6 *adoption tiers*; see the terminology note in §0.6.)
 
 **Cost profile:** Specialist-required (LLM infra knowledge) · Weeks setup, ongoing per-release · Architectural + Spend (per-run provider API costs)
 
@@ -310,13 +322,13 @@ For LLM-feature products whose correctness depends on the model's behavior — t
 | Dimension | What it covers |
 |---|---|
 | **Provider matrix** | The set of LLM providers your product serves (Anthropic / OpenAI / Gemini / Ollama-local / etc.). A behavioral test runs against each |
-| **Substrate tiers** | Progressive complexity. Tier 1: single tool call working. Tier 2: multi-step workflow with multiple tools. Tier 3: full agent workflow with sub-agents and recursive dispatch. Each tier exercises more substrate; each surfaces different failure modes |
+| **Substrate levels** | Progressive complexity. Level 1: single tool call working. Level 2: multi-step workflow with multiple tools. Level 3: full agent workflow with sub-agents and recursive dispatch. Each level exercises more substrate; each surfaces different failure modes |
 
-The substrate-tier model above is one product's shape — a tool-using agent harness. **Substitute the substrate categories that fit your product's actual feature surface.** A chat-only product won't have tool-call tiers (consider tiering by conversation length / context-window pressure / refusal-rate calibration instead). A RAG product might tier by retrieval-quality vs. generation-quality dimensions. A code-completion product might tier by completion-length and language coverage. The point is *progressive substrate exercise*, not the specific tiers below.
+The substrate-level model above is one product's shape — a tool-using agent harness. **Substitute the substrate categories that fit your product's actual feature surface.** A chat-only product won't have tool-call levels (consider tiering by conversation length / context-window pressure / refusal-rate calibration instead). A RAG product might tier by retrieval-quality vs. generation-quality dimensions. A code-completion product might tier by completion-length and language coverage. The point is *progressive substrate exercise*, not the specific levels below.
 
-Coverage is providers × substrate tiers — at scale, dozens of cells. Not every cell needs to run on every change; gate critical cells on every commit, run the full matrix nightly or per-release.
+Coverage is providers × substrate levels — at scale, dozens of cells. Not every cell needs to run on every change; gate critical cells on every commit, run the full matrix nightly or per-release.
 
-**Velocity check.** Tier 1 (single tool call working) on the primary provider is enough until features compose. Building the full provider × substrate matrix before the product ships features that require multi-provider parity is over-investment — bench cost (API spend, infra, engineering hours) doesn't earn back without behavior the bench actually catches. Match bench depth to feature surface; see §0.6 "Security investment outpaces threat model" for the broader pattern (which applies to behavioral verification too).
+**Velocity check.** Level 1 (single tool call working) on the primary provider is enough until features compose. Building the full provider × substrate matrix before the product ships features that require multi-provider parity is over-investment — bench cost (API spend, infra, engineering hours) doesn't earn back without behavior the bench actually catches. Match bench depth to feature surface; see §0.6 "Security investment outpaces threat model" for the broader pattern (which applies to behavioral verification too).
 
 **What this catches that lib/bin tests don't:**
 
@@ -344,14 +356,14 @@ These are gaps lib/bin tests structurally can't reach: they mock provider behavi
 | Failure mode | Symptom | Fix |
 |---|---|---|
 | "We test on the cheapest provider" | Bench runs only on the fast/cheap model; production traffic on flagship models has different behavior | Test the providers you actually serve. Cost is real but behavioral parity isn't optional |
-| Tier 1 only | Bench covers single tool calls; ships break on multi-step workflows once they land | Add Tier 2 (multi-step) at minimum once features compose tool calls; Tier 3 (sub-agents) when the product dispatches |
+| Level 1 only | Bench covers single tool calls; ships break on multi-step workflows once they land | Add Level 2 (multi-step) at minimum once features compose tool calls; Level 3 (sub-agents) when the product dispatches |
 | Manual bench runs | Bench runs only when someone remembers; regressions slip in between runs | CI-gate the bench. For full-matrix runs that are slow/expensive, schedule nightly with explicit pre-release gates |
 | Provider mocks instead of real provider | Bench uses recorded fixtures; doesn't catch behavioral changes the providers ship | Fixtures sparingly (cost-bounded CI on every PR); full real-provider matrix at known cadence (nightly, per-release) |
 
 **Cross-references:**
 - §3 multi-layer testing (above) — multi-provider bench is a layer above E2E for LLM-feature products
 - §4 untrusted-content boundaries — bench should include planted-injection cases per provider's spotlighting strategy
-- §9.7 measuring efficiency — bench produces ET per provider per substrate tier; useful for cost-comparison and regression detection
+- §9.7 measuring efficiency — bench produces ET per provider per substrate level; useful for cost-comparison and regression detection
 - §0.5 LLM-feature-product row references this
 
 ---
@@ -466,7 +478,7 @@ Most projects also need to extend with *some* of: dependencies (supply chain), i
 
 A project's risk classification is the mapping between dimensions it cares about and signals that detect them — typically a small table maintained alongside the change-propagation map (§10).
 
-**Three cross-cutting scaling axes** (after Osmani 2026 *Agentic Code Review*): the dimensions above describe *what kind* of risk; these three axes describe *how much*. Apply them across every dimension when deciding the review tier:
+**Three cross-cutting scaling axes** (after Osmani 2026 *Agentic Code Review*): the dimensions above describe *what kind* of risk; these three axes describe *how much*. Apply them across every dimension when deciding the risk level (defined in the next sub-section):
 
 | Axis | What it asks | Lower = lighter review | Higher = deeper review |
 |---|---|---|---|
@@ -474,13 +486,13 @@ A project's risk classification is the mapping between dimensions it cares about
 | **Code lifespan** | How long will this code be in service? | Days (one-week experiment, throwaway PoC) | Years (production system, long-lived infrastructure) |
 | **Knowledge-sharing scope** | Who has to understand this code to maintain it? | Solo (one person owns it) | Team / many maintainers (review is the knowledge-transfer mechanism) |
 
-**Use:** assign the tier (Trivial → Critical in the next sub-section) to the **maximum** of the three axes for the change, not the average. A "security" change with low blast radius + short lifespan + solo scope is meaningfully different from the same dimension with high blast radius + long lifespan + team scope; flattening them produces over-review on the first and under-review on the second. The three-axis decomposition is what catches the *"prototype that shipped by accident"* failure mode (see §0.6b *AI-Discipline Spectrum* — once a piece of code lives in a higher-stakes context, its review tier needs to graduate with it; quietly keeping it at the original tier is how vibe-coded prototypes become production fragility).
+**Use:** assign the **risk level** (Trivial → Critical in the next sub-section) to the **maximum** of the three axes for the change, not the average. A "security" change with low blast radius + short lifespan + solo scope is meaningfully different from the same dimension with high blast radius + long lifespan + team scope; flattening them produces over-review on the first and under-review on the second. The three-axis decomposition is what catches the *"prototype that shipped by accident"* failure mode (see §0.6b *AI-Discipline Spectrum* — once a piece of code lives in a higher-stakes context, its risk level needs to graduate with it; quietly keeping it at the original risk level is how vibe-coded prototypes become production fragility).
 
 ### Risk taxonomy and auto-merge thresholds
 
-The three-layer model determines *who reviews*; the risk taxonomy determines *what happens after review*. Each change gets classified into a tier; the tier determines the default disposition. The taxonomy below is a starting kit — projects extend with their own tiers and overrides.
+The three-layer model determines *who reviews*; the risk taxonomy determines *what happens after review*. Each change gets classified into a **risk level**; the level determines the default disposition. The taxonomy below is a starting kit — projects extend with their own levels and overrides.
 
-| Tier | Examples | Default disposition | Required guardrails |
+| Risk level | Examples | Default disposition | Required guardrails |
 |---|---|---|---|
 | **Trivial** | Typo fixes, dependency version bumps in lockfile, formatting-only, generated-file regeneration | Auto-merge if mechanical layer passes | Branch protection requires green CI; spot-check sample applies |
 | **Low** | Internal refactor (no public API), test additions, documentation updates, comment cleanup | AI pre-screen + auto-merge if no flags raised | + Cost-cap on reviewer (§9.7); notification to author on merge |
@@ -490,7 +502,7 @@ The three-layer model determines *who reviews*; the risk taxonomy determines *wh
 
 **The principle: more risk → more guardrails.** The auto-merge threshold lives in the project's `CLAUDE.md` (or equivalent process doc) so the team agrees explicitly on what merges without humans. Visibility matters more than the specific cutoff.
 
-**"Tests pass" is not sufficient evidence of safety.** The mechanical layer is necessary but never sufficient. A trivial-tier change with passing tests can still be wrong (a typo can introduce a regression in a string compared elsewhere); the risk taxonomy is the discipline of asking *what kind of change is this*, not just *did the gate pass*.
+**"Tests pass" is not sufficient evidence of safety.** The mechanical layer is necessary but never sufficient. A trivial-risk change with passing tests can still be wrong (a typo can introduce a regression in a string compared elsewhere); the risk taxonomy is the discipline of asking *what kind of change is this*, not just *did the gate pass*.
 
 **Auto-merge for trivial and low changes is the velocity multiplier.** If 60–90% of changes are trivial or low (typical in mature projects), auto-merge with AI pre-screen turns those changes from "open PR, wait for human, get LGTM, merge" into "open PR, AI reviews, merge if clean" — a 10×+ wall-clock reduction. The discipline is *trusting the taxonomy and the reviewer*; spot-check sampling catches the cases where you shouldn't have trusted.
 
@@ -500,8 +512,8 @@ The three-layer model determines *who reviews*; the risk taxonomy determines *wh
 
 | Failure mode | Symptom | Fix |
 |---|---|---|
-| Misclassification on the trivial-low boundary | Changes labeled trivial slip in a behavior change that the mechanical layer doesn't catch | Strengthen the trivial-tier definition (e.g., "only changes where AST diff is identical to a known-safe pattern"); raise borderline changes to Low |
-| Tier inflation | Team labels everything Medium+ to feel safer; auto-merge benefit disappears | Audit recent merges by tier distribution; if Trivial+Low is <30% of merges in a mature codebase, classification is over-cautious |
+| Misclassification on the trivial-low boundary | Changes labeled trivial slip in a behavior change that the mechanical layer doesn't catch | Strengthen the trivial-risk definition (e.g., "only changes where AST diff is identical to a known-safe pattern"); raise borderline changes to Low |
+| Risk-level inflation | Team labels everything Medium+ to feel safer; auto-merge benefit disappears | Audit recent merges by risk-level distribution; if Trivial+Low is <30% of merges in a mature codebase, classification is over-cautious |
 | Stealth promotion | A change marked Low touches a path that should map to Medium; the taxonomy hasn't been updated | Spot-check sampling catches this. Fix the taxonomy mapping, not just the one change |
 | Auto-merge without observability | Trivial changes merge fast; nobody knows what was merged when something later breaks | Auto-merge events feed the §4 agent log (per §4 Agent Log Discipline). Every auto-merge is a logged event with the classification and reviewer's flags doc |
 
@@ -511,7 +523,9 @@ The **auto-review** skill is the foundation. It's invoked on every change after 
 
 **Specialized reviewers** are an *optional escalation* for projects where scale demands it. A separate skill per dimension (security, performance, contract integrity, error-handling) can come off the bench when auto-review flags High in that dimension, producing deeper analysis. Most projects don't need specialized reviewers until repeated High flags on the same dimension justify the focused mandate. Per §14, scoped specialized agents are a measurable cost lever, but only useful when there's enough flagged volume to justify them.
 
-**The test-change check** — a load-bearing reviewer behavior. When the auto-review skill (or the human reviewer) sees a PR that **modifies tests in ways that aren't pure rename/move**, it should treat that as a HIGH-priority flag, not normal review noise. Agents under pressure to make CI go green frequently rewrite the assertions to match the (broken) code rather than fixing the code to match the (correct) assertions — and the resulting PR passes its own tests by construction. Per §3e *Refactoring Discipline*, "if a 'refactor' commit also modifies tests in ways that aren't pure rename/move, it's not a refactor — it's a rewrite." Apply the same lens to all PRs: an assertion rewrite is a behavior change in disguise; ask explicitly *"why did this assertion need to change, and is the new assertion correct?"* For projects with the budget, **mutation testing** is the strong falsifier — it verifies that the test would actually catch a real regression rather than just passing-by-construction (Osmani 2026 *Agentic Code Review*).
+#### Test-change verification
+
+A load-bearing reviewer behavior. When the auto-review skill (or the human reviewer) sees a PR that **modifies tests in ways that aren't pure rename/move**, it should treat that as a HIGH-priority flag, not normal review noise. Agents under pressure to make CI go green frequently rewrite the assertions to match the (broken) code rather than fixing the code to match the (correct) assertions — and the resulting PR passes its own tests by construction. Per §3e *Refactoring Discipline*, "if a 'refactor' commit also modifies tests in ways that aren't pure rename/move, it's not a refactor — it's a rewrite." Apply the same lens to all PRs: an assertion rewrite is a behavior change in disguise; ask explicitly *"why did this assertion need to change, and is the new assertion correct?"* For projects with the budget, **mutation testing** is the strong falsifier — it verifies that the test would actually catch a real regression rather than just passing-by-construction (Osmani 2026 *Agentic Code Review*).
 
 ### Cross-provider review
 
@@ -523,7 +537,7 @@ Same-family review (Claude reviewing Claude, GPT reviewing GPT) tends to validat
 
 **When this earns its cost:**
 
-- Tier Medium+ changes where same-family blind spots are most expensive (security, data integrity, contract integrity)
+- Medium+ risk-level changes where same-family blind spots are most expensive (security, data integrity, contract integrity)
 - Projects with API access to multiple providers (Anthropic + OpenAI, Anthropic + Gemini, etc.)
 - LLM-feature products where the review system itself shouldn't be single-vendor (otherwise a vendor-specific bug propagates from author to reviewer to production)
 
@@ -691,6 +705,31 @@ The §3d code-review three-layer model (mechanical / AI pre-screen / human focus
 - §3c — Multi-decision refactorings should use the §3c protocol (don't batch refactoring decisions)
 - §3d code review — Refactoring commits should be flagged for "behavior unchanged" verification
 - §10 change propagation — Refactoring that renames or moves things must update the propagation map in lockstep
+
+---
+
+## 3f. Eval Suite Management
+
+§3 *Tests and Evals* drew the line: tests verify deterministic code (input → output); evals verify non-deterministic agent behavior (trajectory, tool choice, output quality). §3f is the operational half — how to build and maintain the eval suite that the §3 *Multi-Provider Behavioral Testing* matrix runs against.
+
+**Adopt when** (§0.9 default-deny — cite a concrete trigger): the product ships LLM/agent features whose correctness depends on model behavior, **and** at least one of — a behavior regression reached production that no test could have caught; a prompt or model change shipped with no way to tell if quality moved; you are about to rely on agent output in a path with real blast radius. Absent a trigger, **defer** — evals are real recurring cost, not a default.
+
+**Cost profile:** Specialist-required (eval design) · Weeks setup, ongoing per-change token cost · Architectural + Spend (judge/model API per run). Expect 10–100× a unit-suite's per-run cost.
+
+**The parts:**
+
+| Part | What it is |
+|---|---|
+| **Golden dataset** | A versioned set of inputs + expected behavior (often a rubric or invariants, not an exact string). It grows from real failures — every production miss becomes a case. Version it like code; a changed expected-answer is a reviewed diff (the §3d *test-change check* applies — an assertion quietly weakened to pass is a regression in disguise). |
+| **Scoring** | How a run is judged: programmatic assertions where output is checkable; rubric + **LLM-as-judge** where it's qualitative (judge with a *different* model family per §3d cross-provider review, so the system isn't grading its own homework); human spot-check on a sample. State the pass bar per case. |
+| **Eval-driven workflow** | Run the suite on every prompt-file, instruction-file, model, or tool-schema change — exactly the changes tests don't cover. A prompt edit shipped with no eval delta is unverified (cross-ref §14b). |
+| **Regression evals + CI** | Gate a small critical subset per commit; run the full matrix nightly / per-release (§3 *Multi-Provider Behavioral Testing*). Track scores over time — a downward trend across model versions is drift (§14c). |
+
+**Watch signals:** the eval set hasn't grown after a production miss (failures aren't being captured) · scores are reported but never gate anything · the judge is the same model family as the system under test (correlated blindness, §3d).
+
+**Kill criterion (ledger, §0.9):** demote to per-release-only if no eval has caught a regression in N releases *and* the prompt / model / tool surface is stable; remove if the LLM feature it covered is gone.
+
+**Cross-references:** §3 *Tests and Evals* (the distinction) · §3 *Multi-Provider Behavioral Testing* (the matrix evals run on) · §14b prompt & instruction-file engineering (what the eval-driven workflow gates) · §14c model-version pinning & drift (evals are the drift detector) · §0.6b AI-discipline spectrum (no evals → vibe-coding-adjacent regardless of prompt sophistication) · §9.7 cost caps (eval runs are recurring spend).
 
 ---
 

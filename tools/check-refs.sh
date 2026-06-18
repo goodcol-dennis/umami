@@ -109,6 +109,47 @@ if [ "$SHOW_UNUSED" = "1" ]; then
   done
 fi
 
+# ── Second invariant: relative markdown links resolve to real files ──
+# §N checking can't see a broken *path* — e.g. a `core/` file linking
+# [umami.md](umami.md) (resolves to the non-existent core/umami.md) instead of
+# ../umami.md. This check resolves every local relative link against its
+# containing directory and flags dead targets. Scoped to git-tracked files, so
+# gitignored scratch (review/, out/) is skipped. Surfaced by the 2026-06-17
+# multi-model readability sweep, which found ~18 such breaks check-refs missed.
+broken_link_count=0
+broken_links=""
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  dir=$(dirname "$f")
+  in_fence=0
+  while IFS= read -r line; do
+    # Toggle fenced-code-block state on ``` / ~~~ fences and skip their contents —
+    # example snippets routinely contain illustrative `](path)` that aren't repo links.
+    case "$line" in
+      '```'*|'~~~'*) in_fence=$((1 - in_fence)); continue ;;
+    esac
+    [ "$in_fence" = "0" ] || continue
+    # Strip inline code spans too, so `[x](x)` example text inside backticks is ignored.
+    stripped=$(printf '%s' "$line" | sed -E 's/`[^`]*`//g')
+    links=$(printf '%s\n' "$stripped" | grep -oE '\]\([^)]+\)' | sed -E 's/^\]\((.*)\)$/\1/' || true)
+    [ -n "$links" ] || continue
+    while IFS= read -r target; do
+      [ -n "$target" ] || continue
+      # Strip an optional ` "title"` suffix, then any #anchor.
+      target="${target%% *}"
+      path="${target%%#*}"
+      [ -n "$path" ] || continue   # pure in-page anchor (#foo) — nothing to resolve
+      case "$path" in
+        http://*|https://*|mailto:*|/*) continue ;;   # external / absolute — out of scope
+      esac
+      if [ ! -e "$dir/$path" ]; then
+        broken_links="${broken_links}  ${f} → ${target}"$'\n'
+        broken_link_count=$((broken_link_count + 1))
+      fi
+    done <<< "$links"
+  done < "$f"
+done < <(git ls-files '*.md')
+
 if [ "$QUIET" != "1" ]; then
   echo "=== umami cross-reference fitness check ==="
   echo "Defined sections: $(echo "$defined" | wc -w)"
@@ -126,6 +167,14 @@ if [ "$QUIET" != "1" ]; then
     done
   fi
 
+  echo ""
+  if [ "$broken_link_count" = "0" ]; then
+    echo "✓ All relative markdown links resolve to existing files."
+  else
+    echo "✗ ${broken_link_count} broken relative link(s) found:"
+    printf '%s' "$broken_links"
+  fi
+
   if [ "$SHOW_UNUSED" = "1" ] && [ -n "$unused" ]; then
     echo ""
     echo "Informational — sections defined but never referenced (may be intentional):"
@@ -135,6 +184,7 @@ if [ "$QUIET" != "1" ]; then
   fi
 fi
 
-# Cap exit code at 255 to fit POSIX exit range
-[ "$orphan_count" -gt 255 ] && orphan_count=255
-exit "$orphan_count"
+# Exit code reflects both invariants; capped at 255 to fit the POSIX range.
+total=$((orphan_count + broken_link_count))
+[ "$total" -gt 255 ] && total=255
+exit "$total"

@@ -1,6 +1,6 @@
 # Web Frontend Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §17**
+**Extension of [Rapid Development Guardrails](../umami.md) — §17**
 
 This extension covers browser-based web applications — SPAs, SSR apps, static sites, and web dashboards. The core template covers testing, specs, and process discipline generically. This extension adds the visual, accessibility, and performance dimensions unique to frontend work.
 

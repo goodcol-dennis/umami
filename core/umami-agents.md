@@ -1,6 +1,6 @@
 # Umami — Agent Infrastructure Extension
 
-This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *agent infrastructure* concern cluster — practices specific to running AI agents efficiently within the project context.
+This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](../umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *agent infrastructure* concern cluster — practices specific to running AI agents efficiently within the project context.
 
 **When to fetch this file:** When an audit, init, or implementation task hits a Tier 2+ practice in any of §9 / §11 / §14. Specifically: token efficiency, persistent memory, context-window optimization, file-size budgets (sized for agent context), agent orchestration, approval gates, lifecycle hooks, model routing, MCP/tool integration.
 
@@ -610,6 +610,70 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 - **Review agent-generated code like any other code.** Code review discipline doesn't change because an agent wrote it. The reviewer is responsible for understanding what they approve — "the agent wrote it" is not a justification for merging code no human understands (§3b — Don't Program by Coincidence).
 - **Avoid parallel agent edits to the same files.** Two agents editing the same file in separate branches produces merge conflicts that are hard to resolve because neither developer fully understands the other agent's changes. Coordinate scope before starting, not after conflicting.
 - **Converge on shared skills.** If two developers create different agent skills for the same task (e.g., two different security review prompts), consolidate them into the project skill library. Inconsistent agent behavior across the team produces inconsistent output.
+
+---
+
+## 14b. Prompt & Instruction-File Engineering
+
+Instruction files (`CLAUDE.md` / `AGENTS.md` / `.cursorrules` / equivalent) and the prompts inside skills are the most load-bearing agent inputs in the project — and they're usually edited by feel, untracked, untested. §14b treats them as engineered artifacts: **a change to an instruction file is a change to agent behavior**, and behavior changes get versioned, reviewed, and verified.
+
+**Adopt when** (§0.9 default-deny — cite a trigger): an instruction-file or prompt change measurably moved agent behavior and you couldn't tell which edit did it; **or** the instruction file is edited often by multiple people; **or** a prompt regression shipped. Solo dev on a stable instruction file: **defer**.
+
+**Cost profile:** Agent-with-review · Hours per change · Recurring discipline.
+
+**The practice:**
+- **Treat instruction/prompt edits as behavior changes.** Diff them in §3d review like code. A one-line `CLAUDE.md` edit can shift every session's behavior; it deserves the same scrutiny as a code change with that blast radius.
+- **Structure the prompt.** Delineate instructions from content (XML tags / fenced blocks), use consistent role framing, add few-shot examples for nuanced tasks, and keep *stable* instructions separate from *volatile* context (per §9 front-loading) so the cacheable part stays cacheable.
+- **Verify against evals.** A prompt or instruction-file change shipped with no §3f eval delta is unverified. For a load-bearing prompt, compare behavior on the golden set before/after the change.
+- **Separate shared from personal.** Committed project instructions (shared behavior) vs. uncommitted user-scope preferences — same split as §14 hook configuration.
+
+**Watch signals:** instruction file grows monotonically and nobody measures the effect · prompt changes land without an eval delta · the same instruction is restated in 3+ places (drift risk).
+
+**Kill criterion (ledger, §0.9):** demote to "review like code, no formal before/after" once the instruction surface stabilizes and behavior stops moving across edits.
+
+**Cross-references:** §9 token efficiency / front-loading (stable-vs-volatile context) · §3f eval suite (what verifies a prompt change) · §3d review (instruction edits are behavior changes) · §0.6b AI-discipline spectrum · §14 lifecycle hooks (session-start re-walk of instruction files).
+
+## 14c. Model-Version Pinning & Drift Detection
+
+Providers ship model updates that silently change behavior, and floating aliases (`*-latest`, an unversioned `gpt-x`) move under you between runs. A prompt that worked yesterday can regress today with no diff in your repo. §14c makes the model an explicit, pinned, monitored dependency.
+
+**Adopt when** (§0.9 default-deny — cite a trigger): correctness depends on a model's behavior in production **and** either a provider model update has already changed that behavior, or your config currently routes through a floating alias. If you don't ship agent behavior, or already pin and eval on bumps: **defer**.
+
+**Cost profile:** Operator-required · Hours setup + per-bump eval cost · Recurring.
+
+**The practice:**
+- **Pin exact model IDs** (dated / version-locked), never floating aliases, in agent config — and record the pinned version where the §0.9 ledger or config can show it.
+- **Gate every model bump on evals.** Before adopting a new version, run the §3f suite against the held-out golden set on the new model; compare scores; canary on a slice of traffic before full cutover.
+- **Keep a rollback.** The prior pinned version stays available; revert on regression rather than firefighting forward.
+- **Track deprecation.** Note provider EOL dates; schedule migrations through the eval gate, not under deadline pressure.
+- **Watch divergence in multi-model setups.** Lead and worker models can drift apart (§14 orchestration / model routing); a bump to one is a behavior change to the system.
+
+**Watch signals:** config uses `*-latest` / unversioned aliases · a model was bumped with no eval run · a behavior regression was traced to a silent model update *after* it shipped.
+
+**Kill criterion (ledger, §0.9):** low standing cost once set up, so removal is rare; demote the per-bump eval gate if the product stops depending on specific model behavior.
+
+**Cross-references:** §3f eval suite (the bump gate) · §3 *Multi-Provider Behavioral Testing* · §14 model routing · §9.7 cost caps (new model versions change cost) · §0.9 (the pin decision is a recorded adoption).
+
+## 14d. Agent-Failure Debugging (trajectory forensics)
+
+§3b debugs *code*. §14d debugs *the agent* — diagnosing why an autonomous run went wrong when the code is fine: a tool-call loop, context loss after compaction, the wrong tool chosen, a silent fallback to a weaker model, or confidently-wrong output that read as plausible. These failures are nondeterministic and don't reproduce from a stack trace.
+
+**Adopt when** (§0.9 default-deny — cite a trigger): agents run autonomously enough that failures are nondeterministic and hard to reproduce, **and** you've had at least one agent failure you couldn't diagnose from code logs alone. Interactive-only / low-autonomy use: **defer**.
+
+**Cost profile:** Operator-required · Hours per incident · Recurring (incident-driven).
+
+**The practice:**
+- **Capture the trajectory.** Per-turn trace — tool calls, arguments, results, decisions — must be logged (§4 agent log discipline). You cannot debug what you didn't record; this is the prerequisite, set up before the first incident.
+- **Reproduce from the trace.** Replay the run, note seed/temperature, and isolate the divergent turn.
+- **Match the failure shape to a first check:** tool-call loop → budget / stuck-loop guard; context loss → inspect what compaction dropped; silent model fallback → verify which model *actually* ran (ties to §14c); confidently-wrong output → the §3d intent-reconstruction problem, not a code bug.
+- **Run the incident runbook:** grab logs → reconstruct the call sequence → diff skills / hooks / instruction-files since the last good run (§14b) → identify the changed input.
+- **Feed findings back.** A reproducible agent failure becomes a §3f eval case so it can't silently return.
+
+**Watch signals:** agent failures closed as "flaky, re-ran it" with no root cause · no per-turn trace exists when an incident hits · the same failure recurs across runs.
+
+**Kill criterion (ledger, §0.9):** incident-driven, low standing cost; demote the formal runbook if autonomy drops and failures become trivially reproducible from ordinary logs.
+
+**Cross-references:** §3b systematic debugging (code) · §4 agent log discipline (the trace source) · §3d review (confidently-wrong output = intent reconstruction) · §3f eval suite (failures become regression cases) · §14c drift (silent model fallback).
 
 ---
 

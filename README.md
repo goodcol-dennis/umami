@@ -153,6 +153,7 @@ These practices cost almost nothing to adopt and prevent the most common sources
 | Enforced consistency (types, linting, formatting) | §6 | Catches errors at build time, not in production or code review |
 | Dead code hygiene | §13 | Reduces codebase noise that confuses agents and humans |
 | Pre-commit checklist | §15 (partial) | Catches common mistakes before they compound |
+| Adoption ledger + anti-overhead litmus | §0.9 | The meta-gate: default-deny on new process, a written reason + falsifiable kill criterion per adopted practice, and the 30-day "is it earning its keep?" test. Cheap, and it keeps every other tier honest |
 
 **Tier 2 — Structure** (adopt when the project outlives its first sprint)
 
@@ -177,6 +178,8 @@ These practices pay off when you start maintaining what you built, onboarding co
 | Recovery runbooks per stateful surface | §5 | Project has persistent state that would be hard to reconstruct from scratch |
 | Lifecycle hooks for automated behaviors | §14 | Project has "from now on when X, do Y" rules that need to fire automatically |
 | File size budgets | §11 | Files are getting long enough that agents truncate or miss context |
+| Prompt & instruction-file engineering | §14b | Instruction-file / prompt edits move agent behavior and you can't tell which change did it, or the file is edited often by multiple people |
+| Model-version pinning & drift detection | §14c | Correctness depends on model behavior in production; a model update changed behavior, or config routes through floating aliases |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
 
@@ -201,6 +204,8 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
+| Eval suite management | §3f | LLM/agent-feature product whose correctness depends on model behavior; a regression shipped that tests couldn't catch, or a prompt/model change shipped with no quality signal |
+| Agent-failure debugging (trajectory forensics) | §14d | Agents run autonomously and a failure couldn't be diagnosed from code logs alone |
 
 **Extensions** follow the same principle: apply when the domain is present *and* the project is at least Tier 2. A WordPress site in its first week doesn't need §20.8 production monitoring — but it does need §20.2 security basics.
 
@@ -260,15 +265,16 @@ The core spans 5 files in v3. Section numbers are stable across files; the **Fil
 
 | § | Topic | File |
 |---|-------|------|
-| §0 | Project discovery — onboarding questionnaire, adoption tiers, AI-discipline spectrum (vibe coding ↔ structured AI-assisted ↔ agentic engineering, after Osmani/Saboo/Kartakis 2026), onboarding anti-patterns, tiered audit protocol, init protocol | `umami.md` |
+| §0 | Project discovery — onboarding questionnaire, adoption tiers, AI-discipline spectrum (vibe coding ↔ structured AI-assisted ↔ agentic engineering, after Osmani/Saboo/Kartakis 2026), onboarding anti-patterns, **adoption ledger + adopt/retire gate (§0.9: default-deny, convergence-read decision, retirement pass, 30-day anti-overhead litmus)**, tiered audit protocol, init protocol | `umami.md` |
 | §1 | Project structure — predictable layouts, workspace partitioning, phase/session hierarchy, multi-surface/one-primitive pattern, preserving project structure (structure-as-contract discipline) | `umami.md` |
 | §2 | Specification-first development — specs before code; relationship to Spec-Driven Development (SDD) as the closest movement | `core/umami-quality.md` |
 | §2b | Async channel contracts — typed channel + origin tag + allowed-consumer list + audit-on-add at code review; structural parallel to §4 untrusted-content discipline applied to *reachability scope* instead of trust scope; addresses leaky-async-interface failure modes (global bus, untyped payload, catch-all UI notification surface, shared worker-output display) | `core/umami-quality.md` |
-| §3 | Multi-layer test infrastructure — tests vs. evals as verification's two halves (deterministic + non-deterministic), unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-tier matrix) for LLM-feature products | `core/umami-quality.md` |
+| §3 | Multi-layer test infrastructure — tests vs. evals as verification's two halves (deterministic + non-deterministic), unit, E2E, visual regression, API tests, architectural fitness functions (architecture-invariant tests), multi-provider behavioral testing (provider × substrate-level matrix) for LLM-feature products | `core/umami-quality.md` |
 | §3b | Development process discipline — TDD, systematic debugging, verification, brownfield mapping before changes | `umami.md` |
 | §3c | Interactive decision planning — six-step protocol for designs with multiple compounding decisions, output-format discipline | `core/umami-quality.md` |
 | §3d | Code review discipline — three-layer model (mechanical / AI pre-screen / risk-classified human focus); risk taxonomy with auto-merge thresholds (Trivial → Critical, each with default disposition); cross-provider review (adversarial-eye principle: review with a model from a different family than the author); flags-document format; spot-check sampling; watch signals | `core/umami-quality.md` |
 | §3e | Refactoring discipline — tests as safety net (non-negotiable); named transformations; small atomic commits; refactoring vs. cleanup distinction; agentic-velocity refactoring patterns | `core/umami-quality.md` |
+| §3f | Eval suite management — golden datasets (grown from real failures), scoring (programmatic / rubric + LLM-as-judge with a different model family), eval-driven workflow (run on prompt/model/tool changes), regression evals + CI; the operational half of §3's tests-vs-evals split | `core/umami-quality.md` |
 | §4 | Runtime validation — structural correctness, observability, threat modeling (DFD + STRIDE / OWASP / MITRE ATT&CK / LINDDUN / PASTA), trust posture (perimeter-trust vs. zero-trust; NIST 800-207 / CISA ZTMM alignment), security discipline, agent runtime security, untrusted-content boundaries (prompt-injection hardening for LLM-feature products), agent log discipline (5-layer logs + retention + review cadence). Tier 1 security floor lives in landing's *Security Essentials* sidebar. | `core/umami-runtime.md` (Tier 1 floor in landing) |
 | §5 | State tracking & recoverability — versioned, undoable state, per-stateful-surface recovery runbooks (failure modes / detection / restore steps / RTO-RPO / prevention) | `core/umami-runtime.md` |
 | §6 | Enforced consistency — strict types, style rules, environment isolation, dependency hygiene, supply chain attack defenses | `umami.md` |
@@ -281,6 +287,9 @@ The core spans 5 files in v3. Section numbers are stable across files; the **Fil
 | §12 | Lightweight change tracking — active change blocks, session handoffs | `core/umami-process.md` |
 | §13 | Dead code hygiene — delete, don't comment out | `umami.md` |
 | §14 | Agent orchestration — modes of AI use (implementation / thinking / reviewing), delegation (incl. cost-as-lever framing), model routing, skills, parallel review, MCP/tool integration with server-selection criteria, agent approval gate tables (HARD/SOFT/NONE), lifecycle hooks (four neutral categories: *before-tool* / *after-tool* / *session-start* / *turn-end*, with per-harness identifier mapping for Claude Code / Cursor / Aider / Codex CLI / Goose) | `core/umami-agents.md` |
+| §14b | Prompt & instruction-file engineering — treat instruction-file / prompt edits as behavior changes (versioned, reviewed in §3d, eval-verified via §3f); prompt structure (delineate instructions from content); stable-vs-volatile context split | `core/umami-agents.md` |
+| §14c | Model-version pinning & drift detection — pin exact model IDs (no floating aliases); gate every model bump on the §3f eval suite; rollback + deprecation handling | `core/umami-agents.md` |
+| §14d | Agent-failure debugging — trajectory forensics for autonomous-run failures (tool loops, context loss, silent model fallback, confidently-wrong output); incident runbook; reproducible failures become §3f eval cases | `core/umami-agents.md` |
 | §15 | Checklist — before starting, during dev, before commit, before merge | `umami.md` |
 
 ### Extensions

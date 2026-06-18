@@ -5,7 +5,7 @@ description: First-time umami setup or upgrade-existing-setup. Discovers project
 
 # umami-init — Initialization protocol
 
-**Last synced:** 2026-05-22 from §0.7b (umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on findings — applied where init surfaces process recommendations, not for mechanical URL/skill installation; auto-chain into `/umami-audit` on successful apply added 2026-05-22). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-06-18 from §0.7b (added §0.9 adoption-ledger seeding + default-deny adoption on init; umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on findings — applied where init surfaces process recommendations, not for mechanical URL/skill installation; auto-chain into `/umami-audit` on successful apply added 2026-05-22). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -53,7 +53,7 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
 
 5. **Show the user the proposed changes, then present the four-option dialog.** Enumerate every file that would be modified or created — paths, line counts, the exact URL block that would land in each instruction file, which skill files would be created or updated and at what `Last synced:` date. The user must be able to read the diff before deciding. Then surface the dialog (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
 
-6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first; if the existing skill has a newer or different `Last synced` date, surface the conflict before resolving.
+6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first; if the existing skill has a newer or different `Last synced` date, surface the conflict before resolving. **Seed the §0.9 adoption ledger** (`docs/umami-adoption.md`): one row per Tier-2+ practice this init adopts, each with the concrete discovery artifact as triggering evidence and a falsifiable kill criterion. Adopt under default-deny (§0.9) — only practices a discovery artifact justifies; a URL-list entry alone is not an adoption.
 
 7. **Check for skill drift before finalizing.** Compare this skill's embedded shape against the freshly-fetched §0.7b: count of disposition options in the four-option dialog, count of hard rules below, structure of the procedure. Also check the `**Last synced:**` header against today. If structural drift OR `Last synced` is >3 months old, append a non-blocking `### Skill drift` callout to the report (one line, doesn't count toward the ≤5 limit).
 

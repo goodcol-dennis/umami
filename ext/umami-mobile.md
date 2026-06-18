@@ -1,6 +1,6 @@
 # Mobile App Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §19**
+**Extension of [Rapid Development Guardrails](../umami.md) — §19**
 
 This extension covers native and cross-platform mobile applications (iOS, Android, React Native, Flutter, Kotlin Multiplatform). Mobile development shares many guardrail principles with web, but differs in release mechanics, testing infrastructure, and constraints. You can't hotfix a shipped binary — every release goes through an app store review process, and users update on their own schedule.
 

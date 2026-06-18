@@ -1,6 +1,6 @@
 # Data Pipeline Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §18**
+**Extension of [Rapid Development Guardrails](../umami.md) — §18**
 
 This extension covers data ingestion, transformation pipelines, warehousing, and analytics systems. The core template assumes application development patterns — test suites run in seconds, changes affect UI or API responses, and the blast radius is a broken page. Data projects have different failure modes: silent corruption, schema drift, stale data, and transforms that produce wrong results without errors.
 

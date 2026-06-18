@@ -5,7 +5,7 @@ description: Periodic process audit against the Umami framework. Read-only — p
 
 # umami-audit — Process audit against the Umami framework
 
-**Last synced:** 2026-05-16 from §0.7 (umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on recommendations). Re-derive this skill from the current §0.7 when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-06-18 from §0.7 (added the §0.9 retirement pass + default-deny adoption rule — the audit is now bidirectional, adopt and retire; plus the AI-feature posture/verification step from §0.6b spectrum + tests-vs-evals per §3; umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on recommendations). Re-derive this skill from the current §0.7 when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -31,8 +31,10 @@ Audits the project's development PROCESS against the Umami framework — testing
 3. **Cite a file path or doc reference for every observation.** Findings without citations are opinion.
 4. **Produce 3–5 actionable recommendations** — never more — using the §0.7 output format.
 5. **Name watch signals** for any flagged anti-patterns. Verdicts without falsifiers become opinion.
-6. **Audit is read-only** — do not modify code or docs during the audit phase.
-7. **Check for skill drift before finalizing.** Compare this skill's embedded shape against the freshly-fetched §0.7: count of disposition options in the four-option dialog, count of hard rules below, shape of the output-format block. Also check the `**Last synced:**` header against today. If structural drift OR `Last synced` is >3 months old, append a non-blocking `### Skill drift` callout to the report (one line, doesn't count toward the ≤5 limit).
+6. **For AI-feature projects, assess posture and verification** — note the §0.6b spectrum position (vibe / structured / agentic) and whether verification covers both tests (deterministic) and evals (non-deterministic agent behavior, §3). Agentic posture with no evals is a gap worth surfacing.
+7. **Run the §0.9 retirement pass — the audit is bidirectional.** Steps 1–2 are the *adopt* half. The *retire* half reads the §0.9 adoption ledger (`docs/umami-adoption.md`) and, per practice, checks its kill criterion + the 30-day litmus; flag any that no longer earn their keep with a **Deprecate / Remove** recommendation. Adoption follows default-deny: cite a concrete project artifact as evidence of pain — "the project lacks §X" is not a finding. An add-only audit is the *Monotonic process accretion* anti-pattern.
+8. **Audit is read-only** — do not modify code or docs during the audit phase.
+9. **Check for skill drift before finalizing.** Compare this skill's embedded shape against the freshly-fetched §0.7: count of disposition options in the four-option dialog, count of hard rules below, shape of the output-format block. Also check the `**Last synced:**` header against today. If structural drift OR `Last synced` is >3 months old, append a non-blocking `### Skill drift` callout to the report (one line, doesn't count toward the ≤5 limit).
 
 ## Hard rules (non-negotiable)
 

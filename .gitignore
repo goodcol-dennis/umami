@@ -19,3 +19,9 @@ mcp.json
 *.swp
 *.swo
 .DS_Store
+
+# Multi-model sweep scratch (dev tooling, not corpus) — see
+# tools/build-review-corpus.sh and the b1review fan-out. Regenerable; never commit.
+review/
+out/
+out-*/

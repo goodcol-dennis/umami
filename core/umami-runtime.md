@@ -1,6 +1,6 @@
 # Umami — Runtime / Operations / Security Extension
 
-This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *runtime / operations / security* concern cluster — runtime validation, threat modeling, trust posture, security disciplines, state recovery, developer experience and pipeline health.
+This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](../umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *runtime / operations / security* concern cluster — runtime validation, threat modeling, trust posture, security disciplines, state recovery, developer experience and pipeline health.
 
 **When to fetch this file:** When an audit, init, or implementation task hits a Tier 2+ practice in any of §4 / §5 / §6b. Specifically: threat modeling, trust posture, security depth beyond the day-one floor, agent runtime security, untrusted-content boundaries, agent log discipline, state recovery runbooks, or pipeline health audit. The landing document's *Security Essentials* sidebar holds the Tier 1 floor and points here for depth.
 

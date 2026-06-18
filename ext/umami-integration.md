@@ -1,6 +1,6 @@
 # Systems Integration Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §24**
+**Extension of [Rapid Development Guardrails](../umami.md) — §24**
 
 This extension covers service-to-service communication: API contracts, webhooks, message-based integration, resilience patterns (retry, circuit breakers, timeouts), and the testing discipline required when your system depends on services you don't control. The core template assumes a single application boundary. This extension addresses what happens when your system is one node in a network of services — internal microservices, third-party APIs, webhook providers, and message brokers.
 

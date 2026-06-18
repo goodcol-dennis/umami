@@ -1,6 +1,6 @@
 # Compliance & Regulated Industry Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §22**
+**Extension of [Rapid Development Guardrails](../umami.md) — §22**
 
 This extension covers compliance, regulated data handling, and audit readiness for projects operating in regulated industries (healthcare, finance, government) or subject to cyber liability insurance requirements. The core template establishes development process discipline — testing, specs, security hygiene, change tracking. This extension bridges the gap between development process and the organizational controls that compliance frameworks (HIPAA, SOC 2, PCI-DSS, GDPR, FDA) and cyber liability insurers require.
 

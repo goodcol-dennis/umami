@@ -1,6 +1,6 @@
 # Infrastructure-as-Code Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §16**
+**Extension of [Rapid Development Guardrails](../umami.md) — §16**
 
 This extension covers infrastructure-as-code (Terraform, Pulumi, CloudFormation, CDK), cloud provisioning, and DevOps automation. The core template is oriented toward application development — testing assumes unit/E2E/visual, specs assume component contracts, and the structure assumes `src/`. Infrastructure projects have fundamentally different risks, blast radii, and disciplines.
 

@@ -1,7 +1,7 @@
 # Umami Extension — Homelab Infrastructure Patterns
 
 > **Section 26 — Homelab Infrastructure Management**
-> Extension of [umami.md](umami.md). Patterns for managing a homelab environment with VMs, containers, VPN, DNS, monitoring, and remote access.
+> Extension of [umami.md](../umami.md). Patterns for managing a homelab environment with VMs, containers, VPN, DNS, monitoring, and remote access.
 
 ---
 

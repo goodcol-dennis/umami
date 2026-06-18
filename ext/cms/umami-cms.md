@@ -1,6 +1,6 @@
 # CMS Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §25**
+**Extension of [Rapid Development Guardrails](../../umami.md) — §25**
 
 This extension covers practices common to all content management systems — WordPress, Drupal, and others. CMS platforms share a distinct risk profile: a large ecosystem of third-party extensions (plugins, modules, themes), a culture of composing sites from pre-built components, content/configuration/code boundaries that blur easily, and production environments where non-developers make changes through admin UIs.
 
@@ -9,7 +9,7 @@ This extension covers practices common to all content management systems — Wor
 > **Planned consolidation:** The standalone WordPress (§20) and Drupal (§21) extensions are being rolled into this file in a future release. The shared CMS practices already cover most of the surface area; platform-specific implementation detail will move here as thinner subsections rather than separate documents. Section numbers §20 and §21 will be retained for traceability.
 
 **Loading order:** A CMS project loads three layers:
-1. [umami.md](umami.md) — core guardrails
+1. [umami.md](../../umami.md) — core guardrails
 2. This file (`umami-cms.md`) — CMS-generic practices
 3. The platform-specific file (e.g., `cms/umami-wordpress.md`) — platform-specific implementation
 

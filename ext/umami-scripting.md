@@ -1,6 +1,6 @@
 # Scripting & CLI Automation Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §23**
+**Extension of [Rapid Development Guardrails](../umami.md) — §23**
 
 This extension covers shell scripts (bash, zsh, PowerShell, bat), automation scripts (Python, Node, Ruby), and CLI tools built in any language where the primary use case is scripting and automation rather than a full application. The core template assumes application development patterns — test suites with frameworks, CI/CD pipelines, and structured project layouts. Scripts have different failure modes: silent data loss from unhandled errors, brittle assumptions about the execution environment, and one-off tools that quietly become load-bearing production infrastructure.
 

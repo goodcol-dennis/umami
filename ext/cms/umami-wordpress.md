@@ -8,6 +8,8 @@ This extension covers WordPress-specific development — themes, plugins, and si
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies a CMS / WordPress layer.
 
+**Adopt when (§0.9):** the §25 gate in [umami-cms.md](umami-cms.md) has fired AND the platform is WordPress — the shared gate, cost profile, and kill criterion apply; this file adds no separate ledger entry.
+
 **Loading order:** Load all three layers:
 1. [`umami.md`](../../umami.md) — core guardrails
 2. [`umami-cms.md`](umami-cms.md) — CMS-generic practices (§25)

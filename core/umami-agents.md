@@ -86,6 +86,7 @@ Maintain a **codebase understanding document** (e.g., `CODEBASE.md` at the repo 
 
 - After completing a feature that changes how the codebase works (new layer, new pattern, new convention)
 - After an agent session where the agent had to re-derive something that should have been pre-written
+- The moment observed reality contradicts the document — reality wins; fix the doc in the same change
 - As part of the "Before Every PR/Merge" checklist
 
 **The key instruction in CLAUDE.md:**
@@ -93,7 +94,11 @@ Maintain a **codebase understanding document** (e.g., `CODEBASE.md` at the repo 
 ```
 Read CODEBASE.md before starting any task. Treat it as ground truth for how this project works.
 Do not re-derive what is already stated there. Only explore files you plan to modify.
+If observed reality contradicts CODEBASE.md, reality wins — trust what the code actually does,
+and update CODEBASE.md in the same change so the next session inherits the correction.
 ```
+
+The reality-wins clause is load-bearing, not a hedge: without it, "treat it as ground truth" instructs the agent to act confidently on a document that drifted last sprint. The document is a cache of derived understanding; a cache can be stale, and a stale entry gets invalidated by the read that discovers it, not trusted over the source.
 
 The goal is zero "let me understand the codebase" processing. The agent reads the document and already understands. When the codebase evolves, the document evolves with it.
 
@@ -199,6 +204,8 @@ A 10% ET reduction means a genuine 10% cost reduction, regardless of the model m
 
 Measurement (ET formula above) tells you what costs were spent. Cost caps tell the harness when to *stop* spending. For projects running agents at scale — many invocations per day, many sub-agent dispatches, many provider calls — caps are the difference between predictable cost and surprise bills.
 
+**Applies to — two audiences, two implementations.** Teams *building* agent products implement the cap layers below in their own harness code. Teams *using* a coding agent can only enforce what their harness and provider expose — typically provider-side spend limits, plan budgets, and (where supported) hook-based checks. If your harness exposes no budget hook, the practicable form of this practice is a provider-side spend limit plus the per-day review habit; document *that* as the cap rather than aspiring to enforcement surfaces you don't have (§0.6 "Cost caps in policy doc but not in code" still applies — the enforcement just lives at the provider).
+
 **Three layers of cap:**
 
 | Layer | What it caps | When it triggers |
@@ -265,7 +272,7 @@ Splitting large files also reduces blast radius: a change to one extracted modul
 
 The 400-line budget targets *source code* — files that ship as part of an application. It also applies to most design docs, with a typical ceiling of ~800 lines (split when there are clear sub-topics). It does **not** apply to documents whose section identifiers are external contracts.
 
-A canonical example is this very document. Sections of `umami.md` are referenced as `§0.6`, `§3c`, `§9.1`, etc., from extension files, downstream consumers, agent skills, and bookmarks. Renumbering or splitting would break those references silently. The cost of preserving stable IDs outweighs the benefit of staying under a line budget.
+A canonical example is the umami corpus itself. Sections are referenced as `§0.6`, `§3c`, `§9.1`, etc., across the landing document (`umami.md`), the companion files (including this one), extension files, downstream consumers, agent skills, and bookmarks. Renumbering or splitting would break those references silently. The cost of preserving stable IDs outweighs the benefit of staying under a line budget.
 
 For documents in this category:
 - The budget is **suspended**, not removed. Track the size as a gap (§8) and revisit if the file grows large enough that agents truncate it on read or that humans can no longer scan it.
@@ -473,6 +480,8 @@ For projects where agents take consequential actions (write files, run commands,
 
 §14 above describes how agents work; this sub-section describes how to gate what they do.
 
+**Applies to — two audiences, differently.** Agent *users*: the gates already exist — they are your harness's permission system; your gate table documents which harness setting, permission rule, or hook implements each row, so the *Implementation pointer* column points at configuration, not code you write. Agent-*product* builders: you implement the gates yourselves, and the pointer names the module. The severity model and the table shape are the same for both.
+
 **Severity model:**
 
 | Severity | Meaning |
@@ -507,16 +516,16 @@ Some actions are HARD-blocked regardless of whether the agent is interactive, sc
 
 Document these explicitly in the gate table with a note that the severity is HARD-mode-independent.
 
-**Logging summary — companion table:**
+**Logging summary — companion table.** The Retention column names each layer's *default*, which per §4 agent-log discipline is a starting position to replace with an explicit policy, not a policy itself ("permanent" and "until deleted" are handwaves):
 
 | Log | Location | Retention |
 |---|---|---|
-| Tool-call log (per-message) | Project-specific (chat sessions storage, etc.) | Until session deleted |
-| Grant decisions | Grants registry | Persistent until user clears |
-| Commit log (agent-driven commits) | Standard `git log` | Permanent |
-| Hook execution log | User-controlled | User-controlled |
+| Tool-call log (per-message) | Project-specific (chat sessions storage, etc.) | Harness default: until session deleted. Set an explicit horizon (e.g., 90 days) when compliance or incident-response needs one |
+| Grant decisions | Grants registry | Harness default: until user clears. Add a review cadence — stale grants widen access silently |
+| Commit log (agent-driven commits) | Standard `git log` | Permanent by design — the one layer where permanence is a chosen policy (git history), not a default |
+| Hook execution log | User-controlled | Set explicitly per hook; "user-controlled" with no stated horizon is the handwave §4 warns about |
 
-Without retention info, "we have an audit trail" means nothing under compliance review (§22).
+Without an explicit retention decision per layer, "we have an audit trail" means nothing under compliance review (§22).
 
 **Watch signals:**
 
@@ -538,7 +547,7 @@ Without retention info, "we have an audit trail" means nothing under compliance 
 **Cross-references:**
 - §22 compliance — audit trails feed compliance reviews; gate tables are evidence-pack components
 - §3d code review — new tool surfaces should be flagged for "gate-table update" review
-- §0.6 anti-pattern table — "No agent-approval gate table"
+- §0.6 anti-pattern catalog (`core/umami-anti-patterns.md`) — "No agent-approval gate table"
 
 ### Lifecycle Hooks
 

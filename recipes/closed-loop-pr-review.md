@@ -74,13 +74,15 @@ tiers:
     disposition: auto_merge_with_notification
 
   medium:
-    examples: [new_feature_behind_flag, ui_change, new_dependency]
+    examples: [new_feature_behind_flag, ui_change]
     requires: [mechanical_pass, ai_pre_screen_with_flags, human_ack]
     disposition: merge_on_human_ack
     cross_provider_review: true
 
   high:
-    examples: [auth_change, payment_flow, schema_migration, public_api_change]
+    # new_dependency is High, not Medium — the supply-chain risk lives in the
+    # package, not the diff, so an AI pre-screen cannot clear it alone (§3d, §6)
+    examples: [auth_change, payment_flow, schema_migration, new_dependency, public_api_change]
     requires: [mechanical_pass, ai_pre_screen, full_human_review, threat_model_link]
     disposition: merge_on_full_human_approval
     cross_provider_review: true

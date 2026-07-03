@@ -6,7 +6,11 @@ This extension covers service-to-service communication: API contracts, webhooks,
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies an API / service layer or external integrations.
 
-**This extension covers the communication discipline between services, not the services themselves.** How to build an API (routing, authentication, request handling) belongs in the core template and language-specific practices. How to build data pipelines belongs in [umami-data.md](umami-data.md). This extension covers what happens at the boundary — how services talk to each other reliably, how contracts are maintained, and how to fail gracefully when a dependency is unavailable.
+**Adopt when (§0.9 default-deny):** the system calls services it doesn't control (or two or more internal services communicate over a network) AND a dependency failure, retry storm, or contract break has already cost debugging time or an outage. A monolith calling one well-behaved API needs timeouts (§24.4), not this whole extension.
+**Cost profile:** Operator-required · Days initial + Recurring discipline (per-dependency configuration; periodic quota and contract reviews).
+**Kill criterion:** retire any practice below that has produced no finding, no prevented incident, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
+
+**This extension covers the communication discipline between services, not the services themselves.** How to build the API service itself (routing, authn/authz boundaries, migrations, transactions) is §31's territory — see [umami-backend.md](umami-backend.md): §31 is the service you own, §24 is the remote calls it makes. How to build data pipelines belongs in [umami-data.md](umami-data.md). This extension covers what happens at the boundary — how services talk to each other reliably, how contracts are maintained, and how to fail gracefully when a dependency is unavailable.
 
 **Scope boundary with [umami-data.md](umami-data.md):** Data pipeline concerns (delivery guarantees, schema evolution, batch vs stream, idempotent pipeline steps) are covered in §18. This extension cross-references §18 where relevant and adds the request/response and resilience patterns that §18 doesn't cover. If your system has both APIs and data pipelines, use both extensions.
 
@@ -51,13 +55,7 @@ For infrastructure-level reliability patterns (fault tolerance, RTO/RPO, failure
 
 **Rules:**
 
-- **Implement circuit breakers on every external dependency.** Not just third-party APIs — internal services fail too. The circuit breaker state machine:
-
-| State | Behavior | Transition |
-|---|---|---|
-| **Closed** (normal) | Requests pass through; failures are counted | → Open when failure count exceeds threshold within window |
-| **Open** (tripped) | Requests fail immediately without calling the dependency; return fallback | → Half-open after cooldown period |
-| **Half-open** (testing) | A limited number of requests pass through to test recovery | → Closed if requests succeed; → Open if they fail |
+- **Implement circuit breakers on external dependencies whose failure you've seen or can't afford.** Scale the investment with dependency count and blast radius: a system calling a dozen services it doesn't control needs a breaker on each; a two-service app doesn't need a resilience library between its own halves — a timeout (§24.4) and an alert cover it. The closed/open/half-open state machine is standard library behavior; the engineering decisions are the thresholds, cooldowns, and fallbacks below.
 
 - **Configure thresholds per dependency.** A payment gateway that fails 3 times in 30 seconds is a different signal than a logging service that fails 3 times. Critical dependencies should have tighter thresholds (trip faster) and longer cooldowns (recover more cautiously).
 
@@ -67,7 +65,7 @@ For infrastructure-level reliability patterns (fault tolerance, RTO/RPO, failure
   - **Queue for retry** — for write operations that can be deferred.
   - **Fail fast with a clear error** — when there's no reasonable fallback, return an error immediately rather than hanging.
 
-- **Use bulkhead isolation.** Give each dependency its own connection pool, thread pool, or rate limit. A dependency that consumes all available connections should not starve unrelated dependencies. The bulkhead pattern is a ship design metaphor — a leak in one compartment doesn't sink the entire ship.
+- **Use bulkhead isolation.** Give each dependency its own connection pool, thread pool, or rate limit. A dependency that consumes all available connections should not starve unrelated dependencies.
 
 ```
 # Pseudocode: separate connection pools per dependency
@@ -100,21 +98,7 @@ Without jitter, all clients retry at the same time (thundering herd). Without ba
 
 - **Set a retry budget, not just a retry count.** A retry budget limits the percentage of requests that are retries (e.g., "no more than 20% of traffic to this dependency should be retries"). This adapts to load — under light traffic, 3 retries per request is fine; under heavy traffic, 3 retries per request triples the load on an already struggling service.
 
-- **Distinguish retryable from non-retryable errors.** Not every failure deserves a retry:
-
-| Status / Error | Retryable? | Why |
-|---|---|---|
-| 500 Internal Server Error | Yes | Transient server issue |
-| 502 Bad Gateway | Yes | Upstream temporarily unavailable |
-| 503 Service Unavailable | Yes (respect `Retry-After`) | Server overloaded |
-| 429 Too Many Requests | Yes (respect `Retry-After`) | Rate limited — back off |
-| 408 Request Timeout | Yes | Request took too long, may succeed on retry |
-| 400 Bad Request | No | Your request is wrong — retrying sends the same bad request |
-| 401 Unauthorized | No | Credentials are wrong — retry after refreshing token |
-| 403 Forbidden | No | Permission denied — retrying won't help |
-| 404 Not Found | No | Resource doesn't exist |
-| Connection refused | Maybe | Server may be restarting, but could also be misconfigured |
-| DNS resolution failure | Maybe | Transient if DNS is flaky, permanent if hostname is wrong |
+- **Distinguish retryable from non-retryable errors.** Retry idempotent requests on 429/502/503/504 (respect `Retry-After`) and transient transport failures, with jittered backoff; never retry non-idempotent requests without an idempotency key. 4xx errors other than 429/408 will fail identically on retry — fix the request instead of resending it.
 
 - **Use idempotency keys for safe retries on write operations.** When retrying a POST/PUT that creates or modifies a resource, include a client-generated idempotency key (UUID) in the request header. The server uses this key to deduplicate — if the first request succeeded but the response was lost, the retry returns the original result instead of creating a duplicate.
 
@@ -175,14 +159,7 @@ Rate limiting protects services from being overwhelmed — whether by a misbehav
 
 **Rules:**
 
-- **Implement server-side rate limiting on every public API.** Common algorithms:
-
-| Algorithm | Behavior | Best for |
-|---|---|---|
-| **Token bucket** | Allows bursts up to bucket size, refills at steady rate | APIs with bursty traffic patterns |
-| **Sliding window** | Counts requests in a rolling time window | Smooth, predictable rate enforcement |
-| **Fixed window** | Counts requests per clock-aligned window (e.g., per minute) | Simple implementation, but allows double-burst at window boundary |
-| **Leaky bucket** | Processes requests at a constant rate, queuing excess | Smoothing traffic to a downstream dependency |
+- **Implement server-side rate limiting on every public API.** Pick one algorithm (token bucket, sliding window, leaky bucket — the trade-offs are standard) and document the client-visible behavior: the limit, how bursts are handled, and what a rejected request receives.
 
 - **Return standard rate limit headers.** Clients need to know their limits and remaining quota:
 
@@ -441,6 +418,9 @@ This extension does not replace core guardrails — it extends them for the syst
 - [ ] Monitoring configured — circuit breaker state, error rate, latency, and quota usage visible (§24.2, §24.8).
 
 ### Periodic
+
+**This checklist is a menu, not a calendar** — schedule only the items whose §0.9 trigger has fired for this project; an unrun scheduled check is worse than an unscheduled one (it reads as coverage that doesn't exist, per the §22 compliance-theater anti-pattern).
+
 - [ ] API deprecation review — deprecated versions approaching sunset, consumers notified (§24.1, quarterly).
 - [ ] Contract health — all consumer contracts still passing provider verification (§24.9, monthly).
 - [ ] Dependency health — circuit breaker trip frequency, error rates, latency trends reviewed (§24.2, monthly).

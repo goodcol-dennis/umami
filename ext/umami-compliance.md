@@ -6,6 +6,10 @@ This extension covers compliance, regulated data handling, and audit readiness f
 
 **Apply this extension when** the §0.1 project discovery questionnaire identifies compliance or regulatory requirements, or when the organization needs to complete a cyber liability insurance application.
 
+**Adopt when (§0.9 default-deny):** §22.1 discovery confirms a binding framework (HIPAA, SOC 2, PCI-DSS, GDPR, FDA), regulated data, or an insurer/auditor asking questions. Do not adopt speculatively — compliance discipline without a binding obligation is the compliance-theater anti-pattern below.
+**Cost profile:** Operator-required with organizational sign-off · Weeks initial + Recurring audits.
+**Kill criterion:** when a framework stops applying (or was never confirmed in §22.1 discovery), drop its controls in a §0.9 retirement pass; retire any practice below that no audit, insurer, or incident has consulted across 2 consecutive annual cycles.
+
 **This extension establishes compliance discipline, not a compliance framework** (mirrors §2's framing). Which controls you implement depends on which frameworks apply (HIPAA, SOC 2, PCI-DSS, GDPR, FDA). The discipline is integrating compliance thought into your development workflow rather than bolting it on after the fact.
 
 **Scope boundary:** This extension covers controls that intersect with the development process. Organizational controls that are purely administrative (firewall configuration, endpoint antivirus, physical security, HR procedures, corporate governance) are outside scope — they belong in an organizational security policy, not a development guardrails template. Where this extension identifies a gap that requires an organizational control, it says so explicitly.
@@ -348,6 +352,8 @@ This extension does not replace core guardrails — it extends them for the comp
 
 ### Quarterly
 
+**These recurring checklists are a menu, not a calendar** — schedule only the items whose §0.9 trigger has fired for this project (a framework that doesn't apply carries no items); an unrun scheduled check is worse than an unscheduled one — it reads as coverage that doesn't exist, which is the compliance-theater anti-pattern above.
+
 - [ ] Vendor access review — revoke access no longer needed (§22.7).
 - [ ] Dependency vulnerability review — triage and act on alerts (§6).
 - [ ] Acknowledged gaps triage — compliance-related gaps prioritized (§8).
@@ -420,7 +426,7 @@ The core template's agent runtime security guidance (§4) covers sandboxing, ide
 
 ### Prompt Injection in Regulated Contexts
 
-Prompt injection — hostile text that causes the agent to follow attacker instructions instead of its task — is not hypothetical. Research from Snyk (ToxicSkills, February 2026) found prompt injection in 36% of 3,984 publicly scanned agent skills. Microsoft's AI recommendation poisoning report (February 2026) documented memory-oriented attacks across 31 companies in 14 industries.
+Prompt injection — hostile text that causes the agent to follow attacker instructions instead of its task — is not hypothetical. Research from Snyk (ToxicSkills, February 2026) found prompt injection in 36% of 3,984 publicly scanned agent skills (2026 snapshot; re-verify before citing). Microsoft's AI recommendation poisoning report (February 2026) documented memory-oriented attacks across 31 companies in 14 industries.
 
 In a compliance-bound project, prompt injection risks include:
 - **Data exfiltration** — the agent is tricked into outputting, logging, or sending regulated data to an unauthorized destination.

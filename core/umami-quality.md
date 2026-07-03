@@ -18,31 +18,11 @@ This file is part of umami v3's concern-based file architecture. The landing doc
 
 ## 2. Specification-First Development
 
-Every feature starts with a written spec, not code. Architecture documents and diagrams define system behavior, component contracts, and design constraints before implementation begins. These serve as the source of truth for all contributors.
+Every feature starts with a written spec, not code (see *When Not to Specify* below for the exceptions — the rule is conditional, not absolute). Architecture documents and diagrams define system behavior, component contracts, and design constraints before implementation begins. These serve as the source of truth for all contributors. For AI contributors specifically, a written spec replaces inferred intent — fewer clarification questions, fewer wrong-direction implementations.
 
-**This section establishes spec discipline, not a spec framework.** Any format works — RFCs, design docs, shape-up pitches, PRDs, Gherkin. The discipline is *having* a spec process; the format is a team preference.
+**This section establishes spec discipline, not a spec framework.** Any format works — RFCs, design docs, shape-up pitches, PRDs, Gherkin. The discipline is *having* a spec process; the format is a team preference. Cost profiles below use the Who [Agent / Operator / Specialist] · Magnitude [Hours / Days / Weeks / Months] · Shape [One-time / Recurring / Architectural / Spend] scheme — full legend in §4 *Reading the cost profiles*.
 
-**Spec-Driven Development (SDD) frameworks worth considering.** SDD is an emerging movement around making specs executable or machine-checkable contracts the AI agent works against. Umami doesn't try to invent an SDD methodology — it points at existing ones and provides the process-discipline wrapper around whichever you pick.
-
-Categories of compatible approaches. Each carries a **Cost profile** (Who [Agent / Operator / Specialist] · Magnitude [Hours / Days / Weeks / Months] · Shape [One-time / Recurring / Architectural / Spend] — full scheme in §4 *Reading the cost profiles*).
-
-| Approach | Category | Cost profile |
-|---|---|---|
-| **[GitHub Spec Kit](https://github.com/github/spec-kit)** | Open-source CLI methodology for spec-driven workflows | Operator-required · Weeks (team adoption) · One-time + Recurring discipline |
-| **[Kiro](https://kiro.dev/)** | IDE with a built-in spec workflow | Operator-required (IDE switch if not already there) · Weeks–Months · Architectural + Spend (vendor) |
-| **PRD / RFC / design-doc conventions** | Free-form structured docs your team already uses | Agent-with-review · Hours per spec · Recurring discipline |
-| **Gherkin / BDD scenarios** | Given-When-Then scenarios; predates AI but works as agent input | Operator-required (runner setup) · Days–Weeks · Architectural + Recurring |
-| **Umami §2 (this section)** | Format-agnostic discipline around *having* a spec process | Agent-autonomous · Hours · Recurring discipline |
-
-The SDD landscape evolves fast — check the current documentation for any framework before adopting. The references above are pointers to investigate, not endorsements of specific feature sets. Cost profiles are best-effort estimates for first-time adoption; existing users of any of these frameworks pay only the ongoing-discipline cost.
-
-**Choosing:**
-
-- **Already using an SDD framework?** Keep it. §2's discipline wraps around your chosen framework — there's no conflict.
-- **Want a structured methodology?** Look at the framework names above and evaluate against your project's needs (cross-harness vs. IDE-integrated, CLI vs. embedded, open-source vs. vendor).
-- **Want maximum flexibility?** §2 is format-agnostic by design. Pick the format that fits your team — what matters is *having* the spec discipline, not which framework codifies it.
-
-§2 doesn't prescribe a specific format because tying umami to one SDD methodology would couple the framework to that methodology's lifecycle. Pick what fits; umami's job is the process discipline around the practice, not the format itself.
+**Spec-Driven Development (SDD) frameworks.** SDD is an emerging movement around making specs executable or machine-checkable contracts the AI agent works against. Umami doesn't invent an SDD methodology — it provides the process-discipline wrapper around whichever you pick. Options range from open-source CLI methodologies (GitHub Spec Kit) and spec-workflow IDEs (Kiro) to the PRD / RFC / design-doc conventions your team already uses and Gherkin/BDD scenarios; the landscape evolves fast, so check current documentation before adopting any of them — these are pointers, not endorsements. Already using one? Keep it; §2 wraps around it without conflict. Otherwise stay format-agnostic: what matters is *having* the spec discipline (Agent-autonomous · Hours per spec · Recurring), not which framework codifies it — first-time adoption of a structured framework is typically Operator-required · Weeks and only worth it when the team wants the tooling, not just the discipline.
 
 ### What to Specify
 
@@ -50,10 +30,6 @@ The SDD landscape evolves fast — check the current documentation for any frame
 - **Component contracts** — typed inputs, outputs, and configuration schemas.
 - **Design system** — enforced visual language (colors, typography, spacing) so the UI stays consistent regardless of who writes the code.
 - **Data contracts** — data shapes validated at design time, catching mismatches before runtime.
-
-### How Specs Prevent Waste
-
-For AI contributors, a written spec replaces inferred intent — fewer clarification questions, fewer wrong-direction implementations.
 
 ### When Not to Specify
 
@@ -76,6 +52,8 @@ Specs have diminishing returns. Over-specifying is its own form of waste — a s
 §2b makes the async surface a first-class spec artifact, sitting alongside the data dictionary and source registry that §2 already covers. **Same discipline as static interfaces; different artifact shape.**
 
 **Cost profile:** Agent-with-review · Days per module (first-time migration) / Hours per new channel (steady state) · Architectural + Recurring discipline
+
+**Adopt when (§0.9 default-deny):** the project has async surfaces *and* a wrong-place-message incident (or documented near-miss) has actually occurred. Pre-adoption incident count = 0 means **defer** — record the deferral and move on. Everything below describes the discipline once that trigger has fired; don't migrate a leak-free codebase preemptively.
 
 **§2b vs. §4 untrusted-content boundaries — same shape, different problem.** Both use a four-part pattern (typed wrapper + origin/provenance + allowed-list + audit-on-add), so they are easy to confuse. They are *not* interchangeable:
 
@@ -143,7 +121,7 @@ The fitness function turns "we should keep this clean" into "the build fails whe
 
 ### Cross-references
 
-The four-part pattern (typed wrapper + origin tag + allowed-consumer list + audit-on-add) **rhymes with §4's untrusted-content-boundary discipline** (typed wrapper + provenance + per-provider spotlighting + audit-on-add). They're structurally parallel but solve different problems: §4 is about *trust scope* ("can I trust this string in this context?"); §2b is about *reachability scope* ("can this consumer subscribe to this channel?"). Cite the parallel, don't merge them — the failure modes and remediations diverge, and conflating them invites the "Winchester Mansion sprawl" anti-pattern.
+The four-part pattern is the structural parallel to §4's untrusted-content-boundary discipline — the differentiation table at the top of this section covers the distinction (reachability vs. trust). Cite the parallel, don't merge the disciplines: the failure modes and remediations diverge, and conflating them invites the "Winchester Mansion sprawl" anti-pattern.
 
 - §1 *Preserving Project Structure* — structure-as-contract framing makes "this consumer shouldn't subscribe to that channel" a structural violation, not a style preference
 - §3 *Architectural Fitness Functions* — the Tier 3 escalation when audit-on-add isn't enough
@@ -167,7 +145,7 @@ Testing spans the full stack across complementary layers:
 
 The layers above cover **deterministic** verification. For LLM-feature products, *Tests and Evals* (next sub-section) adds **non-deterministic** (eval) verification, and *Multi-Provider Behavioral Testing* (further below) adds the provider × substrate-level matrix.
 
-Sub-sections below carry **Cost profile** annotations (Who [Agent / Operator / Specialist] · Magnitude [Hours / Days / Weeks / Months] · Shape [One-time / Recurring / Architectural / Spend] — full scheme in §4 *Reading the cost profiles*). The §0.6 tier table places each practice in Foundation / Structure / Scale; the cost profile tells you what adopting one looks like in time, expertise, and money.
+Sub-sections below carry **Cost profile** annotations — same Who · Magnitude · Shape scheme as §2 above (full legend in §4 *Reading the cost profiles*). The §0.6 tier table places each practice in Foundation / Structure / Scale; the cost profile tells you what adopting one looks like in time, expertise, and money.
 
 ### Tests and Evals — verification's two halves
 
@@ -270,13 +248,7 @@ Distinguishing feature: fitness functions test *structural and quality propertie
 | **Security** | Absence of known anti-patterns (untrusted-content reaching model without wrap, secrets in logs) | Static analysis with custom rules; per-PR security checks |
 | **Operational** | Observable signals (every endpoint emits a metric, every error has a trace ID) | Test that probes the running app for required signals |
 
-**Fitness functions vs. other gates umami already covers:**
-
-| Compared to | What fitness functions add | What stays distinct |
-|---|---|---|
-| §0.6 watch signals | Code-level architecture checks | Watch signals detect anti-patterns in *process*; fitness functions detect violations in *architecture* |
-| §3d code review Layer 1 (mechanical) | Architecture-specific tests, not just lint / format / test | Layer 1 covers correctness; fitness functions cover architecture |
-| §4 untrusted-content audit-on-add | Architectural pattern enforcement in CI | Audit-on-add is a process gate at code review; fitness functions are a code gate in CI |
+Fitness functions complement, not duplicate, umami's other gates: §0.6 watch signals detect *process* anti-patterns, §3d Layer 1 checks *correctness*, §4 audit-on-add gates at *review time* — fitness functions are the *architecture* check that runs in CI.
 
 **When to introduce them:**
 
@@ -399,7 +371,7 @@ If those don't all apply, just decide and move on. The protocol is overhead for 
 3. **Recommend one option, with reasoning** — pick a defensible default. The user can override. Refusing to recommend pushes synthesis back to the user and defeats the protocol.
 4. **Surface sub-questions** — most decisions are 2–5 micro-decisions stacked. Name them so the user knows what's under the headline question.
 5. **Stop.** Wait for the user's response. Resist the urge to provide three more decisions speculatively.
-6. **When the user answers, lock cleanly** — restate the locked decision concisely (2–5 sentences), capture in the decisions log if material (§7), then move to the next decision in a *separate* turn. Don't combine "lock previous + setup next" in one beat.
+6. **When the user answers, lock cleanly** — restate the locked decision concisely (2–5 sentences), capture in the decisions log if material (§12; write an ADR per §7 if architectural), then move to the next decision in a *separate* turn. Don't combine "lock previous + setup next" in one beat.
 
 ### Failure modes to avoid
 
@@ -410,7 +382,7 @@ If those don't all apply, just decide and move on. The protocol is overhead for 
 | Skipping the recommendation | Lay out 4 options, refuse to recommend, ask "what do you think?" | Pick one. Pushing synthesis back to the user defeats the protocol. |
 | Restating without locking | Same decision laid out twice across turns without durable capture. | When the user answers, lock it (durable text) before moving on. |
 | Combining lock + next-decision setup | Response that says "OK locked sub-1; here's sub-2 with options A/B/C/D." | Separate beats. Lock first, then the next decision in a fresh turn. |
-| Made-up time estimates inside decisions | "This option is ~2 weeks of work; the other is ~4 days." | Describe scope (subproblem count, relative size, known-vs-unknown ratio); user does velocity arithmetic. See §0.6 anti-pattern table. |
+| Made-up time estimates inside decisions | "This option is ~2 weeks of work; the other is ~4 days." | Describe scope (subproblem count, relative size, known-vs-unknown ratio); user does velocity arithmetic. See the §0.6 anti-pattern catalog. |
 | Prompt requires scroll-back to make sense | "Which one?" / "Option A or Option B?" rendered in a dialog UI where the user can't see preceding chat. | Make each prompt self-contained — state the decision and its options inline, not via reference to chat history. See §3b "Make each prompt self-contained." |
 
 ### Calibration heuristic
@@ -451,7 +423,7 @@ This is why agent code review takes 3–4× longer than human code review even w
 | Layer | What it does | When it runs | Decision criterion |
 |---|---|---|---|
 | **1. Mechanical** | Linters, formatters, type checkers, tests, coverage delta, diff-complexity heuristics | Every change, automatically | Pass / fail gates |
-| **2. AI pre-screen** | Reviewer agents that produce a structured **flags document** (non-blocking) | Every change that passes Layer 1 | Output is findings, not approval |
+| **2. AI pre-screen** | Reviewer agents that produce a structured **flags document** (non-blocking) | Every non-Trivial change that passes Layer 1 (Trivial-classified changes may auto-merge on the mechanical gate alone — see *Risk taxonomy* below) | Output is findings, not approval |
 | **3. Risk-classified human focus** | Human review on changes meeting risk classification OR flagged High by Layer 2 | Only changes that match dimension/signal triggers OR auto-review flagged High | Human reads flags doc + diff |
 
 ### Risk classification
@@ -496,11 +468,15 @@ The three-layer model determines *who reviews*; the risk taxonomy determines *wh
 |---|---|---|---|
 | **Trivial** | Typo fixes, dependency version bumps in lockfile, formatting-only, generated-file regeneration | Auto-merge if mechanical layer passes | Branch protection requires green CI; spot-check sample applies |
 | **Low** | Internal refactor (no public API), test additions, documentation updates, comment cleanup | AI pre-screen + auto-merge if no flags raised | + Cost-cap on reviewer (§9.7); notification to author on merge |
-| **Medium** | New feature behind a flag, UI change, new dependency, performance-sensitive code | AI pre-screen + 1-human spot-check at ≥5% sample | + Flags document required; merge requires human acknowledgment of flags |
-| **High** | Auth/authz, payment flows, schema migration, security-relevant boundaries (§4 threat-model surfaces), public API changes | Full human review + AI as second eye + ADR if architectural | + Linked threat-model touchpoint per §4; dual review for compliance-bound projects |
+| **Medium** | New feature behind a flag, UI change, performance-sensitive code | AI pre-screen + 1-human spot-check at ≥5% sample | + Flags document required; merge requires human acknowledgment of flags |
+| **High** | Auth/authz, payment flows, schema migration, new dependency added (supply chain — see note below), security-relevant boundaries (§4 threat-model surfaces), public API changes | Full human review + AI as second eye + ADR if architectural | + Linked threat-model touchpoint per §4; dual review for compliance-bound projects |
 | **Critical** | Production secrets handling, untrusted-content boundary changes (§4), major architecture (§7 ADR territory), regulatory-bound code (§22), changes to the review system itself | Full team review + ADR + linked research doc | + ADR per §7; cross-implementation research per §7 if foundational; compliance check per §22 |
 
 **The principle: more risk → more guardrails.** The auto-merge threshold lives in the project's `CLAUDE.md` (or equivalent process doc) so the team agrees explicitly on what merges without humans. Visibility matters more than the specific cutoff.
+
+**New dependencies default to High, not Medium.** A lockfile version bump of an existing package is Trivial; introducing a *new* package is a supply-chain decision an AI pre-screen reading the diff cannot vet — the risk lives in the package, not in the lockfile line, and typosquats ship working code precisely so the diff looks fine (see §6 *Supply Chain Attack Defenses*). Human eyes verify the exact name, publisher, and registry identity before merge. Downgrade to Medium only when a private-registry allowlist already gates the install path.
+
+**At solo scale, the model degrades gracefully — use the degraded form, don't build the bureaucracy.** For a solo developer, Layer 3's "human review" is you, and the Critical row's "full team review" is you, slower and on a different day. The useful solo mapping: keep Layer 1 mechanical gates absolute, run Layer 2 AI pre-screen on everything non-Trivial, and spend your own attention only on Medium+ changes — flags doc first, diff second. Skip the sampling protocol and the taxonomy file until a second reviewer exists; classify by habit, not by artifact. What survives at every scale is the discipline of asking *what kind of change is this* before deciding how much attention it gets.
 
 **"Tests pass" is not sufficient evidence of safety.** The mechanical layer is necessary but never sufficient. A trivial-risk change with passing tests can still be wrong (a typo can introduce a regression in a string compared elsewhere); the risk taxonomy is the discipline of asking *what kind of change is this*, not just *did the gate pass*.
 
@@ -543,7 +519,7 @@ Same-family review (Claude reviewing Claude, GPT reviewing GPT) tends to validat
 
 **When it doesn't earn its cost:**
 
-- Trivial / Low tier changes — cross-provider cost outweighs same-family-bias risk
+- Trivial / Low risk-level changes — cross-provider cost outweighs same-family-bias risk
 - Projects on a single-provider budget; revisit when budget allows
 - Reviewer disagreements that humans can't adjudicate — if no human is calibrated enough to tell which review is right, the cross-provider signal isn't actionable
 
@@ -560,7 +536,7 @@ Same-family review (Claude reviewing Claude, GPT reviewing GPT) tends to validat
 |---|---|
 | Cross-provider agreement on every change | Either changes are genuinely uncontroversial, OR both models share the same blind spot. Spot-check sampling catches the second case. |
 | Persistent disagreement on the same kind of change | Indicates a recurring blind spot in one (or both) models — codify the pattern as a project-specific risk dimension |
-| Cost-cap firing repeatedly on cross-provider review | The pattern may be mis-applied at scale; consider running cross-provider review only on Medium+ tiers |
+| Cost-cap firing repeatedly on cross-provider review | The pattern may be mis-applied at scale; consider running cross-provider review only on Medium+ risk levels |
 | Single-provider review fares better than cross-provider on a specific dimension | The reviewer for that dimension may need specialization more than cross-provider verification — see specialized reviewers above |
 
 **Failure modes (cross-provider specific):**
@@ -570,7 +546,7 @@ Same-family review (Claude reviewing Claude, GPT reviewing GPT) tends to validat
 | Cross-provider collusion | Both models trained on similar data; reviews are correlated; "two reviewers" is one reviewer with double the cost | Verify provider diversity (different families, different RLHF lineages). Sample disagreement rate; if it's < 5% on Medium+ changes, the providers are too similar to count as adversarial |
 | Reviewer-of-the-week | Team rotates which provider reviews based on price/availability; classification map gets retrained for one provider's quirks; consistency degrades | Pick providers deliberately, not opportunistically. Document the choice in an ADR per §7 |
 | Cost surprise | Parallel review doubles or triples token spend per PR; cap fires unexpectedly | Pre-allocate budget in §9.7. Cross-provider review is Tier 3 / Scale practice — only adopt when the project's token budget can sustain it |
-| Disagreement paralysis | Models disagree often; humans can't adjudicate fast enough; queue backs up | Reduce cross-provider scope to a smaller tier band (e.g., only Critical) until the protocol matures, or invest in a tie-breaker (a third model, or a human reviewer with the cross-domain expertise to adjudicate) |
+| Disagreement paralysis | Models disagree often; humans can't adjudicate fast enough; queue backs up | Reduce cross-provider scope to a smaller risk-level band (e.g., only Critical) until the protocol matures, or invest in a tie-breaker (a third model, or a human reviewer with the cross-domain expertise to adjudicate) |
 
 ### Flags document
 
@@ -587,7 +563,7 @@ Worked example (one project's shape):
 ```markdown
 ## Review flags — PR #1234
 
-### Change tier (per Risk taxonomy below)
+### Risk level (per the §3d risk taxonomy)
 **Medium** — new feature behind flag + data-integrity touch. Default disposition: AI pre-screen + ≥1 human spot-check.
 
 ### HIGH (need eyes)
@@ -685,9 +661,9 @@ The §3d code-review three-layer model (mechanical / AI pre-screen / human focus
 
 | Signal | What it catches |
 |---|---|
-| Refactoring commits routinely touch >5 files | Refactorings have grown into rewrites; should have been broken into smaller transformations |
+| Refactoring commits routinely touch >5 files *with more than one transformation applied* | Refactorings have grown into rewrites; should have been broken into smaller transformations. **Exception:** a single mechanical transformation (rename, move) legitimately touches every call site — 30 files for one rename is atomic and safe; 6 files for three unrelated extractions is the smell |
 | Refactoring commits include "while I was here" changes | §3b incidental-findings rule violated; scope creep into cleanup territory |
-| Tests had to be updated alongside the refactoring | Refactoring changed behavior, not just structure. Either it's not a refactoring, or the tests were too coupled to implementation |
+| Existing test *assertions* had to be modified alongside the refactoring | Refactoring changed behavior, not just structure. Either it's not a refactoring, or the tests were too coupled to implementation. (Adding missing coverage *before* the refactor, as its own commit per Part 1, is the correct sequence — that's not this signal) |
 | Same refactoring done multiple times across sessions | The pattern isn't being captured in change-propagation maps (§10) or codebase understanding (§9.3) |
 
 ### Failure modes

@@ -6,6 +6,10 @@ This extension covers data ingestion, transformation pipelines, warehousing, and
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies Data Ingestion, Data Pipeline / Transforms, or Data Warehouse / Storage layers.
 
+**Adopt when (§0.9 default-deny):** pipelines feed consumers beyond their author AND a silent data problem — wrong numbers, stale data, duplicates from a re-run — has already occurred or nearly occurred. A one-off analysis script does not warrant this extension.
+**Cost profile:** Operator-required · Days initial (quality tests, source registry, observability) + Recurring discipline.
+**Kill criterion:** retire any practice below that has produced no finding, no caught data defect, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
+
 ---
 
 ## 18.1 Data Quality Testing
@@ -346,6 +350,9 @@ Individual sections above include specific anti-patterns (§18.2 idempotency, §
 - [ ] Observability alerts configured for new pipeline stages — row counts, freshness, duration (§18.7).
 
 ### Periodic
+
+**This checklist is a menu, not a calendar** — schedule only the items whose §0.9 trigger has fired for this project; an unrun scheduled check is worse than an unscheduled one (it reads as coverage that doesn't exist, per the §22 compliance-theater anti-pattern).
+
 - [ ] Data observability alerts reviewed — thresholds still appropriate vs. historical baselines (weekly) (§18.7).
 - [ ] Source registry reviewed — contacts current, quirks documented (quarterly).
 - [ ] Orphaned tables/views sweep — unused artifacts removed (quarterly).

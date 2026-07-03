@@ -137,7 +137,10 @@ Then create `.claude/hooks/activity-log-claude.sh`:
 ```bash
 #!/usr/bin/env bash
 # Appends a [claude] entry to logs/activity.md after every Claude turn.
-# Reads conversation context from stdin (hook input JSON) per Claude Code hook spec.
+# Per the Claude Code Stop-hook spec, stdin carries hook metadata JSON
+# (session_id / transcript_path / hook_event_name / stop_hook_active) —
+# NOT the conversation itself. The last user prompt lives in the transcript
+# JSONL file that transcript_path points to; read it from there.
 set -euo pipefail
 
 LOG="logs/activity.md"
@@ -151,9 +154,24 @@ if ! grep -qxF "$DAY_HEADER" "$LOG"; then
   printf '\n%s\n\n' "$DAY_HEADER" >> "$LOG"
 fi
 
-# Read last user prompt from hook stdin JSON; fall back to a placeholder.
+# Pull the last real user prompt out of the transcript JSONL.
+# User-role transcript entries include tool results and system-injected meta
+# entries; keep only human text (non-meta, text content, non-empty).
 INPUT=$(cat || true)
-PROMPT=$(printf '%s' "$INPUT" | jq -r '.messages[-1].content // empty' 2>/dev/null | head -c 120 | tr '\n' ' ')
+TRANSCRIPT=$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null)
+PROMPT=""
+if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+  PROMPT=$(jq -rs '
+    [ .[]
+      | select(.type == "user" and ((.isMeta // false) | not))
+      | .message.content
+      | if type == "array"
+          then (map(select(.type? == "text") | .text) | join(" "))
+          else .
+        end
+      | select(type == "string" and length > 0) ]
+    | last // empty' "$TRANSCRIPT" 2>/dev/null | head -c 120 | tr '\n' ' ')
+fi
 [ -z "$PROMPT" ] && PROMPT="(no prompt captured)"
 
 # Read default workstream from front matter (fallback: General)
@@ -162,6 +180,8 @@ WORKSTREAM=$(awk '/^default_workstream:/ {print $2; exit}' "$LOG" 2>/dev/null ||
 
 printf -- '- %s  [claude]    %-12s | %s\n' "$TS" "$WORKSTREAM" "$PROMPT" >> "$LOG"
 ```
+
+> **Verify the hook against your harness version before billing against it** (this is Step 4 of the adaptation procedure below applied to the reference implementation itself): run one Claude turn, then check that the new `[claude]` line carries real prompt text and not `(no prompt captured)`. Hook input schemas are harness-version-dependent; the fallback placeholder is designed to fail visibly rather than silently.
 
 The hook is deliberately dumb: timestamp, fixed source tag, default workstream from front matter, truncated raw prompt. Workstream classification is the periodic `/refine-log` skill's job (Step 5).
 

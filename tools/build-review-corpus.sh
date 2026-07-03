@@ -19,6 +19,7 @@ mkdir -p "$OUT_DIR"
 # landing -> core (quality, runtime, process, agents) -> extensions -> recipes.
 FILES=(
   umami.md
+  core/umami-anti-patterns.md
   core/umami-quality.md
   core/umami-runtime.md
   core/umami-process.md
@@ -38,7 +39,9 @@ FILES=(
   ext/desktop/umami-linux.md
   ext/desktop/umami-spa-wrapper.md
   ext/umami-agent-workflows.md
+  ext/umami-backend.md
   recipes/README.md
+  recipes/claude-md-starter.md
   recipes/activity-stream.md
   recipes/closed-loop-pr-review.md
 )

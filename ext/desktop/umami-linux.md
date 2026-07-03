@@ -6,6 +6,8 @@ This extension covers Linux-specific desktop development — GTK4/libadwaita, Wa
 
 **Apply this extension when** the project is a desktop application targeting Linux. Load it alongside the parent [umami-desktop.md](umami-desktop.md) (§27). If the project wraps a web app in WebKitGTK, also load [umami-spa-wrapper.md](umami-spa-wrapper.md) (§29).
 
+**Adopt when (§0.9):** the §27 gate in [umami-desktop.md](umami-desktop.md) has fired AND the target platform is Linux — the shared gate, cost profile, and kill criterion apply; this file adds no separate ledger entry.
+
 > **Scope note:** Linux is currently the only OS-specific sub-extension under §27. That asymmetry reflects contributor experience, not a claim that Linux deserves special treatment. Projects targeting macOS or Windows should still load §27 for cross-platform desktop guardrails; OS-specific patterns for those platforms belong in new sibling sub-extensions, not in this file. PRs welcome.
 
 **Loading order:**

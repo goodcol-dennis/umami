@@ -6,6 +6,8 @@ This extension covers the specific pattern of wrapping a web application in a na
 
 **Apply this extension when** the project wraps an existing web application in a GTK4/WebKitGTK window. This pattern is distinct from building a web frontend (§17) — you don't control the web app's code, you control the shell around it.
 
+**Adopt when (§0.9):** the §27 gate in [umami-desktop.md](umami-desktop.md) has fired AND the project literally is a WebKitGTK SPA wrapper (see the Status note below) — the shared gate, cost profile, and kill criterion apply; this file adds no separate ledger entry.
+
 > **Status — narrowest extension in the corpus.** §29 documents one specific build pattern, not a generic application domain on equal footing with §17 (web), §18 (data), §27 (desktop). Most desktop projects do not need §29; they should stop at §27 (and optionally §28). Load this file only when the project literally is a WebKitGTK SPA wrapper. It exists in the public template because the trade-offs it documents (session persistence, ITP, navigation policy, clipboard bridge, notification forwarding, dock badge wiring) recur for everyone who builds this kind of app, and the failure modes are non-obvious enough to be worth recording. Treat it as a worked example of how §27 and §28 compose for a concrete pattern rather than a peer extension.
 
 **Loading order:**
@@ -249,14 +251,16 @@ The navigation policy (§29.3) must explicitly allow:
 
 ### Permission Auto-Grant
 
-Auto-grant these permissions via the `permission-request` signal:
+Handle the `permission-request` signal — but auto-grant is a per-permission decision, not a blanket policy:
 
-| Permission | Why |
-|------------|-----|
-| `NotificationPermissionRequest` | Notifications (§29.6) |
-| `MediaKeySystemPermissionRequest` | Encrypted media / DRM |
-| `UserMediaPermissionRequest` | Camera/microphone for calls |
-| `ClipboardPermissionRequest` | Clipboard access (if available in WebKitGTK version) |
+| Permission | Disposition | Why |
+|------------|------------|-----|
+| `NotificationPermissionRequest` | Auto-grant | Notifications (§29.6); low abuse value |
+| `MediaKeySystemPermissionRequest` | Auto-grant | Encrypted media / DRM; no data leaves the machine |
+| `UserMediaPermissionRequest` | **Grant only when the requesting origin is an app domain (§29.3 allow-list) — never blanket-grant** | Camera/microphone. The WebView can reach SSO and adjacent domains, and §29.4's wildcards (`*.google.com`, `*.microsoft.com`) are broad — a blanket grant silently hands mic/camera to any reachable page. Check the request's security origin (or the WebView's current URI) against the app-domain list; deny otherwise |
+| `ClipboardPermissionRequest` | Auto-grant | Clipboard access (if available in WebKitGTK version); the §29.5 bridge already mediates what crosses |
+
+This is a §4 trust-boundary decision in miniature: the app's own domains are the trust zone; everything else reachable in the WebView — including SSO providers — is outside it and gets no device access by default.
 
 ---
 

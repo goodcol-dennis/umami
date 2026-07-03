@@ -6,6 +6,10 @@ This extension covers native and cross-platform mobile applications (iOS, Androi
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies a Mobile App layer.
 
+**Adopt when (§0.9 default-deny):** the app ships (or is about to ship) through an app store to users who update on their own schedule. An internal prototype side-loaded onto a handful of devices does not warrant release gates and device matrices.
+**Cost profile:** Operator-required · Days initial (support matrix, crash reporting, rollout gates) + Recurring discipline per release.
+**Kill criterion:** retire any practice below that has produced no finding, no prevented release incident, and no consulted artifact across 2 consecutive release cycles (§0.9 retirement pass).
+
 ---
 
 ## 19.1 Device and OS Matrix

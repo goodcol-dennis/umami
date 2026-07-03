@@ -6,6 +6,10 @@ This extension covers practices common to all content management systems — Wor
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies a CMS layer. Then apply the platform-specific sub-extension ([WordPress](umami-wordpress.md) §20, [Drupal](umami-drupal.md) §21) for implementation details.
 
+**Adopt when (§0.9 default-deny):** the CMS site is production-facing with third-party extensions AND either non-developers change it through admin UIs or an update/extension has already broken it. A static brochure site rebuilt from source does not warrant this extension.
+**Cost profile:** Operator-required · Days initial (inventory, staging, integrity checks) + Recurring discipline (update cadence).
+**Kill criterion:** retire any practice below that has produced no finding, no prevented incident, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
+
 > **Planned consolidation:** The standalone WordPress (§20) and Drupal (§21) extensions are being rolled into this file in a future release. The shared CMS practices already cover most of the surface area; platform-specific implementation detail will move here as thinner subsections rather than separate documents. Section numbers §20 and §21 will be retained for traceability.
 
 **Loading order:** A CMS project loads three layers:
@@ -369,6 +373,9 @@ Sometimes a core or contributed extension bug genuinely blocks your project and 
 - [ ] No core or third-party extension files modified — use hooks, overrides, or managed patches (§25.9).
 
 ### Periodic
+
+**This checklist is a menu, not a calendar** — schedule only the items whose §0.9 trigger has fired for this project; an unrun scheduled check is worse than an unscheduled one (it reads as coverage that doesn't exist, per the §22 compliance-theater anti-pattern).
+
 - [ ] Core and extension file integrity verified against official checksums (weekly) (§25.9).
 - [ ] Security scan run against all extensions (weekly) (§25.8).
 - [ ] Extension inventory reviewed — abandoned extensions flagged (quarterly) (§25.1).

@@ -78,7 +78,7 @@ When committing to a foundational architectural approach where alternatives have
 **Cross-references:**
 - §7 ADRs — research doc feeds the ADR's "alternatives considered" section with concrete depth
 - §2 specs — research informs which alternatives are worth specifying against
-- §0.6 anti-pattern table — "Cargo-culting practices" (one source of cross-impl research is *catching* patterns that look universal but actually aren't)
+- §0.6 anti-pattern catalog (`core/umami-anti-patterns.md`) — "Cargo-culting practices" (one source of cross-impl research is *catching* patterns that look universal but actually aren't)
 
 ---
 

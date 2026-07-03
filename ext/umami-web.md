@@ -6,6 +6,10 @@ This extension covers browser-based web applications — SPAs, SSR apps, static 
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies a Web Frontend layer.
 
+**Adopt when (§0.9 default-deny):** the frontend has real users AND either more than one contributor touches the UI or a visual, accessibility, or performance regression has already shipped. A throwaway internal dashboard does not warrant baseline management and performance budgets.
+**Cost profile:** Operator-required · Days initial (baselines, budgets, CI wiring) + Recurring discipline.
+**Kill criterion:** retire any practice below that has produced no finding, no prevented regression, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
+
 ---
 
 ## 17.1 Visual Regression Testing
@@ -17,7 +21,7 @@ The core template (§3) mentions visual regression as a test layer. This section
 **Rules:**
 - Baseline screenshots are **version-controlled artifacts** checked into git, not generated on the fly.
 - Update baselines **only for intentional changes**. Every baseline update should correspond to a deliberate design decision — never a side effect of a bug fix.
-- Run visual regression before committing any UI change. No exceptions.
+- Run visual regression before committing any UI change. If the visual suite is flaky enough that this rule pressures people to weaken baselines or skip runs, fix the flake first — a gate that gets bypassed under pressure becomes the §0.6 "Rewriting CI to make AI pass" anti-pattern.
 - Set a pixel-diff tolerance appropriate to your stack (anti-aliasing causes 1-2px differences across environments).
 - Organize baselines to mirror the component tree — finding the baseline for a component should be as easy as finding the component itself.
 

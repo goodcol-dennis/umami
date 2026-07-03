@@ -72,11 +72,12 @@ referenced=$(grep -rhoE "$REFERENCE_RE" --include="*.md" . \
   | sort -u)
 
 # Known false-positive references that aren't real cross-refs:
-# - §N where N is "next-available" markers in CLAUDE.md (e.g., "Next available extension section: §31")
+# - §N where N is "next-available" markers in CLAUDE.md (e.g., "Next available extension section: §32")
 # - References inside code fences (rare; not currently filtered)
 # Maintain a small allowlist of section IDs that are expected NOT to resolve.
 # Future: replace with an inline annotation system (<!-- nofitness --> in markdown).
-EXPECTED_UNRESOLVED="31"
+# 2026-07-03: §31 removed from the allowlist — ext/umami-backend.md now defines it; §32 is the new next-available marker.
+EXPECTED_UNRESOLVED="32"
 
 # Report orphan references
 # A reference §N resolves if EITHER the exact section is defined OR any sub-section §N.X is defined.

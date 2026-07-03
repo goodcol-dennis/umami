@@ -6,6 +6,10 @@ This extension covers infrastructure-as-code (Terraform, Pulumi, CloudFormation,
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies an Infrastructure / IaC layer.
 
+**Adopt when (§0.9 default-deny):** the project provisions infrastructure through code AND a change has already caused (or nearly caused) an unintended resource change, outage, or surprise bill. A lone Terraform file for a dev VM does not warrant this extension — §16.1's plan-before-apply habit alone covers it.
+**Cost profile:** Operator-required · Days initial + Recurring discipline (plan review on every change; periodic drift, cost, and credential sweeps).
+**Kill criterion:** retire any practice below that has produced no finding, no prevented incident, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
+
 **This extension establishes infrastructure discipline, not a deployment methodology.** GitOps (ArgoCD, Flux), CI/CD-driven applies, manual plan-and-apply — these are all valid approaches and this extension is compatible with any of them. The principles below (plan before apply, blast radius awareness, state hygiene, drift detection) apply regardless of whether your deployment is pull-based, push-based, or manual. The high-value practice is treating infrastructure as code with the same discipline as application code. How you deliver that code to production is a tooling decision.
 
 ---
@@ -213,19 +217,11 @@ Before building, audit. Before deploying, clean up.
 
 ## 16.12 Reliability Engineering
 
-§16.2 covers blast radius — what happens when a change goes wrong. This section covers the broader question: **what happens when a component fails in production?** Every infrastructure decision should be evaluated for fault tolerance, not just cost and functionality.
+**Adopt when:** the system has production users who notice downtime, or a stated availability target. Skip for dev/staging-only infrastructure — redundancy for an environment nobody depends on is cost without benefit.
 
-**The core question:** For every resource you provision, ask: "What happens when this fails?" If the answer is "the system goes down," you have a single point of failure.
+§16.2 covers blast radius — what happens when a change goes wrong. This section covers the broader question: **what happens when a component fails in production?**
 
-**Reliability patterns:**
-
-| Pattern | What it protects against | How to implement |
-|---|---|---|
-| **Redundancy** | Single instance failure | Multi-AZ deployments, read replicas, auto-scaling groups with min > 1 |
-| **Health checks** | Silent failures | Load balancer health checks, container liveness/readiness probes, application-level heartbeats |
-| **Automatic failover** | Primary failure | RDS Multi-AZ, active-passive clustering, DNS failover |
-| **Circuit breakers** | Cascading failures | Service mesh circuit breaking, retry budgets, bulkhead isolation |
-| **Graceful degradation** | Partial outage | Feature flags to disable non-critical features, fallback to cached data, read-only mode |
+**The core question:** For every resource you provision, ask: "What happens when this fails?" If the answer is "the system goes down," you have a single point of failure. The mitigations — redundancy, health checks, automatic failover, circuit breakers, graceful degradation — are standard; choose per component. The IaC-specific discipline:
 
 **Fault tolerance in IaC:**
 - **Codify redundancy, don't bolt it on.** If a resource should be multi-AZ, define it that way from the start. Retrofitting redundancy is harder and riskier than building it in.
@@ -241,13 +237,11 @@ Before building, audit. Before deploying, clean up.
 
 ## 16.13 Scalability Awareness
 
+**Adopt when:** load is growing, costs are drifting, or an instance-sizing decision is actually on the table. Skip while a single right-sized instance handles the workload with headroom.
+
 Infrastructure should be provisioned with an understanding of the system's load characteristics — not oversized "just in case" and not undersized until it falls over.
 
-**Before provisioning, answer these questions:**
-- **What is the expected load?** Requests per second, concurrent users, data volume per day, storage growth rate. Use estimates, not guesses — even rough numbers (§12 magnitude estimates) are better than nothing.
-- **What is the scaling dimension?** CPU-bound, memory-bound, I/O-bound, network-bound? The answer determines instance type, not just instance size.
-- **Where are the bottlenecks?** The system's throughput is limited by its slowest component. Scaling everything except the bottleneck wastes money.
-- **Is scaling horizontal or vertical?** Horizontal (add more instances) requires stateless design or shared-nothing architecture. Vertical (bigger instance) is simpler but has a ceiling.
+**Before provisioning, answer:** the expected load (requests per second, data volume, growth rate — rough §12 magnitude estimates beat guesses); the scaling dimension (CPU-, memory-, I/O-, or network-bound — it determines instance type, not just size); where the bottleneck is (scaling everything except the bottleneck wastes money); and whether scaling is horizontal (requires stateless or shared-nothing design) or vertical (simpler, but has a ceiling).
 
 **Scalability in IaC:**
 - **Use auto-scaling with defined bounds.** Set min, max, and scaling triggers based on actual metrics (CPU, queue depth, request latency), not guesses. Review and adjust after observing real traffic.
@@ -264,116 +258,60 @@ Infrastructure should be provisioned with an understanding of the system's load 
 
 ## 16.14 SLOs, SLIs, and Error Budgets
 
-Infrastructure exists to serve a system, and that system has reliability targets. SLOs (Service Level Objectives) make those targets explicit and measurable.
+**Adopt when:** someone will hold the system to a reliability target — users, an SLA, an on-call rotation. Skip while "best effort" is the honest answer; an SLO nobody enforces is documentation theater.
 
-**Definitions:**
-- **SLI (Service Level Indicator)** — a measurable signal of system health. Examples: request latency (p99), error rate, availability (% of successful responses), data freshness.
-- **SLO (Service Level Objective)** — the target value for an SLI. Examples: "p99 latency < 200ms," "99.9% availability per month," "data freshness < 5 minutes."
-- **Error budget** — the amount of unreliability your SLO allows. A 99.9% availability SLO means you have ~43 minutes of downtime budget per month.
-
-**Why SLOs matter for infrastructure:**
-- They make reliability decisions concrete. "Should we deploy multi-AZ?" becomes "Do we need 99.9% or 99.99%?" — and the cost difference is quantifiable.
-- They prevent over-engineering. If your SLO is 99.9% and you're running at 99.99%, you may be spending money on reliability you don't need.
-- They prevent under-engineering. If your SLO is 99.9% and you're running at 99.5%, you have a measurable gap to close.
+Infrastructure exists to serve a system, and that system has reliability targets. SLOs (Service Level Objectives) make those targets explicit and measurable — and they cut both ways: a target you're missing is a measurable gap to close; a target you're exceeding is money spent on reliability you don't need.
 
 **How to implement:**
-- **Define SLOs before provisioning.** The SLO should be in the project docs (or ADR) before infrastructure is designed. It drives architecture decisions: redundancy, failover, backup frequency, monitoring granularity.
+- **Define SLOs before provisioning.** The SLO should be in the project docs (or ADR) before infrastructure is designed. It drives architecture decisions: redundancy, failover, backup frequency, monitoring granularity. "Should we deploy multi-AZ?" becomes "Do we need 99.9% or 99.99%?" — and the cost difference is quantifiable.
 - **Instrument SLIs in monitoring.** Every SLO needs a corresponding SLI that's automatically measured. If you can't measure it, you can't manage it.
 - **Alert on error budget burn rate, not individual failures.** A single error is noise. Consuming 50% of your monthly error budget in one hour is a signal. Set alerts on burn rate, not on individual 500s.
 - **Review SLOs quarterly.** Business requirements change. An SLO that was appropriate at launch may be too tight (wasting money) or too loose (users are unhappy) six months later.
-
-**SLO tiers for common infrastructure:**
-
-| Component | Typical SLO | Key SLI | Implication |
-|---|---|---|---|
-| **Web frontend** | 99.9% availability | Successful responses / total responses | Multi-AZ, health checks, CDN |
-| **API service** | 99.9% availability, p99 < 500ms | Latency percentiles, error rate | Auto-scaling, connection pooling, caching |
-| **Database** | 99.95% availability, RPO < 1 hour | Query latency, replication lag | Multi-AZ, automated backups, read replicas |
-| **Batch pipeline** | 99% on-time completion | Completion within SLA window | Retry logic, alerting on overrun, capacity headroom |
-| **Message queue** | 99.9% availability, < 1s delivery | End-to-end message latency | Clustered brokers, dead letter queues |
 
 ---
 
 ## 16.15 Observability as Infrastructure
 
+**Adopt when:** an incident has already required log archaeology across more than one component, or an SLO (§16.14) needs measuring. A single service with good structured logs (§4) doesn't need a monitoring stack yet.
+
 Observability — metrics, logs, traces, and alerts — is infrastructure. The monitoring stack needs the same discipline as any other provisioned system: version-controlled configuration, environment promotion, cost management, and documented architecture decisions.
 
 ### Instrument with OTEL
 
-Use OpenTelemetry (OTEL) as the vendor-neutral standard for instrumentation. The key architectural benefit: your application code emits telemetry through the OTEL SDK, the OTEL Collector receives and routes it, and the backend (Grafana, Datadog, Prometheus, etc.) is a configuration change — not a re-instrumentation.
-
-**What to provision:**
-- **OTEL Collector** — deploy as a sidecar or standalone service. It decouples applications from backends, handles batching and retry, and lets you change backends without touching application code.
-- **Metrics backend** — Prometheus, Mimir, CloudWatch, Datadog. Choose one, document the decision in an ADR.
-- **Log aggregation** — centralized logging (Loki, Elasticsearch, CloudWatch Logs). Structured JSON logs (§4) from every service, searchable by trace ID.
-- **Tracing backend** — Jaeger, Tempo, X-Ray. Needed for distributed systems; optional for single-service deployments.
+Use OpenTelemetry (OTEL) as the vendor-neutral instrumentation standard: applications emit through the OTEL SDK, a collector receives and routes, and the backend (Prometheus, Grafana, Datadog, CloudWatch, …) becomes a configuration change rather than a re-instrumentation.
 
 **Rules:**
 - Use OTEL SDKs for all new instrumentation — not vendor-specific SDKs. Even if you're committed to one vendor today, the switching cost later is significant.
-- Use auto-instrumentation first, manual instrumentation second. Most frameworks have OTEL auto-instrumentation libraries that capture HTTP requests, database calls, and external service calls with zero code changes.
+- Use auto-instrumentation first, manual instrumentation second. Most frameworks capture HTTP requests, database calls, and external service calls with zero code changes.
+- Document the backend choice for metrics, logs, and traces in an ADR. Structured JSON logs (§4) from every service, searchable by trace ID; a tracing backend is needed for distributed systems, optional for single-service deployments.
 - Pin OTEL SDK versions like any other dependency (§16.7).
 
 ### Alerting Discipline
 
-The purpose of an alert is to notify a human that something requires action. An alert that doesn't require action is noise. Noise leads to alert fatigue. Alert fatigue leads to missed real incidents.
-
-**Alert on symptoms, not causes:**
-- Good: "Error rate > 5% for 5 minutes" — users are affected.
-- Bad: "CPU > 80%" — may or may not affect users. CPU at 80% might be perfectly normal during a batch job.
-
-**Alert tiers:**
-
-| Tier | Urgency | Response | Examples |
-|------|---------|----------|---------|
-| **Page** (P1) | Immediate | Drop everything | Service down, data loss, security breach |
-| **Urgent** (P2) | Business hours | Address today | Error rate elevated, SLO budget burning fast, disk > 90% |
-| **Warning** (P3) | This week | Investigate if it persists | Latency trending up, cert expiring in 14 days |
-| **Info** | Awareness only | Review in ops review | Deployment completed, scaling event |
+The purpose of an alert is to notify a human that something requires action. An alert that doesn't require action is noise; noise leads to alert fatigue; alert fatigue leads to missed real incidents.
 
 **Rules:**
-- Every alert must have a runbook — or at least a link to documentation. If the on-call engineer doesn't know what to do, the alert is incomplete.
-- Every alert must have an owner. Unowned alerts are ignored alerts.
+- Alert on symptoms, not causes. "Error rate > 5% for 5 minutes" means users are affected; "CPU > 80%" may be a batch job doing its work.
+- Every alert must have a runbook — or at least a link to documentation — and an owner. Unowned alerts are ignored alerts.
 - Alert on error budget burn rate (§16.14), not individual errors. A single 500 is not an incident. Burning 10% of your monthly error budget in one hour is.
-- Use percentile-based thresholds over averages. p99 > 500ms catches tail latency; average > 500ms only fires when everything is on fire.
-- Use sustained thresholds: "Error rate > 5% for 5 minutes" prevents flapping on momentary spikes.
+- Use percentile-based thresholds (p99, not averages) with sustained windows ("for 5 minutes") to catch tail latency without flapping.
+- Assign each alert an urgency tier (page / urgent / warning / info) and route accordingly — if everything pages, nothing does.
 - Review alerts monthly. If an alert fires regularly and nobody acts on it, fix the underlying issue or adjust the threshold.
 
-### Golden Signals Dashboards
+### Dashboards
 
-Every service should have a dashboard showing four signals (from Google's SRE book):
-
-| Signal | What it measures | Key metric |
-|--------|-----------------|------------|
-| **Latency** | How long requests take | p50, p95, p99 response time |
-| **Traffic** | How much demand the system handles | Requests per second |
-| **Errors** | How often requests fail | Error rate (%), error count by type |
-| **Saturation** | How full the system is | CPU %, memory %, disk %, queue depth, connection pool usage |
-
-**Dashboard hierarchy:**
-1. **Service overview** — golden signals per service. Start here during an incident.
-2. **Dependency view** — latency and errors for downstream dependencies. Answers "is the problem mine or downstream?"
-3. **Business metrics** — orders per minute, signups per day. Answers "is the system doing what it should?"
-4. **Infrastructure** — resource utilization, scaling events, deployment markers.
-
-**Rules:**
-- Start with the golden signals dashboard before building anything elaborate.
-- Add deployment markers — overlaying deploy events on metric graphs instantly answers "did the last deploy cause this?"
+- Start with a golden-signals dashboard per service — latency, traffic, errors, saturation — before building anything elaborate.
+- Add deployment markers. Overlaying deploy events on metric graphs instantly answers "did the last deploy cause this?"
 - Keep dashboards focused. A dashboard with 50 panels is a wall of noise.
 
 ### Observability Cost Management
 
 Observability data is high-volume. Unmanaged, it becomes one of the largest infrastructure line items. Treat it like any other cost (§16.4).
 
-| Data type | Cost driver |
-|-----------|------------|
-| **Metrics** | Cardinality — each unique label combination creates a time series. A metric with a `user_id` label creates a series per user. |
-| **Logs** | Volume (GB/day). Verbose logging in high-traffic services adds up fast. |
-| **Traces** | Span count. 100% trace sampling at scale generates enormous volumes. |
-
 **Cost controls:**
 - Control metric cardinality. If a label can take more than ~100 unique values, it should not be a metric label — put high-cardinality identifiers in logs and traces instead.
-- Sample traces in production. 100% sampling is rarely necessary. Capture 100% of error traces and a statistical sample of successful ones.
-- Set log levels appropriately. DEBUG in production generates 10-100x more volume than INFO.
+- Sample traces in production. Capture 100% of error traces and a statistical sample of successful ones.
+- Set log levels appropriately — DEBUG in production generates 10-100x more volume than INFO.
 - Set retention policies: metrics 13 months, logs 30-90 days, traces 7-14 days.
 - Review observability spend monthly alongside infrastructure costs (§16.4).
 
@@ -381,38 +319,25 @@ Observability data is high-volume. Unmanaged, it becomes one of the largest infr
 
 ## 16.16 CI/CD Pipeline Discipline
 
-Every CI/CD stage either catches a real problem or slows delivery. The discipline is knowing the difference.
+Pipeline definitions are infrastructure: they are code, they gate every change, and modifying a gate is an infra change that deserves the same review as the resources it protects. Three IaC-specific deltas: include the plan output in CI so reviewers approve exactly what will apply (§16.1); reserve manual approval for high-blast-radius changes (§16.2) — production data stores, networking, IAM — and let plans showing only low-risk additions and in-place updates auto-approve; encode policy in policy-as-code or Terraform modules (§16.17), not in pipeline YAML — pipelines execute checks, they don't define them.
 
-**Design principles:**
-- **Fast feedback first.** Cheap checks (format, lint, validate) run before expensive checks (plan, security scan, integration test). A syntax error caught in 5 seconds shouldn't wait behind a 10-minute security scan.
-- **Parallelize independent stages.** Lint, security scan, and cost estimate don't depend on each other — run them simultaneously. A pipeline with 6 sequential stages that could be 3 parallel groups is wasting half its time.
-- **Keep pipelines under 15 minutes for the critical path.** Longer pipelines cause developers to batch changes, which increases blast radius per deploy. If a stage is slow, evaluate whether it's earning its time.
-- **One pipeline definition, parameterized per environment.** Don't maintain separate pipelines for dev/staging/prod. Same stages, different variables. Divergent pipelines mean divergent behavior.
-
-**Gate discipline:**
-- **Reserve manual approval for high-blast-radius changes** (§16.2). Production database modifications, networking changes, IAM changes. Not every config tweak.
-- **Auto-approve low-risk changes** — tag updates, scaling adjustments, non-destructive additions. If the plan shows only additions and in-place updates to non-critical resources, human review is overhead without safety benefit.
-- **Distinguish blocking vs. advisory checks.** High-severity security findings block merge. Medium findings warn and create a tracked issue (§8). Low findings report only. If everything blocks, developers stop reading the output.
-
-**Anti-patterns:**
-- **Gate sprawl** — 12 stages taking 45 minutes when 5 stages taking 8 minutes catch the same issues. Before adding a gate, ask: would this have been caught by an existing check if configured correctly?
-- **"Add a check for that"** — when something breaks in production, the instinct is to add a new CI gate. Often the correct fix is improving an existing check or fixing the underlying code, not adding pipeline complexity.
-- **Flaky checks blocking deploy** — a security scan that intermittently fails or a plan that times out teaches the team to re-run and ignore. Fix or replace flaky checks; don't let them erode trust in the pipeline.
-- **Pipeline as documentation** — encoding business logic and policy decisions in pipeline YAML instead of in policy-as-code or Terraform modules. Pipelines should execute checks, not define them.
+The full pipeline-health discipline — gate inventory, cycle-time budgets, per-gate dispositions, flaky-gate and gate-sprawl anti-patterns — is §6b in `core/umami-runtime.md`; run it there, don't maintain a parallel copy here.
 
 ---
 
 ## 16.17 Security Governance Without Friction
 
+**Adopt when:** more than one person (or agent) ships infrastructure changes, or a security review queue already exists. A solo operator needs §16.8's scanners and §16.5's secrets discipline, not a governance layer.
+
 Security gates that block everything eventually get bypassed. The goal is security that developers work *with*, not *around*.
 
 **Shift-left security:**
 - **Embed security checks in CI** (§16.8), not in a separate review queue. A `checkov` scan that runs automatically on every PR is more effective than a quarterly security review, and faster.
-- **Provide fix guidance, not just findings.** A scan that says "S3 bucket allows public access" is less actionable than one that says "add `block_public_access` — see the approved S3 module." When writing custom policies, include remediation guidance in the output.
+- **Provide fix guidance, not just findings.** "Add `block_public_access` — see the approved S3 module" is actionable; "S3 bucket allows public access" is not. When writing custom policies, include remediation guidance in the output.
 - **Pre-approved modules** — provide Terraform modules that are already security-reviewed. Teams using the approved VPC module don't need a per-project VPC security review. This is the highest-leverage security investment: shift the work from review to reuse.
 
 **Governance patterns:**
-- **Policy-as-code** (OPA, Sentinel, Kyverno) — encode security requirements as automated checks. Policies written in code are testable, version-controlled, and consistently enforced. Policies in a wiki are aspirational.
+- **Policy-as-code** (OPA, Sentinel, Kyverno) — policies written in code are testable, version-controlled, and consistently enforced. Policies in a wiki are aspirational.
 - **Tiered review requirements** — not every change needs the same scrutiny:
 
 | Change scope | Review required |
@@ -435,29 +360,18 @@ Security gates that block everything eventually get bypassed. The goal is securi
 
 When multiple teams share infrastructure patterns, the question shifts from "how do I provision resources?" to "how do I provide self-service infrastructure that's secure and consistent by default?"
 
-**When platform engineering matters:**
-- Multiple teams write similar Terraform for similar infrastructure.
-- Onboarding a new service requires copying and modifying another team's config.
-- Security and compliance requirements must be consistent across all services.
-- Teams spend more time on infrastructure plumbing than on their actual product.
-
-If none of these apply, skip this section. A platform for one team is over-engineering.
+**Adopt when:** multiple teams write similar Terraform for similar infrastructure; onboarding a new service means copying another team's config; security and compliance must be consistent across services; or teams spend more time on infrastructure plumbing than on their product. If none of these apply, skip this section. A platform for one team is over-engineering.
 
 **Shared module library:**
-- Internal Terraform modules that encode your organization's standards (networking, security, tagging, monitoring). Teams compose from these modules instead of writing from scratch.
+- Internal Terraform modules encode your organization's standards (networking, security, tagging, monitoring); teams compose from them instead of writing from scratch.
 - Version modules semantically. Breaking changes require a major version bump and a migration guide.
 - Test modules independently (§16.8) — a broken shared module breaks every consumer.
-- Every module has a documented owner. Unowned modules decay.
-- Document inputs, outputs, and assumptions. If a team can't use your module without reading its source, the interface isn't good enough.
+- Every module has a documented owner and documented inputs, outputs, and assumptions. If a team can't use your module without reading its source, the interface isn't good enough.
 
-**Golden paths:**
-- A "start here" template for common workload types (web service, batch job, data pipeline) that includes infrastructure, CI/CD, monitoring, and alerting scaffolding.
-- Golden paths are opinionated defaults, not mandates. Teams can deviate when they have a reason — but the default should be good enough that most teams don't need to.
-- Build golden paths *with* the teams that use them, not *for* them. A path that doesn't match real needs doesn't get adopted.
-
-**Self-service with guardrails:**
-- Teams provision their own infrastructure using approved modules and templates. The modules enforce policy (encryption, tagging, access controls, cost limits) so teams get compliance by default, not by effort.
-- Provide a service catalog or scaffolding tool that generates the initial Terraform for a new service using approved modules. Reduce the "blank page" problem.
+**Golden paths and self-service:**
+- Provide a "start here" template per common workload type (web service, batch job, data pipeline) that includes infrastructure, CI/CD, monitoring, and alerting scaffolding.
+- Golden paths are opinionated defaults, not mandates — and build them *with* the teams that use them, not *for* them. A path that doesn't match real needs doesn't get adopted.
+- Approved modules and templates enforce policy (encryption, tagging, access controls, cost limits) so teams get compliance by default, not by effort. A scaffolding tool that generates the initial Terraform for a new service reduces the "blank page" problem.
 
 **Anti-patterns:**
 - **Premature platform** — building a shared platform before you have repeated patterns across multiple teams. Start with shared modules. Evolve to a platform when the repetition justifies it.
@@ -512,7 +426,7 @@ This extension does not replace core guardrails — it extends them for the IaC 
 | §0 Discovery | §16.13 Scalability awareness — load parameters, capacity planning |
 | §7 ADRs | §16.14 SLOs/SLIs — measurable reliability targets driving architecture decisions |
 | §4 Observability | §16.15 Observability as infrastructure — OTEL, alerting, dashboards, cost management |
-| §15 Checklists | §16.16 CI/CD pipeline discipline — gate design, fast feedback, pipeline anti-patterns |
+| §15 Checklists | §16.16 CI/CD pipeline discipline — IaC-specific pipeline deltas; full discipline in §6b |
 | §4 Security | §16.17 Security governance — shift-left security, policy-as-code, tiered review |
 | §1 Project Structure | §16.18 Platform engineering — shared modules, golden paths, self-service |
 | §13 Dead Code Hygiene | §16.19 Common anti-patterns — tooling misconceptions, process traps, cleanup discipline |
@@ -545,6 +459,9 @@ This extension does not replace core guardrails — it extends them for the IaC 
 - [ ] Trace context propagation verified end-to-end for distributed services (§16.15).
 
 ### Periodic
+
+**This checklist is a menu, not a calendar** — schedule only the items whose §0.9 trigger has fired for this project; an unrun scheduled check is worse than an unscheduled one (it reads as coverage that doesn't exist, per the §22 compliance-theater anti-pattern).
+
 - [ ] Drift detection run against prod (weekly/nightly).
 - [ ] Orphaned resource sweep (monthly).
 - [ ] Cost review against budget, including observability spend (monthly) (§16.4, §16.15).

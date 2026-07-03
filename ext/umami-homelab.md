@@ -3,6 +3,12 @@
 > **Section 26 — Homelab Infrastructure Management**
 > Extension of [umami.md](../umami.md). Patterns for managing a homelab environment with VMs, containers, VPN, DNS, monitoring, and remote access.
 
+**Adopt when (§0.9 default-deny):** the homelab hosts services others depend on, data you would mind losing, or a remotely reachable entry point. A single experimental box you can rebuild in an afternoon does not warrant this extension — snapshots (§26.4) alone cover it.
+**Cost profile:** Operator-required · Days initial + Recurring discipline (backups, updates, hardening list).
+**Kill criterion:** retire any practice below that has produced no finding, no prevented loss, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
+
+The recurring practices in this file (backup verification §26.12, update cadence §26.13, history audits §26.2) are a menu, not a calendar — schedule only those whose trigger has fired; an unrun scheduled check reads as coverage that doesn't exist (the §22 compliance-theater anti-pattern).
+
 ---
 
 ## 26.0 Context

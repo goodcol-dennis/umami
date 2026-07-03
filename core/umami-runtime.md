@@ -1,6 +1,6 @@
 # Umami — Runtime / Operations / Security Extension
 
-This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *runtime / operations / security* concern cluster — runtime validation, threat modeling, trust posture, security disciplines, state recovery, developer experience and pipeline health.
+This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](../umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *runtime / operations / security* concern cluster — runtime validation, threat modeling, trust posture, security disciplines, state recovery, developer experience and pipeline health.
 
 **When to fetch this file:** When an audit, init, or implementation task hits a Tier 2+ practice in any of §4 / §5 / §6b. Specifically: threat modeling, trust posture, security depth beyond the day-one floor, agent runtime security, untrusted-content boundaries, agent log discipline, state recovery runbooks, or pipeline health audit. The landing document's *Security Essentials* sidebar holds the Tier 1 floor and points here for depth.
 
@@ -322,6 +322,8 @@ The "For AI-assisted development" guidance above covers code the agent *generate
 
 For products with LLM features that ingest external content (web fetches, user messages, tool outputs, file contents, sub-agent outputs), prompt injection is a real attack surface. The model can't tell instructions from content unless you signal the boundary. Treat anything that crossed a trust boundary as untrusted — wrap it explicitly, tag its origin, and mark the boundary visibly to the model.
 
+**Applies to: teams *building* LLM-feature products.** If you only *use* coding agents, the harness owns this surface — your part is the §14 gate/hook discipline and the §6 supply-chain rules for skills/MCP configs, not typed wrappers. An audit should not recommend this sub-section to a project that ships no LLM features.
+
 **Cost profile:** Operator-required (potentially specialist for multi-provider) · Weeks–Months · Architectural
 
 This is the highest-cost practice in §4. It is the "Full" depth of *Security Discipline* above — typed wrappers, provenance tagging, and per-provider spotlighting require touching every site where untrusted content reaches the model. Retrofitting after a feature ships is markedly more expensive than wrapping before shipping. Only justified for LLM-feature products at meaningful scale.
@@ -358,7 +360,7 @@ The discipline has four parts:
 **Cross-references:**
 - §4 "Validate at system boundaries" (above) — this is the LLM-content equivalent for products processing external content via agents
 - §3d code review — new tool surfaces should be flagged for "audit-on-add" classification under a project-specific dimension
-- §0.6 anti-pattern table — "Treats untrusted content as plain strings"
+- §0.6 anti-pattern catalog (`core/umami-anti-patterns.md`) — "Treats untrusted content as plain strings"
 
 ### Agent Log Discipline
 
@@ -367,6 +369,8 @@ For projects where agents take consequential actions, the agent's activity log i
 §4 above covers observability from the production-systems perspective; this sub-section covers the agent-specific log shape that enables incident response, compliance, and operational debugging when the agent does something surprising.
 
 **Cost profile:** Agent-with-review · Days setup + recurring review cadence · Recurring discipline
+
+**Adopt when (§0.9 default-deny):** agents take consequential actions in production AND a concrete need has surfaced — an incident you couldn't reconstruct, a compliance requirement naming audit trails, or an operational-debugging dead end. **Applies to:** primarily agent-product builders; agent *users* inherit most layers from the harness — inventory what the harness already logs (and where) before building anything, and adopt only the review cadence over it.
 
 **The five log layers:**
 
@@ -382,15 +386,15 @@ The 5-layer model above assumes a fairly sophisticated harness (one with context
 
 Each retained layer has its own retention and review cadence. Don't conflate them — a single "agent log" file is hard to review at any one of the relevant granularities.
 
-**Retention discipline:**
+**Retention discipline.** The middle column below names each layer's *default starting point* — what you inherit from the harness before deciding anything. A default is not a policy; replace each with an explicit number:
 
-| Layer | Typical retention |
+| Layer | Default starting point → what to pin |
 |---|---|
-| Tool calls | Until session deleted |
-| Decisions / grants | Persistent until user clears |
-| Compaction events | Until session deleted (debug-grade) |
-| Errors | At least until next release; longer for compliance-bound projects |
-| Sub-agent dispatches | Per dispatch-archive policy (often age-encrypted long-term) |
+| Tool calls | Harness default: until session deleted → pin a number (e.g., 30–90 days) when audit needs outlive sessions |
+| Decisions / grants | Harness default: until user clears → pin a number for compliance-bound projects (§22 retention requirements) |
+| Compaction events | Debug-grade → ≤ 7–30 days |
+| Errors | At least until next release → longer, with a pinned number, for compliance-bound projects |
+| Sub-agent dispatches | Dispatch-archive policy → a written age horizon (e.g., encrypt at 30 days, delete at 1 year), not "long-term" |
 
 Pin retention with explicit numbers in the project's recovery runbooks (§5). "Permanent" and "indefinite" aren't retention policies — they're handwaves. Concrete numbers force the conversation about acceptable storage cost vs. audit utility.
 
@@ -427,26 +431,28 @@ If review never happens, either remove the logging cost or make review part of p
 - §5 Recovery runbooks — runbook detection signatures should map to log-line patterns; if you can't write the detection from the log, the log is missing the field
 - §9.6 strategic compaction — compaction events are a layer worth logging
 - §22 compliance — agent logs are evidence-pack components; retention policy must align with regulatory requirements
-- §0.6 anti-pattern table — "Agent logs without review"
+- §0.6 anti-pattern catalog (`core/umami-anti-patterns.md`) — "Agent logs without review"
 
 ---
 
 ## 5. State Tracking & Recoverability
 
-Every state mutation is tracked through content-addressable hashing or equivalent versioning.
+State tracking scales with what the state is worth — don't build versioning infrastructure the project's actual state doesn't justify. For most projects, git plus a database with verified backups *is* the state-tracking story; §0.9 default-deny applies, so cite the incident, rollback need, or audit-trail requirement that demands more before building more. The full discipline — every state mutation tracked through content-addressable hashing or equivalent versioning — is the deep end, justified when stateful editing is itself the product's domain (documents, graphs, rich configuration) and undo/redo or "what changed and when" is a product feature or audit requirement:
 
 - **Change detection** — diffs computed at field level, not "the whole file changed."
 - **Undo/redo** — navigable version history, not a naive stack.
 - **Deduplication** — identical states produce identical hashes, no redundant storage.
 - **Debounced persistence** — frequent edits batched to avoid write storms, with forced caps to prevent data loss.
 
-The result: every edit is recoverable, and you can always answer "what changed and when."
+The result at full depth: every edit is recoverable, and you can always answer "what changed and when."
 
 For production systems, recoverability extends beyond code versioning to disaster recovery and incident response — RTO/RPO targets, backup verification, and restore procedures. The IaC extension covers infrastructure recovery (§16.12). The compliance extension covers the procedural layer — incident response plans, DR testing, and communication plans (§22.4).
 
 ### Recovery Runbooks per Stateful Surface
 
 For projects with persistent state — configuration files, credential stores, session databases, agent logs, working trees, on-disk caches, indexed memory — formalize *per-surface restore procedures* before they're needed in an incident. A runbook turns "we have backups somewhere" into "here's exactly what to do in the next 15 minutes."
+
+**Adopt when (§0.9 default-deny):** a stateful surface exists that would be genuinely hard to reconstruct AND either a loss or near-miss has already occurred, or recovery time matters to someone besides you (users, a client, an auditor). One runbook for the surface that scares you most beats a full catalog written aspirationally.
 
 §5 above describes how state tracking *prevents* loss; runbooks describe how to *recover* when prevention fails.
 
@@ -539,7 +545,7 @@ The shape carries information density: detection signatures help detect; numbere
 
 ## 6b. Developer Experience and Pipeline Health
 
-Developer experience is a velocity input. Slow CI, slow local feedback loops, and unaudited pipeline gates tax every contribution. The math is brutal: a 25-minute CI run × 8 commits per day per contributor × 5 contributors = 1,000 contributor-minutes per day spent waiting, or ~14 working hours per week of pure latency across the team. Inner-loop slowness (a test runner that takes 90 seconds instead of 9) compounds across every iteration and is often worse than outer-loop slowness.
+Developer experience is a velocity input. Slow CI, slow local feedback loops, and unaudited pipeline gates tax every contribution. The tax is mostly not literal idle waiting — contributors pipeline other work while CI runs — it's what the wait does to behavior: **context-switching** (every 25-minute run invites a task switch and a re-orientation cost on return), **batching** (contributors bundle changes to amortize the wait, making each merge bigger and riskier to review), and **integration latency** (merge queues and flaky re-runs stack the delay exactly where it blocks others). A 25-minute pipeline doesn't cost 25 idle minutes per run; it shifts the whole team toward fewer, larger, less-reviewable changes. Inner-loop slowness (a test runner that takes 90 seconds instead of 9) compounds across every iteration and is often worse than outer-loop slowness.
 
 Velocity-protective practices elsewhere in umami (§4 depth tiers, §0.6 tier-sizing, the cost profile annotations in §2/§3/§4) are undermined if the pipeline silently consumes the velocity they preserve. This section frames pipeline and inner-loop health as a recurring audit practice, not a one-time setup.
 
@@ -552,6 +558,8 @@ Velocity-protective practices elsewhere in umami (§4 depth tiers, §0.6 tier-si
 The core practice of this section: a periodic gut check on CI/CD. Quarterly is the default cadence; per-incident as a secondary trigger.
 
 **Cost profile:** Operator-required · Days per audit · Recurring discipline
+
+**Adopt when (§0.9 default-deny):** cycle time is taxing every commit, contributors are skipping local CI, or the gate config was inherited from another project without local justification. A project whose whole pipeline is a 3-minute lint+test pass doesn't need the audit protocol — re-check when the pipeline grows past what one person can hold in their head.
 
 **Depth tiers within the practice:**
 
@@ -566,7 +574,7 @@ The core practice of this section: a periodic gut check on CI/CD. Quarterly is t
 1. **Measure cycle time** — P50 / P99 of pipeline duration over the last 30 days. Include queue time, not just execution time.
 2. **Inventory gates** — list every gate (build, lint, format, type-check, unit tests, integration tests, E2E, visual regression, security scan, deploy gate, manual approvals). For each: what does it check, when did it last catch something, who owns it.
 3. **Audit purposes** — for each gate, can someone name the specific failure mode it catches and a recent example? If the answer is "we've always had it" or "for compliance" without naming the specific control, the gate is unmoored from its purpose.
-4. **Calculate the tax** — cycle time × commits per day × contributors = contributor-hours per week spent waiting. This is the tax the pipeline imposes; compare it to the value the gates produce.
+4. **Calculate the tax** — cycle time × commits per day × contributors gives an upper bound on wall-clock exposure. It overstates idle time (contributors pipeline other work while CI runs) but trends the behavioral tax well enough to act on. Pair it with the behavioral signals: median PR size over time (batching to amortize the wait), commit frequency trend, and re-run rate (flake tax). The value side of the comparison is step 2's "last caught something" dates — gates justify their share of the tax with concrete recent catches, not with plausibility.
 5. **Check guardrails-vs-needs fit** — evaluate the gate set as a whole against the team's actual context, not just per-gate purpose. Pipelines drift out of fit in either direction: under-guardrailed (a small team grows into a security-sensitive product without growing its pipeline) or over-guardrailed (an early-stage prototype inherits an enterprise pipeline that costs hours per commit for no real risk). Check fit against four dimensions:
    - **Team structure** — size, distribution, on-call coverage. A 2-person team rarely needs the same approval gates as a 30-person team.
    - **Risk profile** — regulated? user-facing? handles secrets, payments, PHI? Pipeline depth should match the §3d risk taxonomy the project actually carries, not what a similar-looking project elsewhere carries.
@@ -603,7 +611,7 @@ These are heuristics, not hard rules. Your project may justify slower budgets (l
 | Pipeline failures dismissed without investigation | Flaky tests becoming normalized; gates losing trust; eventually a real regression gets dismissed too |
 | Identical gate configuration across multiple projects regardless of context | Pipeline cargo-culted from one project to another without local justification |
 | No gate has caught a real regression in N months | Gates documenting aspiration, not catching incidents |
-| Audit ran; no gates removed | Audit-without-disposition pattern (see §0.6 "Documentation theater" applied to pipeline) |
+| Audit ran; every gate Kept with no per-gate justification recorded | Audit-without-disposition pattern (see §0.6 "Documentation theater" applied to pipeline). All-Keep *can* be the honest outcome — but only when each Keep cites a recent catch or a live threat; a blanket Keep with no citations is the audit rubber-stamping itself |
 | Team scaled up or down without pipeline adjustment | Pipeline guardrails sized for the team six months ago, not the team today (e.g., 2-person team grew to 10 with no review gates added; or 30-person team shrank to 5 with the same heavyweight approval gates blocking everything) |
 | Risk profile changed without pipeline adjustment | Project shipped a new compliance-bound feature, started handling secrets, or grew an authenticated user base — but the pipeline still gates as if it's the prototype it was |
 | Deployment model changed without pipeline adjustment | Team moved to continuous deploy but the pipeline still assumes periodic releases (or vice versa); gate priorities don't match the deploy flow anymore |

@@ -1,6 +1,6 @@
 # Umami — Process / Documentation / Tracking Extension
 
-This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *process / documentation / tracking* concern cluster — how the project explains itself, surfaces gaps, coordinates changes, and tracks state across sessions.
+This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](../umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *process / documentation / tracking* concern cluster — how the project explains itself, surfaces gaps, coordinates changes, and tracks state across sessions.
 
 **When to fetch this file:** When an audit, init, or implementation task hits a Tier 2+ practice in any of §7 / §8 / §10 / §12. Specifically: ADR discipline, cross-implementation research, gap registry / per-release retros, periodic dropped-item audit, change-propagation maps, session-handoff tracking.
 
@@ -78,7 +78,7 @@ When committing to a foundational architectural approach where alternatives have
 **Cross-references:**
 - §7 ADRs — research doc feeds the ADR's "alternatives considered" section with concrete depth
 - §2 specs — research informs which alternatives are worth specifying against
-- §0.6 anti-pattern table — "Cargo-culting practices" (one source of cross-impl research is *catching* patterns that look universal but actually aren't)
+- §0.6 anti-pattern catalog (`core/umami-anti-patterns.md`) — "Cargo-culting practices" (one source of cross-impl research is *catching* patterns that look universal but actually aren't)
 
 ---
 

@@ -72,11 +72,12 @@ referenced=$(grep -rhoE "$REFERENCE_RE" --include="*.md" . \
   | sort -u)
 
 # Known false-positive references that aren't real cross-refs:
-# - §N where N is "next-available" markers in CLAUDE.md (e.g., "Next available extension section: §31")
+# - §N where N is "next-available" markers in CLAUDE.md (e.g., "Next available extension section: §32")
 # - References inside code fences (rare; not currently filtered)
 # Maintain a small allowlist of section IDs that are expected NOT to resolve.
 # Future: replace with an inline annotation system (<!-- nofitness --> in markdown).
-EXPECTED_UNRESOLVED="31"
+# 2026-07-03: §31 removed from the allowlist — ext/umami-backend.md now defines it; §32 is the new next-available marker.
+EXPECTED_UNRESOLVED="32"
 
 # Report orphan references
 # A reference §N resolves if EITHER the exact section is defined OR any sub-section §N.X is defined.
@@ -109,6 +110,62 @@ if [ "$SHOW_UNUSED" = "1" ]; then
   done
 fi
 
+# ── Second invariant: relative markdown links resolve to real files ──
+# §N checking can't see a broken *path* — e.g. a `core/` file linking
+# [umami.md](umami.md) (resolves to the non-existent core/umami.md) instead of
+# ../umami.md. This check resolves every local relative link against its
+# containing directory and flags dead targets. Scoped to git-tracked files, so
+# gitignored scratch (review/, out/) is skipped. Surfaced by the 2026-06-17
+# multi-model readability sweep, which found ~18 such breaks check-refs missed.
+broken_link_count=0
+broken_links=""
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  dir=$(dirname "$f")
+  in_fence=0
+  while IFS= read -r line; do
+    # Toggle fenced-code-block state on ``` / ~~~ fences and skip their contents —
+    # example snippets routinely contain illustrative `](path)` that aren't repo links.
+    case "$line" in
+      '```'*|'~~~'*) in_fence=$((1 - in_fence)); continue ;;
+    esac
+    [ "$in_fence" = "0" ] || continue
+    # Strip inline code spans too, so `[x](x)` example text inside backticks is ignored.
+    stripped=$(printf '%s' "$line" | sed -E 's/`[^`]*`//g')
+    links=$(printf '%s\n' "$stripped" | grep -oE '\]\([^)]+\)' | sed -E 's/^\]\((.*)\)$/\1/' || true)
+    [ -n "$links" ] || continue
+    while IFS= read -r target; do
+      [ -n "$target" ] || continue
+      # Strip an optional ` "title"` suffix, then any #anchor.
+      target="${target%% *}"
+      path="${target%%#*}"
+      [ -n "$path" ] || continue   # pure in-page anchor (#foo) — nothing to resolve
+      case "$path" in
+        http://*|https://*|mailto:*|/*) continue ;;   # external / absolute — out of scope
+      esac
+      if [ ! -e "$dir/$path" ]; then
+        broken_links="${broken_links}  ${f} → ${target}"$'\n'
+        broken_link_count=$((broken_link_count + 1))
+      fi
+    done <<< "$links"
+  done < "$f"
+done < <(git ls-files '*.md')
+
+# ── Third invariant: the landing stays under its token budget ──
+# The landing (umami.md) is the Tier-1 fetch; its size is a managed budget
+# (see the "Landing token budget" gap-registry entry, opened 2026-07-03 after
+# the file silently grew from ~13K to ~30K tokens past its published claim).
+# Budget: ~25K tokens ≈ 125,000 bytes (bytes/5 ≈ tokens for this markdown mix,
+# split between the word- and byte-based estimates). Growth past the budget
+# gets extracted along an orthogonal seam (§11), not absorbed — this check
+# makes the breach loud instead of silent.
+LANDING_BUDGET_BYTES=125000
+landing_bytes=$(wc -c < umami.md | tr -d ' ')
+landing_over=0
+if [ "$landing_bytes" -gt "$LANDING_BUDGET_BYTES" ]; then
+  landing_over=1
+fi
+
 if [ "$QUIET" != "1" ]; then
   echo "=== umami cross-reference fitness check ==="
   echo "Defined sections: $(echo "$defined" | wc -w)"
@@ -126,6 +183,21 @@ if [ "$QUIET" != "1" ]; then
     done
   fi
 
+  echo ""
+  if [ "$broken_link_count" = "0" ]; then
+    echo "✓ All relative markdown links resolve to existing files."
+  else
+    echo "✗ ${broken_link_count} broken relative link(s) found:"
+    printf '%s' "$broken_links"
+  fi
+
+  echo ""
+  if [ "$landing_over" = "0" ]; then
+    echo "✓ Landing within budget: ${landing_bytes} / ${LANDING_BUDGET_BYTES} bytes."
+  else
+    echo "✗ Landing over budget: ${landing_bytes} bytes > ${LANDING_BUDGET_BYTES}. Extract along an orthogonal seam (§11); update the budget only with a recorded rationale."
+  fi
+
   if [ "$SHOW_UNUSED" = "1" ] && [ -n "$unused" ]; then
     echo ""
     echo "Informational — sections defined but never referenced (may be intentional):"
@@ -135,6 +207,7 @@ if [ "$QUIET" != "1" ]; then
   fi
 fi
 
-# Cap exit code at 255 to fit POSIX exit range
-[ "$orphan_count" -gt 255 ] && orphan_count=255
-exit "$orphan_count"
+# Exit code reflects all three invariants; capped at 255 to fit the POSIX range.
+total=$((orphan_count + broken_link_count + landing_over))
+[ "$total" -gt 255 ] && total=255
+exit "$total"

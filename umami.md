@@ -4,6 +4,8 @@ This document is a template for establishing processes, testing strategies, and 
 
 **This is a general-purpose template.** It must not contain references to any specific project, codebase, brand, or product. All examples should use generic descriptions. If you adapt this template for a specific project, do so in that project's own docs — not here.
 
+> **Read this first — the anti-overhead litmus.** umami is a menu of process, not a checklist to complete. Adopting more of it is not better; adopting what *earns its keep* is. Before adding any practice, and periodically after: *pick any three umami practices currently active in your project; for each, name a specific event in the last 30 days where it caught a problem, prevented one, or produced a finding you acted on.* If you can't for two of the three, the project is carrying process it shouldn't — prune before you add. The default answer to "should we adopt §X?" is **no, until a concrete pain says otherwise**. This discipline is the whole of §0.9; everything below is opt-in against it.
+
 **This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Do NOT copy it into a project's `docs/` folder. Instead, keep the URL in each project's `CLAUDE.md` as a reference for on-demand process audits.
 
 > **A note on `CLAUDE.md`:** This template uses `CLAUDE.md` as the instruction file name throughout because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
@@ -15,17 +17,17 @@ This document is a template for establishing processes, testing strategies, and 
 - Core companion — Runtime (security, threat modeling, trust posture, state, pipeline health): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-runtime.md
 - Core companion — Process (ADRs, gaps, change propagation, change tracking): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-process.md
 - Core companion — Agents (token efficiency, file size budgets, orchestration): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-agents.md
+- Core companion — Anti-pattern catalog (§0.6 full table; fetch for onboarding/audits): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-anti-patterns.md
 - Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-web.md
 - Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-data.md
 - Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-mobile.md
-- Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
-- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-wordpress.md
-- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-drupal.md
+- Extension — CMS (incl. §20 WordPress + §21 Drupal variants, folded in at v3.1): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
 - Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-compliance.md
 - Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-scripting.md
 - Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-integration.md
 - Extension — Homelab: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-homelab.md
+- Extension — Backend API services: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-backend.md
 - Extension — Desktop (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-desktop.md
 - Extension — Desktop Linux: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-linux.md
 - Extension — SPA Wrapper: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-spa-wrapper.md
@@ -35,12 +37,30 @@ This document is a template for establishing processes, testing strategies, and 
   (umami.md) first and consult its Section Navigation Map to identify which companion
   files apply. Follow the tiered audit protocol in §0.7 — determine the project's current
   adoption tier, fetch only the companion files needed for the current and next tier,
-  then audit one tier above. Tier 1 audits typically don't need any companion file.
+  then audit one tier above. Tier 1 audits typically don't need any companion file
+  (exception: fetch core/umami-anti-patterns.md when onboarding an existing codebase).
   Focus on 3-5 actionable recommendations, not comprehensive compliance. Audits are
   READ-ONLY — report findings and describe what changes each recommendation requires,
   but do not modify code or project files until the user explicitly chooses which
   recommendations to apply.
 ```
+
+> **Pinning a version.** The URLs above float on `main`, which always serves the latest released state — every push to the umami repo reaches your agent's context on its next fetch. A project can instead pin to a release tag by substituting `refs/tags/v3.1` (the current release) for `refs/heads/main` in every URL. Pinning is the same discipline §14c teaches for model versions: pin, then bump deliberately (fetch the new tag, read the diff, update the URL block in one reviewed commit). Solo and experimental projects can stay on `main` for simplicity; teams and compliance-bound projects should pin — an immutable tag means your agents' instructions can't change under you between audits.
+
+---
+
+## Where to Start
+
+Match the request to an entrypoint *before* doing anything else. "Apply umami," "set up umami," and "audit against umami" are different tasks, and "Tier N" in a request can mean either *targeting* that tier or *currently at* it.
+
+| Situation | Start here | What "Tier N" means here |
+|---|---|---|
+| **New project, no umami yet** | Run the §0 questionnaire (propose-then-confirm), then §0.7b Initialization. Apply Tier 1 now plus any Tier-2 practice whose "adopt when…" trigger (§0.6) already fires — do **not** scaffold a whole tier preemptively (that's the *Adopting everything at once* anti-pattern). | *Targeting* — grow toward it as triggers fire |
+| **Existing project, no umami references** | §0.7b Initialization (runs discovery, computes the URL set, installs skill/command files, then auto-chains one §0.7 audit). | *Targeting* |
+| **Existing project, already references umami** | §0.7 Audit (read-only). Determine the *current* adoption tier, then audit one tier above. | *Currently at* — audit one above |
+| **Recurring health check** | §0.7 Audit on a cadence; §6b for pipeline/DevEx health, §8 for dropped work. | n/a |
+
+**Init vs. audit, in one line:** no umami references in the project yet → §0.7b (Initialization — writes skill/command files). References already present → §0.7 (Audit — read-only). When genuinely unsure, state both and ask which to run.
 
 ---
 
@@ -50,7 +70,7 @@ This document is the **landing doc** for umami v3 — it carries the framework, 
 
 | § | Topic | File | Tier | Fetch when... |
 |---|---|---|---|---|
-| §0 | Project Discovery (questionnaire, tiers, anti-patterns, audit and init protocols) | `umami.md` | Foundation | Always |
+| §0 | Project Discovery (questionnaire, tiers, AI-discipline spectrum, anti-patterns, adoption ledger + adopt/retire gate, audit and init protocols) | `umami.md` | Foundation | Always |
 | §1 | Project Structure | `umami.md` | Foundation | Always |
 | §2 | Specification-First Development | `core/umami-quality.md` | Structure | Features take more than one session |
 | §2b | Async Channel Contracts (typed channel + origin tag + allowed-consumer list + audit-on-add) | `core/umami-quality.md` | Structure | Project has async surfaces (events, messages, worker output) and team has seen wrong-place message incidents |
@@ -59,6 +79,7 @@ This document is the **landing doc** for umami v3 — it carries the framework, 
 | §3c | Interactive Decision Planning | `core/umami-quality.md` | Structure | Design has 3+ load-bearing compounding decisions |
 | §3d | Code Review Discipline (three-layer) | `core/umami-quality.md` | Scale | Code generation outpaces human review capacity |
 | §3e | Refactoring Discipline | `core/umami-quality.md` | Structure | Agents refactor at velocity |
+| §3f | Eval Suite Management (golden datasets, LLM-as-judge, eval-driven workflow) | `core/umami-quality.md` | Scale | LLM/agent-feature product whose correctness depends on model behavior |
 | §4 | Runtime Validation, observability, threat modeling, trust posture, security disciplines, agent runtime security, untrusted-content boundaries, agent log discipline | `core/umami-runtime.md` | Mixed (Tier 1 floor lives in landing's *Security Essentials* below; full discipline in companion) | Threat-relevant boundaries, security depth beyond day-one floor, LLM-feature products |
 | §5 | State Tracking & Recoverability (recovery runbooks per stateful surface) | `core/umami-runtime.md` | Scale | Stateful operations need rollback or audit trails |
 | §6 | Enforced Consistency Rules (types, lint, deps, supply-chain defenses) | `umami.md` | Foundation | Always |
@@ -71,20 +92,43 @@ This document is the **landing doc** for umami v3 — it carries the framework, 
 | §12 | Lightweight Change Tracking | `core/umami-process.md` | Scale | Work spans multiple sessions and context is lost between handoffs |
 | §13 | Dead Code Hygiene | `umami.md` | Foundation | Always |
 | §14 | Agent Orchestration (modes, delegation, model routing, skills, gates, hooks) | `core/umami-agents.md` | Scale | Multi-agent workflows or specialized agent delegation |
+| §14b | Prompt & Instruction-File Engineering | `core/umami-agents.md` | Structure | Instruction-file / prompt changes move agent behavior and you can't tell which edit did it |
+| §14c | Model-Version Pinning & Drift Detection | `core/umami-agents.md` | Structure | Correctness depends on model behavior in production; a model update changed behavior, or config uses floating aliases |
+| §14d | Agent-Failure Debugging (trajectory forensics) | `core/umami-agents.md` | Scale | Agents run autonomously and a failure couldn't be diagnosed from code logs alone |
 | §15 | Putting It Together — Checklist | `umami.md` | Foundation | Always |
 
 **Companion files (core):**
 
-- [`core/umami-quality.md`](core/umami-quality.md) — §2 · §2b · §3 · §3c · §3d · §3e — specs, async channel contracts, testing, decision planning, code review, refactoring
+- [`core/umami-anti-patterns.md`](core/umami-anti-patterns.md) — §0.6 onboarding anti-pattern catalog — the full table (how to spot it · watch signal · mitigation); the landing keeps the grouped index. Fetch when onboarding an existing codebase or running a §0.7 audit
+- [`core/umami-quality.md`](core/umami-quality.md) — §2 · §2b · §3 · §3c · §3d · §3e · §3f — specs, async channel contracts, testing, decision planning, code review, refactoring, eval suite management
 - [`core/umami-runtime.md`](core/umami-runtime.md) — §4 · §5 · §6b — runtime validation, security disciplines, threat modeling, trust posture, state recovery, pipeline health
 - [`core/umami-process.md`](core/umami-process.md) — §7 · §8 · §10 · §12 — documentation, gap registry, change propagation, change tracking
-- [`core/umami-agents.md`](core/umami-agents.md) — §9 · §11 · §14 — token efficiency, file size budgets, agent orchestration
+- [`core/umami-agents.md`](core/umami-agents.md) — §9 · §11 · §14 · §14b · §14c · §14d — token efficiency, file size budgets, agent orchestration, prompt/instruction-file engineering, model pinning & drift, agent-failure debugging
 
-**Domain extensions** (§16–§30) live in [`ext/`](ext/), with shared+variant clusters grouped under `ext/{domain}/` (currently `ext/cms/` and `ext/desktop/`). See [README](README.md) for the full extension catalog.
+**Domain extensions** (§16–§31) live in [`ext/`](ext/), with shared+variant clusters grouped under `ext/{domain}/` (currently `ext/cms/` and `ext/desktop/`). See [README](README.md) for the full catalog with descriptions. Quick §→file index for targeted fetches:
 
-**Deprecation note (v3.0 → v3.1):** Stubs remain at the pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory). These stubs are deprecated and **will be removed in v3.1**. They exist so adopters fetching legacy paths get a clear migration message rather than a 404.
+| § | Extension | File |
+|---|---|---|
+| §16 | IaC / DevOps | [`ext/umami-iac.md`](ext/umami-iac.md) |
+| §17 | Web frontend | [`ext/umami-web.md`](ext/umami-web.md) |
+| §18 | Data pipelines | [`ext/umami-data.md`](ext/umami-data.md) |
+| §19 | Mobile | [`ext/umami-mobile.md`](ext/umami-mobile.md) |
+| §20 | WordPress (platform variant; folded into §25's file at v3.1) | [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) |
+| §21 | Drupal (platform variant; folded into §25's file at v3.1) | [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) |
+| §22 | Compliance | [`ext/umami-compliance.md`](ext/umami-compliance.md) |
+| §23 | Scripting / CLI | [`ext/umami-scripting.md`](ext/umami-scripting.md) |
+| §24 | Systems integration | [`ext/umami-integration.md`](ext/umami-integration.md) |
+| §25 | CMS (shared) | [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) |
+| §26 | Homelab | [`ext/umami-homelab.md`](ext/umami-homelab.md) |
+| §27 | Desktop (shared) | [`ext/desktop/umami-desktop.md`](ext/desktop/umami-desktop.md) |
+| §28 | Desktop Linux (loads with §27) | [`ext/desktop/umami-linux.md`](ext/desktop/umami-linux.md) |
+| §29 | SPA wrapper (loads with §27+§28) | [`ext/desktop/umami-spa-wrapper.md`](ext/desktop/umami-spa-wrapper.md) |
+| §30 | Agent workflows | [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) |
+| §31 | Backend API services | [`ext/umami-backend.md`](ext/umami-backend.md) |
 
-**Cost-aware adoption:** Tier 1 / foundation work uses `umami.md` alone — no companion file needed. Fetch concern files only when the §0.6 tier table or §0.5 mapping calls for them. On a Pro / lower-token plan, landing-only is a ~13K-token fetch instead of ~40K for the pre-v3 monolithic document.
+**Legacy paths (v3.1+):** Pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory) **no longer resolve** as of v3.1 — the v3.0 deprecation stubs were removed. The v3.0-era `ext/cms/umami-wordpress.md` and `ext/cms/umami-drupal.md` also no longer resolve — §20/§21 folded into `ext/cms/umami-cms.md` at v3.1. Adopter `CLAUDE.md` files still referencing dead paths get a 404; update them per the Navigation Map above, or run `/umami-init` which detects dead paths and offers automatic migration.
+
+**Cost-aware adoption:** Tier 1 / foundation work uses `umami.md` alone — no companion file needed. Fetch concern files only when the §0.6 tier table or §0.5 mapping calls for them. Landing-only is a ~25K-token fetch after the 2026-07-03 anti-pattern-catalog extraction (estimate from ~118KB; it had grown to ~30K from ~13K at the v3.0 split; the pre-v3 monolith was ~40K). The landing's token size is a managed budget — umami's own gap registry (`audits/gaps.md` in the umami repo, not your project) tracks it; further growth gets extracted, not absorbed.
 
 ---
 
@@ -164,22 +208,22 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 
 | If the project has... | Apply these sections | Extension file | Skip or defer |
 |-----------------------|---------------------|----------------|---------------|
-| Data ingestion / pipelines | §3 (testing — data quality layer), §3b (TDD + debugging), §4 (validation), §5 (state tracking), §10 (change map per-layer) | [umami-data.md](umami-data.md) | §3 visual regression (no UI yet) |
-| Database / warehouse | §2 (specs — schema contracts), §3 (test doubles for DB), §6 (strict types), §7 (data dictionary as living doc) | [umami-data.md](umami-data.md) | §7 UX audit (no UI) |
-| API / backend | §2 (specs — API contracts), §3 (API/service tests + test doubles), §3b (TDD), §4 (validation), §6 (type checking) | [umami-integration.md](umami-integration.md) | §3 visual regression |
-| Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | [umami-web.md](umami-web.md) | — (full template applies) |
-| Mobile app | §2 (specs), §3 (unit + integration tests), §3b (TDD), §6 (strict types), §12 (release tracking) | [umami-mobile.md](umami-mobile.md) | §3 visual regression (use device matrix testing instead) |
-| Infrastructure / IaC | §2 (specs — infra contracts), §6 (pinning), §7 (ADRs — cloud decisions), §8 (acknowledged gaps) | [umami-iac.md](umami-iac.md) | §3 visual/E2E, §4 runtime validation (use drift detection instead) |
-| CMS (any) | §3 (testing), §3b (TDD), §6 (consistency — coding standards), §7 (ADRs — extension/architecture decisions), §8 (acknowledged gaps — extension risks) | [umami-cms.md](umami-cms.md) + platform file ([WordPress](cms/umami-wordpress.md), [Drupal](cms/umami-drupal.md)) | — |
-| CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | [umami-scripting.md](umami-scripting.md) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
+| Data ingestion / pipelines | §3 (testing — data quality layer), §3b (TDD + debugging), §4 (validation), §5 (state tracking), §10 (change map per-layer) | [umami-data.md](ext/umami-data.md) | §3 visual regression (no UI yet) |
+| Database / warehouse | §2 (specs — schema contracts), §3 (test doubles for DB), §6 (strict types), §7 (data dictionary as living doc) | [umami-data.md](ext/umami-data.md) | §7 UX audit (no UI) |
+| API / backend | §2 (specs — API contracts), §3 (API/service tests + test doubles), §3b (TDD), §4 (validation), §6 (type checking) | [umami-backend.md](ext/umami-backend.md) (the service you own) + [umami-integration.md](ext/umami-integration.md) (the remote calls it makes) | §3 visual regression |
+| Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | [umami-web.md](ext/umami-web.md) | — (full template applies) |
+| Mobile app | §2 (specs), §3 (unit + integration tests), §3b (TDD), §6 (strict types), §12 (release tracking) | [umami-mobile.md](ext/umami-mobile.md) | §3 visual regression (use device matrix testing instead) |
+| Infrastructure / IaC | §2 (specs — infra contracts), §6 (pinning), §7 (ADRs — cloud decisions), §8 (acknowledged gaps) | [umami-iac.md](ext/umami-iac.md) | §3 visual/E2E, §4 runtime validation (use drift detection instead) |
+| CMS (any) | §3 (testing), §3b (TDD), §6 (consistency — coding standards), §7 (ADRs — extension/architecture decisions), §8 (acknowledged gaps — extension risks) | [umami-cms.md](ext/cms/umami-cms.md) (includes the §20 WordPress / §21 Drupal platform-variant parts — apply the one matching the platform) | — |
+| CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | [umami-scripting.md](ext/umami-scripting.md) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
-| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | [umami-compliance.md](umami-compliance.md) | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
-| Desktop app (native) | §1 (structure), §3 (unit + E2E tests), §3b (TDD), §6 (strict types, linting), §8 (acknowledged gaps — headless testing limitations), §11 (file size budgets) | [umami-desktop.md](umami-desktop.md) + platform file ([Linux](desktop/umami-linux.md)) | §3 visual regression (use headless E2E instead) |
-| Desktop app (SPA wrapper) | §1 (structure), §4 (security — navigation policy, session persistence), §6 (consistency), §8 (acknowledged gaps) | [umami-desktop.md](umami-desktop.md) + [Linux](desktop/umami-linux.md) + [SPA Wrapper](desktop/umami-spa-wrapper.md) | §2 (specs — you don't control the web app), §3 multi-layer testing |
-| Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
+| Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | [umami-compliance.md](ext/umami-compliance.md) | Nothing skipped — compliance adds rigor, it doesn't remove sections. |
+| Desktop app (native) | §1 (structure), §3 (unit + E2E tests), §3b (TDD), §6 (strict types, linting), §8 (acknowledged gaps — headless testing limitations), §11 (file size budgets) | [umami-desktop.md](ext/desktop/umami-desktop.md) + platform file ([Linux](ext/desktop/umami-linux.md)) | §3 visual regression (use headless E2E instead) |
+| Desktop app (SPA wrapper) | §1 (structure), §4 (security — navigation policy, session persistence), §6 (consistency), §8 (acknowledged gaps) | [umami-desktop.md](ext/desktop/umami-desktop.md) + [Linux](ext/desktop/umami-linux.md) + [SPA Wrapper](ext/desktop/umami-spa-wrapper.md) | §2 (specs — you don't control the web app), §3 multi-layer testing |
+| Homelab / self-hosted infrastructure | §1 (structure — documented topology), §4 (security discipline), §7 (living docs as AI context), §8 (acknowledged gaps), §15 (checklists) | [umami-homelab.md](ext/umami-homelab.md) | §2 (specs), §3 visual/E2E, §11 (file size budgets) |
 | AI-assisted development (any project using agents) | §3c (interactive decision planning when designs compound), §3d (code review at agentic velocity), §9 (token efficiency), §14 (agent orchestration — delegation, modes of AI use, skills, parallel review, tool integration) | — | — |
-| LLM-feature product (ships features that ingest external content via LLMs) | §4 (untrusted-content boundaries — typed wrapper, provenance, per-provider spotlighting, audit-on-add), §3d (add an "untrusted-content-surface" project-specific risk dimension), §9.6 (MCP and tool context costs apply to product-side LLM features), §14 (modes of AI use — products typically span all three) | — | §15 visual regression unless the product also has a UI |
-| Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI, scheduled remote agents) | §14 (orchestration building blocks), §9.7 (cost caps non-negotiable for autonomous workflows), §4 (kill switches, sandboxing, identity isolation), §3 (verification gates for closed-loop patterns) | [umami-agent-workflows.md](umami-agent-workflows.md) | — |
+| LLM-feature product (ships features that ingest external content via LLMs) | §4 (untrusted-content boundaries — typed wrapper, provenance, per-provider spotlighting, audit-on-add), §3d (add an "untrusted-content-surface" project-specific risk dimension), §9.6 (MCP and tool context costs apply to product-side LLM features), §14 (modes of AI use — products typically span all three) | — | §3 visual regression unless the product also has a UI |
+| Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI, scheduled remote agents) | §14 (orchestration building blocks), §9.7 (cost caps non-negotiable for autonomous workflows), §4 (kill switches, sandboxing, identity isolation), §3 (verification gates for closed-loop patterns) | [umami-agent-workflows.md](ext/umami-agent-workflows.md) | — |
 
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
@@ -188,6 +232,15 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 ### 0.6 Adoption Tiers — Size the Process to the Project
 
 Not every practice is equally valuable at every stage. Adopting everything at once on a new project adds process weight that outweighs the benefit. Instead, adopt in tiers — start with the foundations, then add practices when specific problems or project growth make them valuable.
+
+> **Terminology note — "tier" / "level" mean different things in different sections.** The word recurs on several unrelated axes; an unqualified "Tier 2" is ambiguous, so each section qualifies it:
+> - **Adoption tier** (this section, §0.6): Foundation / Structure / Scale — *which practices to adopt at all*. This is the canonical "Tier 1/2/3."
+> - **Risk level** (§3d): Trivial / Low / Medium / High / Critical — *how much review a change needs*.
+> - **Depth tier** (§4 *Reading the cost profiles*): how deeply you implement *one* practice.
+> - **Substrate level** (§3 *Multi-Provider Behavioral Testing*): progressive test complexity for LLM features.
+> - **Data classification** (§22): Public / Internal / Confidential / Restricted.
+>
+> When a section says "Tier N" without a qualifier, it means *adoption tier* (this section).
 
 **Tier 1 — Foundation** (every project, from day one)
 
@@ -204,6 +257,7 @@ These practices cost almost nothing to adopt and prevent the most common sources
 | Enforced consistency | §6 | Types, linting, formatting, and dependency hygiene catch errors at build time |
 | Dead code hygiene | §13 | Less noise means better signal for agents and humans |
 | Pre-commit checklist | §15 (partial) | Catches common mistakes before they compound |
+| Adoption ledger + anti-overhead litmus | §0.9 | The meta-gate: default-deny on new process, a written reason + kill criterion per adopted practice, and the 30-day "is it earning its keep?" test. Cheap, and it's what keeps every other tier honest |
 
 **Tier 2 — Structure** (adopt when the project outlives its first sprint)
 
@@ -228,6 +282,8 @@ These pay off when you start maintaining what you built, onboarding contributors
 | Recovery runbooks per stateful surface | §5 | Project has any persistent state surface that would be hard to reconstruct from scratch (config, credentials, sessions, working trees, indexed memory, etc.) |
 | Lifecycle hooks for automated behaviors | §14 | Project has any "from now on when X, do Y" rules that need to fire automatically (memory and process docs cannot enforce these — only hooks can) |
 | File size budgets | §11 | Files are long enough that agents truncate or miss context |
+| Prompt & instruction-file engineering | §14b | Instruction-file / prompt edits move agent behavior and you can't tell which change did it, or the file is edited often by multiple people |
+| Model-version pinning & drift detection | §14c | Correctness depends on model behavior in production; a provider model update changed behavior, or config routes through floating aliases |
 
 **Tier 3 — Scale** (adopt when complexity demands it)
 
@@ -241,10 +297,10 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Measuring efficiency over time (ET, run-frequency weighting) | §9.7 | You're optimizing across multiple recurring agent workflows or model tiers and need apples-to-apples cost comparison |
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
 | Risk taxonomy with auto-merge thresholds | §3d | Auto-merge is on the table; team needs to agree explicitly on what merges without humans (most projects: 60–90% of changes are eligible) |
-| Cross-provider code review | §3d | Tier Medium+ changes on LLM-feature products where same-family blind spots are expensive; budget supports parallel review |
+| Cross-provider code review | §3d | Medium+ risk-level changes on LLM-feature products where same-family blind spots are expensive; budget supports parallel review |
 | Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or has become rubber-stamping |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
-| Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
+| Multi-provider behavioral testing (provider × substrate-level matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
 | Architectural fitness functions | §3 | Project has clear architectural boundaries that linter rules can't express; team has been bitten by boundary violations |
 | Agent log discipline (5-layer log + retention + review cadence) | §4 | Project has agents taking consequential actions in production where audit trail matters for incident response, compliance, or operational debugging |
 | Cross-implementation research before foundational ADRs | §7 | Project is committing to a foundational architectural approach with meaningful trade-offs (agent loop, edit format, sub-agent model, auth framework, state-management pattern, etc.) |
@@ -252,6 +308,8 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Change propagation maps | §10 | Changes routinely touch 5+ files and contributors miss downstream impacts |
 | Change tracking | §12 | Work spans multiple sessions and context is lost between handoffs |
 | Agent orchestration | §14 | You're using multi-agent workflows or delegating to specialized agents |
+| Eval suite management | §3f | LLM/agent-feature product whose correctness depends on model behavior; a regression shipped that tests couldn't catch, or a prompt/model change shipped with no quality signal |
+| Agent-failure debugging (trajectory forensics) | §14d | Agents run autonomously and a failure couldn't be diagnosed from code logs alone |
 
 **Extensions** follow the same logic: apply when the domain is present *and* the project has reached the maturity level where that guidance adds value. A WordPress site in its first week needs §20.2 security basics, not §20.8 production monitoring.
 
@@ -261,42 +319,55 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 
 When onboarding a project to umami — especially an existing codebase — watch for these patterns. If you identify any during discovery or an initial audit, flag them and recommend the mitigation.
 
-**Use the "watch signal" column to convert each anti-pattern from a description into a diagnostic.** A symptom describes the steady state once the anti-pattern has set in. A watch signal is a falsifiable check — a specific event that, if it does or doesn't happen by a specific point, confirms or refutes the verdict. Without watch signals, anti-pattern audits become subjective and easy to wave away ("we're not *really* doing documentation theater"). With them, the audit can resolve.
+**Use each entry's watch signal to convert the anti-pattern from a description into a diagnostic.** A symptom describes the steady state once the anti-pattern has set in; a watch signal is a falsifiable check — a specific event that, if it does or doesn't happen by a specific point, confirms or refutes the verdict. Verdicts without falsifiers are opinion.
 
-| Anti-pattern | How to spot it | Watch signal (falsifies / confirms) | Mitigation |
+The catalog groups into three families. Scan the relevant family first, then fetch the row for the specific check.
+
+- **Adoption & process shape:** Adopting everything at once · Winchester Mansion sprawl · Monotonic process accretion · Process without product · Documentation theater · Cargo-culting practices · Made-up estimates · Treating the template as law · Aesthetic restructure · Deferred decisions that never get decided
+- **AI-discipline & review:** Accepting AI's 80% as 100% · Closed-loop self-review · Rewriting CI to make AI pass · Accepting agent-rewritten tests uncritically · Refactoring without tests
+- **Technical, runtime & operational:** MCP tool sprawl · Treats untrusted content as plain strings · Leaky async interfaces · No agent-approval gate table · Runbooks-as-aspiration · "From now on when X" without a hook · Single-provider testing for multi-provider product · Agent logs without review · ADR alternatives without research depth · Cost caps in policy doc but not in code · Fitness functions as documentation · Security as reactive — no threat model · Security investment outpaces threat model · Pipeline cargo cult
+
+**The full catalog — one row per anti-pattern (how to spot it · watch signal · mitigation) — lives in [`core/umami-anti-patterns.md`](core/umami-anti-patterns.md)**, extracted from this document on 2026-07-03 to keep the Tier-1 landing fetch lean. Fetch it when onboarding an existing codebase (§0 discovery) or running a §0.7 audit; a greenfield Tier-1 session needs only the index above.
+
+**For AI assistants:** during initial onboarding, fetch the catalog and scan for these patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out — and recommend removing unused process artifacts before adding new ones; reducing noise is as valuable as adding signal. When you flag a borderline case, name the watch signal explicitly ("Borderline documentation theater: 14 specs and 8 ADRs before any application code. Watch signal: if Phase 0 stretches past 9 sessions without code progress, the anti-pattern is real."). A verdict without a falsifier becomes opinion; a verdict with one becomes a checkpoint.
+
+### 0.6b AI-Discipline Spectrum — Vibe Coding ↔ Structured ↔ Agentic
+
+§0.6 sized process to project maturity. This sub-section frames a **complementary, orthogonal axis: per-task AI-collaboration discipline**. A Tier 3 project still vibe-codes the occasional throwaway prototype; a Tier 1 project can apply full agentic engineering to its threat-model boundary. The skill is knowing which posture each piece of work warrants — and being explicit about that call.
+
+Three points on the spectrum, after Osmani, Saboo & Kartakis (2026), *The New SDLC with Vibe Coding: From ad-hoc prompting to Agentic Engineering*:
+
+| Dimension | Vibe coding | Structured AI-assisted | Agentic engineering |
 |---|---|---|---|
-| **Adopting everything at once** | New project gets CLAUDE.md, change propagation maps, ADRs, multi-layer tests, and token efficiency practices before any application code exists. | Tier 2 + Tier 3 practices documented before Tier 1 has been exercised on real code. If the project is still adding process docs after session 5–10 without a runnable artifact, the verdict is confirmed. | Start with Tier 1 only (§0.6). Add higher-tier practices when specific pain points justify them, not preemptively. |
-| **Winchester Mansion sprawl** | *The mature-project cousin of "Adopting everything at once" (above) — same underlying failure to prune, different timeline.* The codebase has grown by accretion over many sessions / iterations / contributors. Features were added; few were removed. The result: rooms that don't connect (modules with no callers, endpoints with no consumers), stairs to nowhere (half-implemented features still in main, code paths that lead to dead ends), doors to walls (documented APIs that don't actually work, exports without imports, settings that no longer do anything). The system "works" — current features run — but nobody can hold the whole shape in their head, onboarding is brutal, and refactoring becomes impossible because nobody knows what's safe to touch. | Pick three features documented in README, marketing, or a feature list. For each: when did it last get exercised in production? When did its tests last run? Who owns it? If the answers are "I don't know" / "I don't know" / "no one" for 2+ features, the sprawl is real. Also: ratio of imported-but-never-called functions, dead routes, modules whose only caller is a test, settings keys nobody reads. | Periodic *architectural* pruning, not just code-level pruning. Combine §13 dead code hygiene (per-file) with a higher-level *feature inventory* pass (per-feature, quarterly default). For each feature: Keep (active use) / Deprecate (announce removal) / Remove (no users, no future). Apply §8 dropped-item-audit discipline to *features*, not just designs. Watch §1 Preserving Project Structure as the upstream protection. |
-| **Process without product** | Days spent building guardrail infrastructure (instruction files, documentation scaffolding, test harnesses) before writing any application code. | No runnable slice exists past the session count where one would normally appear (typically 3–9 sessions, project-shape-dependent). Pick the threshold up front; past it, the anti-pattern is real. | Build something first. Add structure as the project grows. A working prototype with no CLAUDE.md beats a pristine process scaffold with no code. |
-| **Documentation theater** | A heavy planning corpus exists, but subsequent sessions don't *consume* it. Decisions get re-litigated. Specs grow but aren't cited. The corpus exists; the workflow doesn't reference it. | Subsequent sessions re-derive what specs/ADRs/decisions already settle, instead of citing them. If you can't find the doc that drove the last 3 commits' decisions, it's theater. The signal is *consumption*, not volume — front-loaded planning is fine if it gets used. | Every document should be referenced by at least one workflow. Commits, PR descriptions, and session notes should cite the relevant ADR / spec / decision when one applies. If a document isn't being read, either integrate it into the workflow or delete it. |
-| **Cargo-culting practices** | Change propagation maps on a 3-file project. Formal specs for a 10-line script. Multi-layer testing on a single function. Agent orchestration for a solo developer with one assistant. | A practice was adopted because it appears in the template, not because a specific pain point surfaced. If you can't name the pain the practice addresses on this project, the trigger hasn't fired. | Every practice in the tier tables has an "adopt when..." trigger. If the trigger hasn't fired, the practice is premature. More process is not inherently better — only process that addresses a real problem earns its cost. |
-| **Made-up estimates** | The assistant offers calendar predictions ("this is ~2 weeks of work" / "10 sessions" / "we'll be done by Friday"). | Any time-based estimate appears in chat, commit messages, roadmap entries, or planning docs — sourced from the assistant. Calendar predictions are not the assistant's call. | Describe **scope**, not duration: subproblem count, relative size (S/M/L/XL vs. comparable past work), known-vs-unknown ratio. The user does velocity arithmetic — only they know their schedule, energy, and parallel commitments. Sessions are sized by goal, not by clock. |
-| **Treating the template as law** | Rigidly following every recommendation instead of adapting to the project's context. Refusing to skip sections that don't apply. Forcing project structure to match §1 exactly even when it doesn't fit. | Audit findings cite "non-conformance" with sections that don't fit the project shape, instead of recommending adapt or skip. | Umami is a toolkit, not a compliance checklist. Skip what doesn't apply. Adapt what partially applies. The goal is better software, not template conformance. If a recommendation creates friction without solving a problem, it's the wrong recommendation for this project. |
-| **MCP tool sprawl** | The agent has 5–10+ MCP tools loaded "just in case." Tool metadata is consuming a large fraction of every turn's context, often without the developer realizing. | Measure tool-metadata-as-percent-of-context on a representative session. If tool schemas exceed ~30% of context, the verdict is confirmed. Most projects need 1–2 core MCP servers, not 10. | Apply §9.6: prune unused tools first, prefer lazy-load architectures (§9.5b), wrap static servers behind a proxy if needed. The cheapest tool schema is the one not loaded this turn. |
-| **Treats untrusted content as plain strings** | LLM-feature product reads external content (web pages, user messages, tool outputs, file contents) into untyped strings that flow directly to the model. New code paths frequently forget to sanitize; sanitize-on-read is scattered across the codebase. | If functions consuming external content take plain `String` parameters (rather than a typed `UntrustedContent<T>` wrapper), the verdict is confirmed. Audit-on-add doesn't catch it; the type system needs to make it uncompileable. | Apply §4 untrusted-content-boundary discipline: typed wrapper at every boundary, provenance tagging, per-provider spotlighting, audit-on-add at code review. |
-| **Leaky async interfaces** | Project has async surfaces (event bus, message queue, notification system, worker output) but those channels aren't part of the spec. Symptoms: a global event bus with no topic scoping; untyped payloads (`any`, raw JSON) that consumers route by guess; a catch-all UI notification surface receiving messages meant for scoped views; shared worker / stream output regions where multiple writers interleave. The leak manifests as *"a message appeared in the wrong part of the app"* — usually long after the emitting code was forgotten. | If grep finds a global event bus / `EventEmitter` at app scope / `pubsub` library wired at root with no topic discipline, AND the codebase has an `any`-typed or stringly-typed message payload, AND a single global notification / toast root receives traffic from >2 unrelated modules — at least one of those three is true in any leaky-async project. Confirmation: ask the team when they last had a "wrong-place message" incident; if the answer is "last month" or fresher, the verdict is real. | Apply §2b *Async Channel Contracts*: typed channel + origin tag + allowed-consumer list + audit-on-add at §3d code review. Promote to a §3 fitness function (cross-module subscriber not on allowed-consumer list = test fail) when audit-on-add proves insufficient at team pace. The four-part pattern parallels §4's untrusted-content boundary; cite the parallel, don't merge them. |
-| **No agent-approval gate table** | Project has agents taking consequential actions (write files, run commands, network access, sub-agent dispatch) but no single document codifying which actions are gated, at what severity, with what audit trail. New contributors discover gates by tripping them. | If the project has consequential agent actions but no `docs/agent-approval-gates.md` (or equivalent), the gates are implicit. Even one HARD action without a tabulated gate is a sign. | Maintain a gate table per §14 "Agent Approval Gates": HARD/SOFT/NONE severity, action class, user-visible surface, audit trail location, implementation pointer. Group by category. |
-| **Runbooks-as-aspiration** | Per-stateful-surface runbooks exist on disk, but RTO/RPO targets are vague ("soon", "minimal") or restore steps haven't been exercised in >6 months. The runbook reads as policy, not procedure. | Pick the longest-untested runbook and run a recovery drill cold (without coaching). If it fails, the runbook is aspiration. RTO/RPO sections without numbers (just adjectives) are also a confirmed signal. | Apply §5 "Recovery Runbooks per Stateful Surface": numbered restore steps with prerequisites, concrete RTO/RPO numbers, quarterly drills rotating across surfaces. |
-| **"From now on when X" without a hook** | Project documents an automated behavior ("we always log Y", "we never let the agent touch Z") in CLAUDE.md or process docs but no hook implements it. The agent doesn't perform the behavior; humans assume it's being done. | Search the project's harness configuration (`settings.json` or equivalent) for the corresponding event and predicate. If the doc says "always do X" but no PreToolUse / PostToolUse / SessionStart / Stop hook fires X, the verdict is confirmed. | Apply §14 "Lifecycle Hooks": wire automated behaviors through the harness's hook layer. Doc-only "always do X" rules are aspiration unless they're hook-implemented. |
-| **Single-provider testing for multi-provider product** | LLM-feature product serves multiple providers (Anthropic / OpenAI / Gemini / etc.) but the behavioral bench / E2E suite runs against only one. Production paths through other providers ship without behavioral verification. | Count the providers the product serves vs. the providers covered in the bench matrix. If serves > covered, the gap is silent regression risk. Often surfaces post-incident: "we shipped a tool-schema change; it works on Anthropic but Gemini rejects it because we never tested." | Apply §3 "Multi-Provider Behavioral Testing": matrix of providers × substrate tiers; gate critical cells per commit; full matrix nightly or per-release. Real-provider RTT, not just mocks. |
-| **Agent logs without review** | Project ships agent activity logs to a sink (disk, observability platform, S3) but nobody actually reads them. The retention policy looks compliance-shaped; nothing ever gets queried. | Ask when the agent log was last queried for anything other than incident response. If "never" or "I don't know," the log is write-only. If retention is set in months but no review cadence is documented, the log exists for paperwork, not for audit. | Apply §4 "Agent Log Discipline" review-cadence guidance: weekly tool-call scan, per-release error-layer review, per-incident forensic reconstruction, quarterly field-utility review. If review doesn't happen, drop the logging cost. |
-| **ADR alternatives without research depth** | ADR has an "alternatives considered" section that names 1–3 alternatives in 1–2 sentences each. Reader can't tell what kind of audit went into the rejection — was it a deep read, a README skim, or just the assistant's training-data summary? | If an ADR doesn't cite a research doc, ask the author when the alternatives were last deep-read and what concrete dimensions were compared. If the answer is "we just knew" or "it's industry consensus," the audit didn't happen. | Apply §7 "Cross-Implementation Research": pair foundational ADRs with a dated research doc, comparison matrix, and tiered steal-list. The research doc gives the ADR's rejection reasoning auditable depth. |
-| **Cost caps in policy doc but not in code** | Project documentation states "max $X per day for agent operations" but no enforcement exists in the harness configuration. Cost overruns happen and post-hoc retros say "well we have a policy" — but the policy never blocked anything. | Search the harness configuration (`settings.json`, hook configurations, etc.) for cap enforcement. If the doc says max $X but no hook / setting / runtime check enforces it, the verdict is confirmed. Cap-without-enforcement is aspiration. | Apply §9.7 "Cost Caps and Budget Gates": enforce caps in the harness layer (hooks, settings constraints, runtime checks). Document the policy AND the enforcement, with the audit-trail entry recorded when a cap fires. |
-| **Fitness functions as documentation** | Architectural fitness functions exist in the test suite, but they assert constraints that are always trivially true. They never fail. They're aspirational descriptions of architecture, not active gates. | Run the fitness function suite in a deliberately broken state (introduce a known violation). If the suite still passes, the constraint is too loose or the test isn't actually checking what it claims. Functions that have never failed in their lifetime are also a sign — either the codebase has perfect compliance (unlikely) or the test is documentation. | Apply §3 "Architectural Fitness Functions": each function should be specific enough to fail when its invariant is violated. If you can't construct a violation case, the test is documentation, not a fitness function. |
-| **Refactoring without tests** | Code restructured "for clarity" without tests covering the affected behavior. Either no tests exist, or the tests were added/changed as part of the refactor commit. Behavior may have changed silently. | If a "refactor" commit also modifies tests in ways that aren't pure rename / move, it's not a refactor — it's a rewrite. If the codebase has refactor-style commits but the test suite doesn't run reliably, the safety net is missing. | Apply §3e "Refactoring Discipline": tests as the safety net are non-negotiable. If behavior isn't covered, write the test first; then refactor. If you can't write the test, you're not refactoring — you're rewriting. |
-| **Security as reactive — no threat model** | Project ships features with security controls in place (boundary validation, secrets management, auth) but no systematic threat model. Defenses cover threats the team happened to think of; threats they didn't think of slip through. Security incidents repeatedly surface "we should have caught this." | Ask the team to draw the system's trust-boundary data flow diagram on a whiteboard from memory. If they can't, the threat model doesn't exist. Look for a document mapping system boundaries → threats → mitigation decisions. If absent, security is reactive, not deliberate. | Apply §4 "Threat Modeling": the 5-step protocol (DFD → STRIDE → rate → decide mitigations → living document). One pass at project bootstrap; re-visit when boundaries change; per-release for compliance-bound projects. |
-| **Security investment outpaces threat model** | Team adopts Full-depth security practices (zero-trust posture, typed untrusted-content wrappers, multi-provider behavioral matrix, architectural fitness functions) before the threat model or incident history justifies the cost. Often driven by aspirational compliance, vendor headline anxiety, or rigor-signaling — security work feels rigorous and is hard to argue against. Carrying cost is invisible until the project ships late. | Count §4 / §3 Full-depth practices in flight vs. specific threats they address (named in the threat model or incident postmortems). If Full-depth practices > documented threats, the investment is outpacing the model. Also: if weeks of security infra are landing before the features that earn user trust ship, the verdict is confirmed. | Default to Starter / Working depth across §4 practices. Deepen when a threat-model finding, incident, compliance trigger, or vendor/customer requirement justifies the cost — not when the practice sounds rigorous. The §0.6 "Adopting everything at once" anti-pattern applies to security specifically; flag aspirational Full-depth work in §8 acknowledged gaps with an explicit "why now" check. |
-| **Pipeline cargo cult — slow CI as accepted reality** | Project's CI pipeline takes 20+ minutes for what should be a 5-minute pass. Gates were added per incident over time; none have been removed. Contributors stopped complaining months ago because the slowness is treated as immutable. New contributors inherit the slow pipeline and add their own gates without re-justifying existing ones. Pipeline configuration is often copy-pasted from another project. | Measure cycle time P50 / P99 over 30 days. If trending up over consecutive months without remediation, the verdict is confirmed. List every gate; if 3+ have "I don't know" or "never that I remember" answers to "when did this last catch a regression?", the cargo cult is real. Identical pipeline configs across multiple projects with different threat models is the strongest confirmation signal. | Apply §6b "Pipeline Audit": quarterly gut check on cycle time + per-gate purpose + last-caught-something date. Each gate gets a disposition (keep / move local / demote nightly / remove). Inner-loop feedback budgets documented in CLAUDE.md. Cargo-culted pipeline configs re-justified per gate against current threat model and feature surface. |
-| **Aesthetic restructure** | Someone proposes (or an agent quietly executes) a directory / file-layout reorganization framed as "cleaner" or "more consistent." The change breaks paths referenced from downstream `CLAUDE.md` files, skill files, tests, change-propagation maps, or external documentation. Coordination cost was not enumerated. | When a restructure is proposed, ask the proposer to enumerate the external contracts that will break (tests, docs, downstream `CLAUDE.md` references, skill paths, propagation maps). If they can't or won't, the change is aesthetic and the coordination cost is invisible to them. Often the current layout is fine and the structural rule just needs codification. | Apply §1 "Preserving Project Structure": codify the rule (CLAUDE.md), encode invariants as §3 fitness functions, flag structural changes in §3d code review. Restructure only at appropriate phases (discovery, pre-shipping, major-version boundary, or trigger-fired per §8). |
-| **Deferred decisions that never get decided** | Project has decisions-log entries / ADRs / design docs marked "decide later", "TBD", "deferred", or "Proposed" status that persist across multiple phases without resolution. The gap registry tracks these implicitly but they're not in it; they're in the middle ground of "we'll get to it" that never gets gotten to. | Count decisions-log entries / ADRs in "deferred" or "Proposed" state with no follow-up resolution. If the count grows over time (or stays flat across multiple phases without items resolving), the discipline is missing. Old `docs/designs/` files without recent updates and no archive move are the same pattern in design-doc form. | Apply §8 "Periodic Dropped-Item Audit" (typically quarterly). For each dropped item, force a disposition: Revive (still relevant, schedule it) / Archive (was relevant, preserve in `_archive/`) / Delete (truly dead) / Re-decide (the deferred decision gets a real decision now). Default to archive unless revival is justified. |
+| **Intent specification** | Casual natural-language prompts | Detailed prompts with examples and constraints | Formal specs (§2), architecture docs (§7), per-project rule files |
+| **Verification** | "Does it seem to work?" | Manual testing + spot-checking (§3d sampling band) | Automated tests + evals (§3 *Tests and Evals*) + CI gates (§6b) + LLM judges (§3d cross-provider review) |
+| **Codebase understanding** | Minimal; developer may not read the generated code | Selective review of critical paths | Comprehensive review of architecture; AI handles implementation detail under structural constraints (§1) |
+| **Error handling** | Copy-paste error messages back to the AI | Developer diagnoses root cause; AI implements the fix | Agents self-diagnose within bounded surface; humans handle architectural issues |
+| **Appropriate scope** | Prototypes, scripts, personal projects, hackathons, exploration | Features inside an established codebase | Production systems, team-scale development, compliance-bound work |
+| **Risk profile** | High — acceptable only when the code is genuinely disposable | Moderate — human judgement at the key checkpoints | Low — systematic verification at every stage |
 
-**For AI assistants:** During initial onboarding (§0 discovery), scan for these anti-patterns in the project's existing state. If the project already shows signs of documentation theater or cargo-culted practices from a previous process adoption, call it out. Recommend removing unused process artifacts before adding new ones — reducing noise is as valuable as adding signal.
+**The single biggest differentiator is verification.** Vibe coding makes verification optional; agentic engineering makes it mandatory via two complementary mechanisms — **tests** verify the deterministic parts (a function given this input produces that output), **evals** verify the non-deterministic parts (the agent took the right trajectory, used the right tools, produced output meeting the quality bar). Without both, the practice sits closer to vibe coding regardless of how sophisticated the prompts are. See §3 *Tests and Evals — verification's two halves* and §3 *Multi-Provider Behavioral Testing*.
 
-**When you flag a borderline case, name the watch signal explicitly.** "Borderline documentation theater: 14 specs and 8 ADRs before any application code. Watch signal: if Phase 0 stretches past 9 sessions without code progress, the anti-pattern is real." A verdict without a falsifier becomes opinion; a verdict with one becomes a checkpoint.
+**How to pick the spectrum position:** match it to the stakes of the task, explicitly, at the start of the work.
+
+- **Throwaway / exploration / prototype / hackathon** → vibe coding is the right speed. Don't pay agentic-engineering cost to learn what something could look like.
+- **Feature inside an established codebase** → structured AI-assisted. Detailed prompts, manual review of critical paths, lean on the project's existing test/CI discipline.
+- **Production system, payment processing, security boundary, compliance-bound work, AI-feature product reaching real users** → agentic engineering, no shortcuts. The cost of "it seems to work" in these surfaces is exponentially higher than the cost of the discipline.
+
+**Failure mode: keeping the boundary fuzzy.** Teams that don't make the per-task spectrum call explicit produce **prototypes that ship by accident** — a vibe-coded experiment becomes the production thing because nobody re-established the discipline when the stakes changed. Per §1 *Preserving Project Structure* applied to AI-discipline: once a piece of code lives in a higher-stakes context, the discipline needs to graduate with it; quietly keeping it at the original posture is how vibe-coded prototypes become production fragility.
+
+**Watch signal:** ask the team to point at three recently-merged PRs and name the spectrum position each was developed at. If the answers cluster around "I dunno, the usual," the boundary is fuzzy in practice and the prototypes-that-ship-by-accident failure mode is imminent. Falsifier: at least 2 of 3 PRs get a confident, specific spectrum-position answer that matches the change's stakes.
+
+**Cross-references:**
+- §3 *Tests and Evals — verification's two halves* — the verification mechanisms that define the spectrum position
+- §3d code review — risk taxonomy auto-merge thresholds tighten as the spectrum position moves right
+- §4 untrusted-content / threat modeling — agentic engineering is the floor, not a stretch goal, for products handling external content
+- §9.7 cost caps — vibe coding has *low CapEx + high OpEx* (token burn, prompting loops, maintenance tax accumulating in unreviewed code); agentic engineering inverts (higher CapEx investment in harness/tests/specs; lower OpEx via first-pass success rate and lower defect cost downstream)
+- Osmani/Saboo/Kartakis 2026 — original framing of the three-point spectrum and the six-dimension table; see *The New SDLC with Vibe Coding*, Table 1
 
 ### 0.7 Audit Protocol — How to Review Efficiently
 
-Auditing the full document against a project is expensive — both in tokens and in time. A comprehensive audit of every umami file (landing + 4 core companions + relevant extensions) can consume 40,000+ tokens. The umami v3 architecture is designed so most audits don't need that much: a Tier 1 audit needs only the landing document (~13K tokens); a Tier 2 audit pulls in the one or two companion files that match the audit scope (~25K tokens). Use a tiered audit approach.
+Auditing the full document against a project is expensive — both in tokens and in time. A comprehensive audit of every umami file (landing + core companions + relevant extensions) can consume 70,000+ tokens. The umami v3 architecture is designed so most audits don't need that much: a Tier 1 audit needs only the landing document (~25K tokens as of 2026-07) plus the anti-pattern catalog when onboarding an existing codebase; a Tier 2 audit pulls in the one or two companion files that match the audit scope (~40–55K tokens). Use a tiered audit approach.
 
 **For AI assistants performing an audit:**
 
@@ -311,6 +382,10 @@ Auditing the full document against a project is expensive — both in tokens and
 4. **Read selectively. Use the Section Navigation Map.** You do NOT need to fetch every umami file for every audit. Always fetch the landing document (`umami.md`) first — it carries §0 (discovery + framework), the Navigation Map, and Tier 1 practices. Consult the Navigation Map to identify which core companion files apply to the tier you're auditing. Tier 1 audits use landing alone; Tier 2 audits typically fetch one or two companions; Tier 3 audits may fetch more.
 
 5. **Extensions only when relevant.** Only fetch domain extension files if the project has that domain layer AND is at Tier 2+. A Tier 1 web project doesn't need an audit against `umami-web.md` — it needs to get its basic testing and structure right first. The same principle applies to core companions: don't fetch `umami-agents.md` if the project isn't running agents at scale.
+
+6. **For AI-feature projects, assess posture and verification.** Note the project's §0.6b AI-discipline spectrum position (vibe / structured / agentic) and whether verification covers *both* halves per §3 — tests for deterministic code, evals for non-deterministic agent behavior. A project operating in agentic posture with tests but no evals is a gap worth surfacing.
+
+7. **Run the §0.9 retirement pass — the audit is bidirectional.** Auditing one tier above (steps 1–2) is the *adopt* half. The *retire* half reads the §0.9 adoption ledger and, for each adopted practice, checks its kill criterion and the 30-day litmus; practices that have stopped earning their keep get a **Deprecate / Remove** recommendation. An audit that only ever adds practices is itself the *Monotonic process accretion* anti-pattern (§0.6). Adoption recommendations follow default-deny: cite a concrete project artifact as evidence of the pain (per §0.9) — "the project doesn't have §X yet" is not a finding. Retirements use the same findings-disposition dialog as additions.
 
 **Audit output format:**
 
@@ -385,8 +460,8 @@ This callout sits **outside** the priority-ordered recommendations list and does
 **Hard rules for the audit skill** — encode these as non-negotiable constraints in the skill body, not just as suggestions in the audit text. Skills drift when their constraints are advisory; they hold when constraints are stated as rules:
 
 - **Read-only.** Never modify code or docs during the audit. Even obvious cleanup belongs in a follow-up, not in the audit itself.
-- **Always fetch the landing document fresh from the canonical URL** (`https://raw.githubusercontent.com/.../umami.md`). Never cache locally. The framework evolves; cached copies go stale silently.
-- **Consult the Section Navigation Map.** Identify which core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`) and which domain extensions apply before fetching anything beyond the landing document. Fetch only what the audit scope requires.
+- **Always fetch the landing document fresh from the canonical URL** (`https://raw.githubusercontent.com/.../umami.md`). Never cache locally. The framework evolves; cached copies go stale silently. Projects that pin a release tag (see *Pinning a version* near the top of this document) substitute `refs/tags/vX.Y` for `refs/heads/main` — honor the pin, fetch that tag fresh, and note the pinned version in the report. If the project pins a release tag (`refs/tags/vX.Y` — see the pinning note under the URL block above), honor the pin: fetch the pinned tag, note the pinned version in the report, and flag — don't silently override — when the pin is more than one release behind.
+- **Consult the Section Navigation Map.** Identify which core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`, plus `umami-anti-patterns.md` when onboarding an existing codebase) and which domain extensions apply before fetching anything beyond the landing document. Fetch only what the audit scope requires.
 - **If the fetch fails, tell the user and stop.** Do not fall back to a stale local copy. An audit against three-month-old guidance is worse than no audit — it produces confident, wrong recommendations.
 - **Never recommend more than 5 things.** A wall of recommendations is not actionable. Prioritize ruthlessly.
 - **Cite a file path or doc reference for every observation.** "The project lacks ADRs" is an opinion; "no files exist under `docs/decisions/`" is a finding.
@@ -411,6 +486,8 @@ The agent fetches the spec, follows this section, and during the apply phase ins
 
 **This is a lightweight setup, not a framework install.** Init writes only URL references and small invocation-aid skill files. There is no framework copy, no runtime dependency, no library to keep updated. The umami spec stays at its canonical URL and is fetched fresh on every run; the local artifacts are just a way to make access to umami consistent and harness-recognized as commands.
 
+**Harness note (reference implementation).** The paths below — `.claude/skills/…`, `.claude/settings.json` — are Claude Code's layout, used here as one concrete reference. On another harness, substitute its command/skill directory and config file (e.g., Cursor's `.cursor/`, Aider's config, a Codex/Goose equivalent). The skill *content* and the URL references are harness-neutral; only where they live changes. See §14 for the per-harness mapping.
+
 **What gets stored locally vs. fetched fresh:**
 
 - **Stored locally:** URL *references* to the canonical umami spec (in instruction files like `CLAUDE.md`) and *skill files* (`.claude/skills/umami-init.md`, `.claude/skills/umami-audit.md`) that describe *how to invoke* the protocol.
@@ -420,27 +497,27 @@ Skill files are invocation aids — they encode procedure shape, hard rules, and
 
 **Procedure for AI assistants performing initialization:**
 
-1. **Detect current state.** Grep instruction file(s) (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.) for umami URLs. Determine starting state:
+1. **Detect current state.** Grep instruction file(s) (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, etc.) for umami raw-fetch URLs (`raw.githubusercontent.com/…/umami`) — repo-page links or prose mentions of umami don't count as an installation. Determine starting state:
    - **None** — first-time setup.
    - **Partial** — some umami URLs present; missing relevant companion files, missing relevant domain extensions, or referencing extensions for layers the project doesn't have.
    - **Complete** — references match the project shape; recommend `/umami-audit` instead.
 
 2. **Run §0.1–§0.4 discovery** interactively, one decision at a time per §3c when answers compound.
 
-3. **Derive recommended URL set** via §0.5 mapping. The URL block always includes the **landing document** (`umami.md`). Core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`) and domain extensions are added based on the tier the project is targeting and which concerns apply. For Tier 1 / first-pass adoption, the URL block may legitimately list only the landing document plus relevant domain extensions — companion files can be added when the project escalates to Tier 2.
+3. **Derive recommended URL set** via §0.5 mapping. The URL block always includes the **landing document** (`umami.md`). Core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`; `umami-anti-patterns.md` is fetched during onboarding/audits rather than listed per-tier) and domain extensions are added based on the tier the project is targeting and which concerns apply. For Tier 1 / first-pass adoption, the URL block may legitimately list only the landing document plus relevant domain extensions — companion files can be added when the project escalates to Tier 2.
 
-4. **Compute the diff:** adds (companion files + domain extensions to add to URL list), removes (rare; usually flag-only), and skill installations (`.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md`, each with `**Last synced:** YYYY-MM-DD` set to today).
+4. **Compute the diff:** adds (companion files + domain extensions to add to URL list), removes (rare; usually flag-only), and skill installations (`.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md`, each with `**Last synced:** YYYY-MM-DD` set to today). The other three skills (`umami-auto-review`, `umami-pipeline-audit`, `umami-drift-audit`) install **on demand, not by default** — offer each only when discovery shows its protocol applies (§3d review at agentic velocity, §6b when the project has a CI pipeline, §8 when a backlog of designs/decisions exists) and include any accepted ones in the same diff.
 
 5. **Show the user the proposed changes, then present the four-option dialog.** Enumerate every file that would be modified or created — paths, line counts, the exact URL block that would land in each instruction file, which skill files would be created or updated and at what `Last synced:` date. The user must be able to read the diff before deciding. Then surface the dialog (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
 
-6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first.
+6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first. **Seed the §0.9 adoption ledger** (`docs/umami-adoption.md` or equivalent): one row per Tier-2+ practice this init adopts, each with its triggering evidence (the concrete artifact found during discovery) and a falsifiable kill criterion. Adopt under default-deny — only practices a discovery artifact justifies; a bare URL-list entry is not an adoption.
 
 7. **On apply, auto-chain into the first audit.** When step 6 actually wrote files, immediately invoke `/umami-audit` to produce a baseline process audit against the freshly-installed configuration. Announce the transition (*"Init complete — wrote {file list}. Running first process audit now…"*) and proceed without further confirmation; the user already consented to the workflow at the four-option dialog. The audit runs its full §0.7 procedure — read-only fetch, findings report, and its own four-option findings-disposition dialog at the end — so the user still chooses interactively what to act on. Init's job isn't done when the skills are on disk; it's done when the user has seen where they stand. If init was skipped at the dialog (no files written), do not auto-chain; hand off with *"Init skipped — re-invoke `/umami-init` when you're ready."*
 
 **Hard rules** mirror §0.7:
 
 - Read-only by default. The four-option dialog gates every write; no destructive changes without explicit approval.
-- Always fetch the landing document (`umami.md`) fresh from the canonical URL. Never cache locally.
+- Always fetch the landing document (`umami.md`) fresh from the canonical URL. Never cache locally. If the project pins a release tag, fetch that tag and preserve the pin in the URL block init writes.
 - For Tier 2+ scope, fetch the companion files identified by the Section Navigation Map. Don't fetch companions speculatively.
 - If the fetch fails, tell the user and stop. Don't fall back to a stale local copy.
 - Cite a file path or doc reference for every observation.
@@ -476,6 +553,42 @@ The AI explores the codebase, proposes that it's a web application, and presents
 Without the confirmation step, the AI would have silently applied web-centric guardrails and the misfit wouldn't surface until real development starts — after tokens and time had been spent on the wrong structure.
 
 **Key lesson:** The AI should always propose its understanding of the project shape and get confirmation before scaffolding guardrails. A 30-second correction from the user prevents hours of structural rework.
+
+### 0.9 The Adoption Ledger — gate process to earned value
+
+§0.6 tiers, "adopt when…" triggers, anti-pattern watch signals, and §4 cost profiles are all **advisory** — they describe when a practice is worth adopting, but nothing *enforces* the call. That asymmetry is umami's central failure mode: the corpus's mere existence pulls toward "adopt it all," and an agent applying umami defaults to *including* everything it references. The result is process that was added, never earned its keep, and slowed the project down — exactly what umami warns against, committed by umami's own readers.
+
+§0.9 is the active gate that turns the advisory machinery into something enforceable. It **cannot eliminate** the over-application pull — a framework about process discipline carries irreducible process weight — but it eases it. The ledger must itself stay cheap, or it becomes the overhead it fights.
+
+**Default-deny.** A practice is *not adopted* until it has a ledger entry. Absence of a practice is **not** a finding: "this project doesn't have §X yet" is never, on its own, a reason to adopt it. This single rule breaks the §0.7 "audit one tier above" expansion bias.
+
+**The adopt decision is a convergence read, not a binary trigger.** Adopting a practice is never black-and-white; it's reading several spectrums and adopting where they *overlap*. Score the candidate — roughly, not precisely — against these axes:
+
+| Spectrum | Leans ADOPT | Leans DEFER |
+|---|---|---|
+| **Pain** — a concrete recent incident this practice would have caught? | Named incident in the last 30 days (commit, ticket, near-miss) | None; "sounds smart" |
+| **Lifespan** — how long will this code/project live? | Years; long-lived | Days; throwaway / prototype |
+| **Blast radius** — cost if what it guards goes wrong | Users / money / security / data | Dev-only, contained |
+| **Cost to carry** — the practice's own ongoing weight (§4 cost profile) | Hours, one-time | Weeks + recurring discipline |
+| **Reversibility** — how hard to undo a wrong adoption | Cheap to remove later | Architectural, sticky |
+
+One axis leaning alone is noise. When **several converge**, the practice has earned its place; when they don't, defer and record the deferral. Convergence gives a confidence gradient, not a false yes/no — which is the honest shape of the decision.
+
+**The ledger artifact.** One small file at the project root (`docs/umami-adoption.md` or equivalent), one row per adopted Tier-2+ practice:
+
+| Practice (§) | Adopted | Triggering evidence (concrete event) | Cost profile | Kill criterion (falsifiable) | Last payoff |
+|---|---|---|---|---|---|
+| §2b Async channel contracts | 2026-03-14 | 2 wrong-place-message incidents in Feb (gap entries G-47/52) | Agent-with-review · Days · Recurring | Remove if 0 wrong-place incidents AND 0 audit-on-add findings for 2 quarters | 2026-04-22 (PR #131) |
+
+Keep it light — a markdown table a human and an agent can both read and update. A machine-readable variant with embedded measurement scripts is an *optional Tier-3 escalation* for projects already running agents autonomously; don't mandate it (a heavy gate is its own overhead). **The ledger is a *function*, not necessarily a new file** — a project already keeping a gap registry (§8) or a decisions log / ADRs (§7) can host these columns there rather than spinning up a separate `docs/umami-adoption.md`. (umami's own repo does exactly this: its gap registry + ADRs already serve as its ledger, so it adopts no separate file — default-deny applied to the ledger itself.) Add a dedicated file only when no existing artifact fits. The ledger forces the adoption *decision* to be written down (you can't fill `triggering evidence` + `kill criterion` without making the call), makes adoptions auditable ("why did we adopt §X?" → a concrete answer, not "it was in the template"), and makes retirement mechanical.
+
+**Agent-executable — read evidence, don't feel pain.** An agent can't feel a pain point, but it can read evidence of one. Before recommending adoption, an agent **must cite at least one concrete artifact in *this* project** — a gap-registry entry (§8), a retro line (§8), a commit/PR message ("fixed regression", "this took longer than it should"), a co-change cluster in `git log`, a CI "last caught" gap (§6b), or a file-system observation — that constitutes the pain the practice addresses. No artifact → no recommendation. The same project-state signals drive *skip* and *retire*.
+
+**The reverse gate — retirement.** umami is strong on *when to adopt* and was silent on *when to retire*; the ledger closes that. A practice is dead weight when its kill criterion fires, when it shows no payoff (and its watch signals never trip) across N review cycles, when the pain that triggered it is gone (team / scale / architecture changed), or when its artifacts stop being read. Run a **retirement pass** alongside each §0.7 audit: for every ledger row, force a disposition — **Keep** (still earning) / **Deprecate** (set a removal date) / **Remove** (delete the practice *and* its artifacts) / **Re-justify** (rare; needs fresh evidence + fresh kill criterion). When ambiguous, default to **Deprecate, not Keep** — process at rest stays only if actively justified. This is also the stop rule for *iterating* on a practice: once added value plateaus and you're only polishing, the polishing has stopped earning its keep.
+
+**Anti-overhead litmus (the 30-day test).** Usable by a human or agent in five minutes: *pick any three active Tier-2+ practices; for each, name a specific event in the last 30 days (or last 3 releases) where it caught a problem, prevented one, or produced a finding the team acted on.* If you can't for 2 of 3, the project is carrying process it shouldn't — run the retirement pass before adopting anything new. The test measures **value, not conformance**: the question is never "are we following umami?" but "is umami earning its keep here?"
+
+**Cross-references:** §0.6 tiers (what to adopt) · §0.6b spectrum (per-task discipline) · §3d three-axis risk decomposition (the same convergence-read applied to review) · §4 cost profiles (the cost axis) · §7 ADRs (record a removal) · §8 gap registry + retros (agent-readable pain evidence) · §0.7 audit (runs the retirement pass).
 
 ---
 
@@ -830,7 +943,7 @@ Typosquatting, dependency confusion, and package compromise are real attack vect
 
 ## Security Essentials (Tier 1 floor)
 
-The day-one security floor lives here so a Tier 1 fetch (`umami.md` alone) carries the must-knows. The **full security discipline** — threat modeling, trust posture, agent runtime security, untrusted-content boundaries, agent log discipline — lives in **§4 in [`umami-runtime.md`](umami-runtime.md)**, which the agent should fetch when crossing into Tier 2+ security work.
+The day-one security floor lives here so a Tier 1 fetch (`umami.md` alone) carries the must-knows. The **full security discipline** — threat modeling, trust posture, agent runtime security, untrusted-content boundaries, agent log discipline — lives in **§4 in [`umami-runtime.md`](core/umami-runtime.md)**, which the agent should fetch when crossing into Tier 2+ security work.
 
 **Day-one rules (universal):**
 
@@ -843,7 +956,7 @@ The day-one security floor lives here so a Tier 1 fetch (`umami.md` alone) carri
 - **Don't build custom auth unless you have a specific reason.** Established libraries and services exist for every platform. Custom auth implementations are a leading source of security vulnerabilities.
 - **Build output hygiene** is part of §6 above: `.gitignore` covers `dist/`, `build/`, `out/`, `*.map`, `.env*` at minimum; scan build output before deploy.
 
-**When to fetch §4 in [`umami-runtime.md`](umami-runtime.md):**
+**When to fetch §4 in [`umami-runtime.md`](core/umami-runtime.md):**
 
 - You're identifying threats deliberately (threat modeling — STRIDE / OWASP / LINDDUN / PASTA framework picker)
 - You're choosing between perimeter-trust and zero-trust postures (NIST 800-207 / CISA ZTMM alignment)

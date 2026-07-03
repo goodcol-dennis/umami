@@ -19,6 +19,10 @@ This extension covers **agent-as-substrate workflow patterns** — patterns wher
 
 **Relationship to §14.** §14 covers what an agent *can do* (the building blocks). This extension covers patterns of *how to compose those building blocks into workflows* that run beyond a single interactive session. A project can adopt §14 fully without ever needing this extension; this extension assumes §14 is already in place.
 
+**Adopt when (§0.9 default-deny):** the project actually runs — or is concretely about to run — an autonomous agent workflow (production CI agent, scheduled remote agent, closed-loop remediation), not merely interactive assistants. Each §30.x pattern below carries its own adopt-when and cost profile; this file-level gate only asks whether the substrate exists.
+**Cost profile:** varies per pattern (each §30.x states its own); the common floor is Operator-required · Days (observation infrastructure, with §14 gates already in place).
+**Kill criterion:** retire any pattern that has run for 2 consecutive review cycles without producing a merged fix, a caught regression, or a consulted artifact (§0.9 retirement pass); if no autonomous workflow remains, drop this extension from the URL block.
+
 ---
 
 ### §30.1 Closed-Loop Auto-Remediation
@@ -140,7 +144,7 @@ Each shape has a different cost profile and a different containment strategy. Th
 
 ### §30.4 Anti-Patterns Specific to Autonomous Workflows
 
-These extend §0.6's anti-pattern table with patterns specific to agent-as-substrate workflows. The §0.6 anti-patterns ("Adopting everything at once", "Cargo-culting practices", etc.) apply universally; these are workflow-specific.
+These extend §0.6's anti-pattern catalog (`core/umami-anti-patterns.md`) with patterns specific to agent-as-substrate workflows. The §0.6 anti-patterns ("Adopting everything at once", "Cargo-culting practices", etc.) apply universally; these are workflow-specific.
 
 | Anti-pattern | How to spot it | Watch signal | Mitigation |
 |---|---|---|---|

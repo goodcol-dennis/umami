@@ -1,13 +1,17 @@
 # Desktop Application Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §27**
+**Extension of [Rapid Development Guardrails](../../umami.md) — §27**
 
 This extension covers practices common to all desktop applications — native GUI apps, SPA wrappers, and hybrid approaches across any platform. Desktop apps share a distinct risk profile: tight coupling to OS APIs, multi-threaded architectures where GUI and worker threads must coordinate safely, hardware integration (audio, input devices, GPUs), and E2E testing that requires a running compositor or display server.
 
-**Apply this extension when** the §0.2 system shape questionnaire identifies a desktop application layer. Then apply the platform-specific sub-extension ([Linux](desktop/umami-linux.md) §28, macOS and Windows forthcoming) for implementation details. If the project is a web-app-in-native-shell wrapper, also apply [SPA Wrapper](desktop/umami-spa-wrapper.md) §29.
+**Apply this extension when** the §0.2 system shape questionnaire identifies a desktop application layer. Then apply the platform-specific sub-extension ([Linux](umami-linux.md) §28, macOS and Windows forthcoming) for implementation details. If the project is a web-app-in-native-shell wrapper, also apply [SPA Wrapper](umami-spa-wrapper.md) §29.
+
+**Adopt when (§0.9 default-deny):** the app has crossed from experiment to something users rely on — threads coordinating GUI and workers, OS integration surface, or behavior worth E2E-testing. A single-window utility only its author runs needs §27.2's file budget, not the full extension.
+**Cost profile:** Operator-required · Days initial (thread-model doc, test harness) + Recurring discipline.
+**Kill criterion:** retire any practice below that has produced no finding, no prevented regression, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
 
 **Loading order:** A desktop project loads at least two layers:
-1. [umami.md](umami.md) — core guardrails
+1. [umami.md](../../umami.md) — core guardrails
 2. This file (`umami-desktop.md`) — desktop-generic practices
 3. A platform-specific file (e.g., `desktop/umami-linux.md`) — platform implementation details
 4. Optionally, a pattern-specific file (e.g., `desktop/umami-spa-wrapper.md`) — if the project wraps a web app

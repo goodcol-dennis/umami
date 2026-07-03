@@ -1,6 +1,6 @@
 # Umami Recipes
 
-**Recipes are drop-in implementation artifacts for cross-cutting features** — opinionated, copyable, often spanning multiple files. They live alongside the umami framework but aren't part of the §0–§30 numbered guidance.
+**Recipes are drop-in implementation artifacts for cross-cutting features** — opinionated, copyable, often spanning multiple files. They live alongside the umami framework but aren't part of the §0–§31 numbered guidance.
 
 ## What recipes are (and aren't)
 
@@ -28,16 +28,21 @@ Each recipe declares its maturity:
 3. Adapt to your stack — recipes are opinionated but not universal. Adjust paths, tool names, conventions.
 4. Cite the recipe in your project's `CLAUDE.md` or ADR so future contributors know where the pattern came from.
 
+## Licensing
+
+Code blocks inside recipes (bash, YAML, config snippets) are MIT-licensed (see `LICENSE-CODE` at the repo root) so they can be embedded in proprietary codebases; the surrounding prose remains CC BY-SA 4.0.
+
 ## Roadmap
 
 | Recipe | Status | What it does |
 |---|---|---|
-| [`consulting-timesheet.md`](consulting-timesheet.md) | Planned | Inject enough tracking that an LLM can generate a billable timesheet at month-end |
-| [`closed-loop-pr-review.md`](closed-loop-pr-review.md) | Planned | Auto-merge ~90% of PRs via mechanical pre-flight + AI review + risk-tiered disposition, with optional cross-provider review for adversarial verification on Medium+ tiers |
+| [`activity-stream.md`](activity-stream.md) | Drafted | Consolidated activity stream (multi-source capture: Claude `Stop` hook + git `post-commit` + manual `/log`) — primary use case is billable-timesheet reconstruction; replaces the v3.0 `consulting-timesheet.md` placeholder |
+| [`claude-md-starter.md`](claude-md-starter.md) | Drafted | Distilled Tier-1 CLAUDE.md starter block — the zero-ceremony entry point; paste one block, get the guardrail floor on the next agent turn. Graduation triggers point into the full framework. |
+| ~~`closed-loop-pr-review.md`~~ | Deprecated (v3.1) | Was a Planned placeholder since v3.0 with no field implementation; removed per the §0.9 reverse gate. §30.5 + §3d carry the closed-loop PR-review guidance; the recipe slot returns when someone has run the pattern on a real project and can contribute the implementation |
 | `agent-cost-monthly-report.md` | Future | Aggregate agent token costs across workflows for invoicing or budget tracking |
 | `adr-template.md` | Future | Drop-in ADR template with the §7 fields pre-stubbed |
 | `recovery-runbook-template.md` | Future | Pre-filled §5 runbook for common stateful surfaces (database, secrets store, working tree) |
-| `status-block-starter.md` | Future | §9.1 status block template ready to paste into a project's `CLAUDE.md` |
+| ~~`status-block-starter.md`~~ | Folded into [`claude-md-starter.md`](claude-md-starter.md) | §9.1 status block template — the starter block ships the Status skeleton, so no separate recipe is needed |
 | `gitignore-stack-{node,python,rust}.md` | Future | Opinionated `.gitignore` for common stacks |
 
 This roadmap is illustrative, not committed. Recipes get added when a contributor has a working pattern to share.
@@ -76,4 +81,4 @@ If a recipe matures into a full discipline that applies broadly, consider promot
 
 ## Relationship to the v3 architecture
 
-Recipes were introduced as a directory in v3.0 as the architectural slot for drop-in artifacts. They're independent of the §0–§30 numbering — a recipe isn't a section, it's an implementation aid.
+Recipes were introduced as a directory in v3.0 as the architectural slot for drop-in artifacts. They're independent of the §0–§31 numbering — a recipe isn't a section, it's an implementation aid.

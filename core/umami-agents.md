@@ -1,6 +1,6 @@
 # Umami — Agent Infrastructure Extension
 
-This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *agent infrastructure* concern cluster — practices specific to running AI agents efficiently within the project context.
+This file is part of umami v3's concern-based file architecture. The landing document ([umami.md](../umami.md)) contains the framework, Section Navigation Map, and Tier 1 practices. This file collects the *agent infrastructure* concern cluster — practices specific to running AI agents efficiently within the project context.
 
 **When to fetch this file:** When an audit, init, or implementation task hits a Tier 2+ practice in any of §9 / §11 / §14. Specifically: token efficiency, persistent memory, context-window optimization, file-size budgets (sized for agent context), agent orchestration, approval gates, lifecycle hooks, model routing, MCP/tool integration.
 
@@ -12,7 +12,7 @@ This file is part of umami v3's concern-based file architecture. The landing doc
 
 **Cross-references** in this file use plain `§N` notation. File location is metadata; section numbers are stable identifiers across all umami files.
 
-**Related extension:** [umami-agent-workflows.md](umami-agent-workflows.md) (§30) covers agent-*workflow* patterns (closed-loop auto-remediation, production agentic CI). This file covers agent-*infrastructure* building blocks.
+**Related extension:** [umami-agent-workflows.md](../ext/umami-agent-workflows.md) (§30) covers agent-*workflow* patterns (closed-loop auto-remediation, production agentic CI). This file covers agent-*infrastructure* building blocks.
 
 ---
 
@@ -48,7 +48,7 @@ See [ROADMAP.md], [v0.11.0-retro.md], [decisions.md].
 
 The Status block is also where the §1 Phase / Session structure surfaces visibly — naming the current phase and the next phase tag. Update it as part of the release workflow; if you forget, the next session will tell you (it'll re-derive everything from scratch and the cost will be obvious).
 
-**Per-send re-walk.** When instruction files (CLAUDE.md / AGENTS.md / skills) can change *during* a session — the team edits CLAUDE.md mid-session, a skill gets updated, AGENTS.md gets refined as you work — re-walk per *send* rather than per *session start*. Loading once at session start means the agent runs against stale instructions for the rest of the conversation, which becomes a real problem when those files are actively maintained. SessionStart hooks (§14) fire only at session start; per-send re-walk is the live-edit alternative. The cost is small (a few hundred tokens per re-walk for short files); the benefit is that edits land instantly without restart. Harness-dependent: support varies. When the harness supports per-send re-walk, prefer it for projects under active CLAUDE.md / skills development.
+**Per-send re-walk.** When instruction files (CLAUDE.md / AGENTS.md / skills) can change *during* a session — the team edits CLAUDE.md mid-session, a skill gets updated, AGENTS.md gets refined as you work — re-walk per *send* rather than per *session start*. Loading once at session start means the agent runs against stale instructions for the rest of the conversation, which becomes a real problem when those files are actively maintained. *Session-start* hooks (§14) fire only at session start; per-send re-walk is the live-edit alternative. The cost is small (a few hundred tokens per re-walk for short files); the benefit is that edits land instantly without restart. Harness-dependent: support varies. When the harness supports per-send re-walk, prefer it for projects under active CLAUDE.md / skills development.
 
 ### 9.2 Persistent Memory Across Sessions
 
@@ -86,6 +86,7 @@ Maintain a **codebase understanding document** (e.g., `CODEBASE.md` at the repo 
 
 - After completing a feature that changes how the codebase works (new layer, new pattern, new convention)
 - After an agent session where the agent had to re-derive something that should have been pre-written
+- The moment observed reality contradicts the document — reality wins; fix the doc in the same change
 - As part of the "Before Every PR/Merge" checklist
 
 **The key instruction in CLAUDE.md:**
@@ -93,7 +94,11 @@ Maintain a **codebase understanding document** (e.g., `CODEBASE.md` at the repo 
 ```
 Read CODEBASE.md before starting any task. Treat it as ground truth for how this project works.
 Do not re-derive what is already stated there. Only explore files you plan to modify.
+If observed reality contradicts CODEBASE.md, reality wins — trust what the code actually does,
+and update CODEBASE.md in the same change so the next session inherits the correction.
 ```
+
+The reality-wins clause is load-bearing, not a hedge: without it, "treat it as ground truth" instructs the agent to act confidently on a document that drifted last sprint. The document is a cache of derived understanding; a cache can be stale, and a stale entry gets invalidated by the read that discovers it, not trusted over the source.
 
 The goal is zero "let me understand the codebase" processing. The agent reads the document and already understands. When the codebase evolves, the document evolves with it.
 
@@ -199,6 +204,8 @@ A 10% ET reduction means a genuine 10% cost reduction, regardless of the model m
 
 Measurement (ET formula above) tells you what costs were spent. Cost caps tell the harness when to *stop* spending. For projects running agents at scale — many invocations per day, many sub-agent dispatches, many provider calls — caps are the difference between predictable cost and surprise bills.
 
+**Applies to — two audiences, two implementations.** Teams *building* agent products implement the cap layers below in their own harness code. Teams *using* a coding agent can only enforce what their harness and provider expose — typically provider-side spend limits, plan budgets, and (where supported) hook-based checks. If your harness exposes no budget hook, the practicable form of this practice is a provider-side spend limit plus the per-day review habit; document *that* as the cap rather than aspiring to enforcement surfaces you don't have (§0.6 "Cost caps in policy doc but not in code" still applies — the enforcement just lives at the provider).
+
 **Three layers of cap:**
 
 | Layer | What it caps | When it triggers |
@@ -265,7 +272,7 @@ Splitting large files also reduces blast radius: a change to one extracted modul
 
 The 400-line budget targets *source code* — files that ship as part of an application. It also applies to most design docs, with a typical ceiling of ~800 lines (split when there are clear sub-topics). It does **not** apply to documents whose section identifiers are external contracts.
 
-A canonical example is this very document. Sections of `umami.md` are referenced as `§0.6`, `§3c`, `§9.1`, etc., from extension files, downstream consumers, agent skills, and bookmarks. Renumbering or splitting would break those references silently. The cost of preserving stable IDs outweighs the benefit of staying under a line budget.
+A canonical example is the umami corpus itself. Sections are referenced as `§0.6`, `§3c`, `§9.1`, etc., across the landing document (`umami.md`), the companion files (including this one), extension files, downstream consumers, agent skills, and bookmarks. Renumbering or splitting would break those references silently. The cost of preserving stable IDs outweighs the benefit of staying under a line budget.
 
 For documents in this category:
 - The budget is **suspended**, not removed. Track the size as a gap (§8) and revisit if the file grows large enough that agents truncate it on read or that humans can no longer scan it.
@@ -473,6 +480,8 @@ For projects where agents take consequential actions (write files, run commands,
 
 §14 above describes how agents work; this sub-section describes how to gate what they do.
 
+**Applies to — two audiences, differently.** Agent *users*: the gates already exist — they are your harness's permission system; your gate table documents which harness setting, permission rule, or hook implements each row, so the *Implementation pointer* column points at configuration, not code you write. Agent-*product* builders: you implement the gates yourselves, and the pointer names the module. The severity model and the table shape are the same for both.
+
 **Severity model:**
 
 | Severity | Meaning |
@@ -507,16 +516,16 @@ Some actions are HARD-blocked regardless of whether the agent is interactive, sc
 
 Document these explicitly in the gate table with a note that the severity is HARD-mode-independent.
 
-**Logging summary — companion table:**
+**Logging summary — companion table.** The Retention column names each layer's *default*, which per §4 agent-log discipline is a starting position to replace with an explicit policy, not a policy itself ("permanent" and "until deleted" are handwaves):
 
 | Log | Location | Retention |
 |---|---|---|
-| Tool-call log (per-message) | Project-specific (chat sessions storage, etc.) | Until session deleted |
-| Grant decisions | Grants registry | Persistent until user clears |
-| Commit log (agent-driven commits) | Standard `git log` | Permanent |
-| Hook execution log | User-controlled | User-controlled |
+| Tool-call log (per-message) | Project-specific (chat sessions storage, etc.) | Harness default: until session deleted. Set an explicit horizon (e.g., 90 days) when compliance or incident-response needs one |
+| Grant decisions | Grants registry | Harness default: until user clears. Add a review cadence — stale grants widen access silently |
+| Commit log (agent-driven commits) | Standard `git log` | Permanent by design — the one layer where permanence is a chosen policy (git history), not a default |
+| Hook execution log | User-controlled | Set explicitly per hook; "user-controlled" with no stated horizon is the handwave §4 warns about |
 
-Without retention info, "we have an audit trail" means nothing under compliance review (§22).
+Without an explicit retention decision per layer, "we have an audit trail" means nothing under compliance review (§22).
 
 **Watch signals:**
 
@@ -538,26 +547,36 @@ Without retention info, "we have an audit trail" means nothing under compliance 
 **Cross-references:**
 - §22 compliance — audit trails feed compliance reviews; gate tables are evidence-pack components
 - §3d code review — new tool surfaces should be flagged for "gate-table update" review
-- §0.6 anti-pattern table — "No agent-approval gate table"
+- §0.6 anti-pattern catalog (`core/umami-anti-patterns.md`) — "No agent-approval gate table"
 
 ### Lifecycle Hooks
 
 Most agentic harnesses expose **lifecycle hooks** — user-controlled extension points where a project can insert custom behavior at well-defined moments in the agent's execution. Hooks are how you implement automated behaviors that aren't in the harness's defaults, without modifying harness code, without losing the change on the next harness update.
 
-The four canonical events most harnesses converge on:
+**The four canonical event categories most harnesses converge on** (harness-neutral names; each harness exposes these under different identifiers):
 
-| Event | Triggered before | Common uses |
+| Event category | Triggered when | Common uses |
 |---|---|---|
-| **PreToolUse** | Any tool call about to execute | Block tool calls based on user-defined predicates (deny lists, allow lists, content checks); add custom approval gates beyond the harness's defaults; redact arguments before the call |
-| **PostToolUse** | After any tool call completes | Log / audit, redact sensitive results before they reach the model, trigger downstream behavior (notifications, metrics, dispatch chains) |
-| **SessionStart** | Chat session begins (or resumes) | Re-walk instruction files (CLAUDE.md / AGENTS.md / skills), refresh project memory, run pre-flight checks. For projects under active instruction-file development, see also §9.1 per-send re-walk |
-| **Stop** | Agent loop terminates | Cleanup, summary generation, archival, write-back of session state |
+| **before-tool** | A tool call is about to execute | Block tool calls based on user-defined predicates (deny lists, allow lists, content checks); add custom approval gates beyond the harness's defaults; redact arguments before the call |
+| **after-tool** | A tool call has completed | Log / audit, redact sensitive results before they reach the model, trigger downstream behavior (notifications, metrics, dispatch chains) |
+| **session-start** | Chat session begins (or resumes) | Re-walk instruction files (the project's primary AI instruction file — `CLAUDE.md` / `AGENTS.md` / `.cursorrules` / equivalent — plus skills/rules), refresh project memory, run pre-flight checks. For projects under active instruction-file development, see also §9.1 per-send re-walk |
+| **turn-end** | The agent loop terminates for a turn | Cleanup, summary generation, archival, write-back of session state, activity-stream logging (see `recipes/activity-stream.md`) |
 
-Different harnesses use different names — `before_tool` / `after_tool`, `BeforeRequest` / `AfterRequest`, etc. — but the structural shape is the same: well-known points where user-supplied code runs. Names matter less than the discipline of using them.
+**How each harness names these categories** (sample, not exhaustive — consult your harness's hook documentation for the current names and input/output schemas):
+
+| Harness | before-tool | after-tool | session-start | turn-end |
+|---|---|---|---|---|
+| **Claude Code** | `PreToolUse` | `PostToolUse` | `SessionStart` | `Stop` |
+| **Cursor** | (rules / hooks; check current docs) | (check current docs) | rule-load on session begin | (check current docs) |
+| **Aider** | command-execution shell hook (via `.aider.conf.yml`) | post-command shell hook | startup hook | post-turn hook |
+| **Codex CLI** | (check OpenAI Codex CLI docs) | (varies) | (varies) | (varies) |
+| **Goose** | extension `PreInvoke` (MCP-layer) | extension `PostInvoke` | extension load on session | extension `on_complete` |
+
+The category names matter; the specific identifiers don't. When this document or a recipe refers to "the turn-end hook" or "the session-start hook," substitute your harness's name. The naming table above is a starting position — fill in the row for your harness with confidence once you've validated against its current documentation. The `core/umami-agents.md` §14 hook examples and `recipes/activity-stream.md` Stop-hook snippets use the Claude Code identifiers because that's the harness this corpus is field-tested on.
 
 **The "from now on when X" insight.** Any automated behavior of the form *"from now on, every time Y happens, do Z"* requires a hook. Memory and process documentation cannot fulfill these — the agent is not the runtime, the harness is. If a user says "remember to log every git push" or "block tool calls that touch /etc," that's a hook configuration, not a memory entry. Process docs that say "we always do X" are aspiration unless wired through hooks.
 
-**Configuration shape.** Hooks are user-controlled — configured via the harness's settings (e.g., `settings.json`, `.claude/settings.json`, per-project YAML). The harness ships sensible defaults; project-specific or developer-specific hooks layer on top. Project hooks live in the repo (committed, shared); personal hooks live in user-scope settings (uncommitted).
+**Configuration shape.** Hooks are user-controlled — configured via the harness's settings (e.g., `.claude/settings.json` for Claude Code, `.aider.conf.yml` for Aider, `.cursorrules` / `.cursor/rules/` for Cursor, harness-specific YAML elsewhere). The harness ships sensible defaults; project-specific or developer-specific hooks layer on top. Project hooks live in the repo (committed, shared); personal hooks live in user-scope settings (uncommitted).
 
 **Watch signals:**
 
@@ -565,7 +584,7 @@ Different harnesses use different names — `before_tool` / `after_tool`, `Befor
 |---|---|
 | Hooks-as-aspiration (configured but never fire) | The hook is mis-targeted — its predicate doesn't match what actually runs, or it's registered for an event the agent doesn't reach |
 | Hook drift (rule references deprecated tool, path, or behavior) | Codebase moved on; hook didn't. First incident discovers the gap |
-| Hook overhead (slow hook delays every tool call) | Hook is doing too much — fast-path the common case, or move work to PostToolUse where latency is cheaper |
+| Hook overhead (slow hook delays every tool call) | Hook is doing too much — fast-path the common case, or move work to the *after-tool* event where latency is cheaper |
 
 **Failure modes:**
 
@@ -577,9 +596,10 @@ Different harnesses use different names — `before_tool` / `after_tool`, `Befor
 | Hook proliferation (15+ hooks doing similar things) | Hard to reason about what fires when; rules conflict; debugging "why did this happen?" is expensive | Periodic hook review: consolidate similar predicates, remove dead hooks, document each remaining hook's purpose |
 
 **Cross-references:**
-- §14 Agent Approval Gates (above) — hooks are the user-controlled extension point for adding gates beyond what the harness ships. PreToolUse hooks implement custom HARD/SOFT gates
-- §0.7 / §0.7b audit and init protocols — skills are SessionStart-time loaded; hooks fire on session start to refresh them
-- §9.1 front-load context — SessionStart hooks can re-walk instruction files per session start
+- §14 Agent Approval Gates (above) — hooks are the user-controlled extension point for adding gates beyond what the harness ships. *before-tool* hooks implement custom HARD/SOFT gates
+- §0.7 / §0.7b audit and init protocols — skill/rule files load at session-start time; hooks fire on session start to refresh them
+- §9.1 front-load context — *session-start* hooks can re-walk instruction files per session start
+- `recipes/activity-stream.md` — a worked example of the *turn-end* hook category, with a Claude Code reference implementation and adaptation pointers for other harnesses
 
 ### Agent Orchestration Anti-Patterns
 
@@ -599,6 +619,70 @@ When multiple developers work with AI agents on the same codebase, coordinate th
 - **Review agent-generated code like any other code.** Code review discipline doesn't change because an agent wrote it. The reviewer is responsible for understanding what they approve — "the agent wrote it" is not a justification for merging code no human understands (§3b — Don't Program by Coincidence).
 - **Avoid parallel agent edits to the same files.** Two agents editing the same file in separate branches produces merge conflicts that are hard to resolve because neither developer fully understands the other agent's changes. Coordinate scope before starting, not after conflicting.
 - **Converge on shared skills.** If two developers create different agent skills for the same task (e.g., two different security review prompts), consolidate them into the project skill library. Inconsistent agent behavior across the team produces inconsistent output.
+
+---
+
+## 14b. Prompt & Instruction-File Engineering
+
+Instruction files (`CLAUDE.md` / `AGENTS.md` / `.cursorrules` / equivalent) and the prompts inside skills are the most load-bearing agent inputs in the project — and they're usually edited by feel, untracked, untested. §14b treats them as engineered artifacts: **a change to an instruction file is a change to agent behavior**, and behavior changes get versioned, reviewed, and verified.
+
+**Adopt when** (§0.9 default-deny — cite a trigger): an instruction-file or prompt change measurably moved agent behavior and you couldn't tell which edit did it; **or** the instruction file is edited often by multiple people; **or** a prompt regression shipped. Solo dev on a stable instruction file: **defer**.
+
+**Cost profile:** Agent-with-review · Hours per change · Recurring discipline.
+
+**The practice:**
+- **Treat instruction/prompt edits as behavior changes.** Diff them in §3d review like code. A one-line `CLAUDE.md` edit can shift every session's behavior; it deserves the same scrutiny as a code change with that blast radius.
+- **Structure the prompt.** Delineate instructions from content (XML tags / fenced blocks), use consistent role framing, add few-shot examples for nuanced tasks, and keep *stable* instructions separate from *volatile* context (per §9 front-loading) so the cacheable part stays cacheable.
+- **Verify against evals.** A prompt or instruction-file change shipped with no §3f eval delta is unverified. For a load-bearing prompt, compare behavior on the golden set before/after the change.
+- **Separate shared from personal.** Committed project instructions (shared behavior) vs. uncommitted user-scope preferences — same split as §14 hook configuration.
+
+**Watch signals:** instruction file grows monotonically and nobody measures the effect · prompt changes land without an eval delta · the same instruction is restated in 3+ places (drift risk).
+
+**Kill criterion (ledger, §0.9):** demote to "review like code, no formal before/after" once the instruction surface stabilizes and behavior stops moving across edits.
+
+**Cross-references:** §9 token efficiency / front-loading (stable-vs-volatile context) · §3f eval suite (what verifies a prompt change) · §3d review (instruction edits are behavior changes) · §0.6b AI-discipline spectrum · §14 lifecycle hooks (session-start re-walk of instruction files).
+
+## 14c. Model-Version Pinning & Drift Detection
+
+Providers ship model updates that silently change behavior, and floating aliases (`*-latest`, an unversioned `gpt-x`) move under you between runs. A prompt that worked yesterday can regress today with no diff in your repo. §14c makes the model an explicit, pinned, monitored dependency.
+
+**Adopt when** (§0.9 default-deny — cite a trigger): correctness depends on a model's behavior in production **and** either a provider model update has already changed that behavior, or your config currently routes through a floating alias. If you don't ship agent behavior, or already pin and eval on bumps: **defer**.
+
+**Cost profile:** Operator-required · Hours setup + per-bump eval cost · Recurring.
+
+**The practice:**
+- **Pin exact model IDs** (dated / version-locked), never floating aliases, in agent config — and record the pinned version where the §0.9 ledger or config can show it.
+- **Gate every model bump on evals.** Before adopting a new version, run the §3f suite against the held-out golden set on the new model; compare scores; canary on a slice of traffic before full cutover.
+- **Keep a rollback.** The prior pinned version stays available; revert on regression rather than firefighting forward.
+- **Track deprecation.** Note provider EOL dates; schedule migrations through the eval gate, not under deadline pressure.
+- **Watch divergence in multi-model setups.** Lead and worker models can drift apart (§14 orchestration / model routing); a bump to one is a behavior change to the system.
+
+**Watch signals:** config uses `*-latest` / unversioned aliases · a model was bumped with no eval run · a behavior regression was traced to a silent model update *after* it shipped.
+
+**Kill criterion (ledger, §0.9):** low standing cost once set up, so removal is rare; demote the per-bump eval gate if the product stops depending on specific model behavior.
+
+**Cross-references:** §3f eval suite (the bump gate) · §3 *Multi-Provider Behavioral Testing* · §14 model routing · §9.7 cost caps (new model versions change cost) · §0.9 (the pin decision is a recorded adoption).
+
+## 14d. Agent-Failure Debugging (trajectory forensics)
+
+§3b debugs *code*. §14d debugs *the agent* — diagnosing why an autonomous run went wrong when the code is fine: a tool-call loop, context loss after compaction, the wrong tool chosen, a silent fallback to a weaker model, or confidently-wrong output that read as plausible. These failures are nondeterministic and don't reproduce from a stack trace.
+
+**Adopt when** (§0.9 default-deny — cite a trigger): agents run autonomously enough that failures are nondeterministic and hard to reproduce, **and** you've had at least one agent failure you couldn't diagnose from code logs alone. Interactive-only / low-autonomy use: **defer**.
+
+**Cost profile:** Operator-required · Hours per incident · Recurring (incident-driven).
+
+**The practice:**
+- **Capture the trajectory.** Per-turn trace — tool calls, arguments, results, decisions — must be logged (§4 agent log discipline). You cannot debug what you didn't record; this is the prerequisite, set up before the first incident.
+- **Reproduce from the trace.** Replay the run, note seed/temperature, and isolate the divergent turn.
+- **Match the failure shape to a first check:** tool-call loop → budget / stuck-loop guard; context loss → inspect what compaction dropped; silent model fallback → verify which model *actually* ran (ties to §14c); confidently-wrong output → the §3d intent-reconstruction problem, not a code bug.
+- **Run the incident runbook:** grab logs → reconstruct the call sequence → diff skills / hooks / instruction-files since the last good run (§14b) → identify the changed input.
+- **Feed findings back.** A reproducible agent failure becomes a §3f eval case so it can't silently return.
+
+**Watch signals:** agent failures closed as "flaky, re-ran it" with no root cause · no per-turn trace exists when an incident hits · the same failure recurs across runs.
+
+**Kill criterion (ledger, §0.9):** incident-driven, low standing cost; demote the formal runbook if autonomy drops and failures become trivially reproducible from ordinary logs.
+
+**Cross-references:** §3b systematic debugging (code) · §4 agent log discipline (the trace source) · §3d review (confidently-wrong output = intent reconstruction) · §3f eval suite (failures become regression cases) · §14c drift (silent model fallback).
 
 ---
 

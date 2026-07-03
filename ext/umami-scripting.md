@@ -1,10 +1,14 @@
 # Scripting & CLI Automation Guardrails
 
-**Extension of [Rapid Development Guardrails](umami.md) — §23**
+**Extension of [Rapid Development Guardrails](../umami.md) — §23**
 
 This extension covers shell scripts (bash, zsh, PowerShell, bat), automation scripts (Python, Node, Ruby), and CLI tools built in any language where the primary use case is scripting and automation rather than a full application. The core template assumes application development patterns — test suites with frameworks, CI/CD pipelines, and structured project layouts. Scripts have different failure modes: silent data loss from unhandled errors, brittle assumptions about the execution environment, and one-off tools that quietly become load-bearing production infrastructure.
 
 **Apply this extension when** the §0.2 system shape questionnaire identifies a CLI / scripts layer.
+
+**Adopt when (§0.9 default-deny):** scripts are the deliverable AND at least one runs unattended or is used by someone other than its author. A personal one-off script needs `set -euo pipefail` and a shebang, not this extension.
+**Cost profile:** Agent-executable for most checks · Hours initial + Recurring discipline (lint, idempotency verification, scheduled-job audits).
+**Kill criterion:** retire any practice below that has produced no finding, no prevented silent failure, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
 
 **This extension covers scripts that are the product, not scripts that support a product.** Build scripts, CI config, and Makefiles that exist solely to support application development are covered by the core template and relevant domain extensions. This extension applies when scripts *are* the deliverable — operational automation, data processing scripts, CLI tools, deployment helpers, migration scripts, and cron jobs.
 
@@ -437,6 +441,9 @@ This extension does not replace core guardrails — it extends them for the scri
 - [ ] Schedule, owner, and failure runbook documented in crontab comment or companion doc (§23.10).
 
 ### Periodic
+
+**This checklist is a menu, not a calendar** — schedule only the items whose §0.9 trigger has fired for this project; an unrun scheduled check is worse than an unscheduled one (it reads as coverage that doesn't exist, per the §22 compliance-theater anti-pattern).
+
 - [ ] Audit scripts for growth — any script over 400 lines evaluated for splitting or rewrite (§23.9, quarterly).
 - [ ] Credential rotation — scripts using long-lived tokens verified against rotation schedule (§23.6, per §4 cadence).
 - [ ] Dependency check — required external tools still available and compatible in target environments (§23.5, after environment updates).

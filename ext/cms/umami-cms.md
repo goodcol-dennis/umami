@@ -4,18 +4,17 @@
 
 This extension covers practices common to all content management systems — WordPress, Drupal, and others. CMS platforms share a distinct risk profile: a large ecosystem of third-party extensions (plugins, modules, themes), a culture of composing sites from pre-built components, content/configuration/code boundaries that blur easily, and production environments where non-developers make changes through admin UIs.
 
-**Apply this extension when** the §0.2 system shape questionnaire identifies a CMS layer. Then apply the platform-specific sub-extension ([WordPress](umami-wordpress.md) §20, [Drupal](umami-drupal.md) §21) for implementation details.
+**Apply this extension when** the §0.2 system shape questionnaire identifies a CMS layer. Then apply the platform-specific part below (§20 WordPress, §21 Drupal) for implementation details — only when that platform is present.
 
 **Adopt when (§0.9 default-deny):** the CMS site is production-facing with third-party extensions AND either non-developers change it through admin UIs or an update/extension has already broken it. A static brochure site rebuilt from source does not warrant this extension.
 **Cost profile:** Operator-required · Days initial (inventory, staging, integrity checks) + Recurring discipline (update cadence).
 **Kill criterion:** retire any practice below that has produced no finding, no prevented incident, and no consulted artifact across 2 consecutive review cycles (§0.9 retirement pass).
 
-> **Planned consolidation:** The standalone WordPress (§20) and Drupal (§21) extensions are being rolled into this file in a future release. The shared CMS practices already cover most of the surface area; platform-specific implementation detail will move here as thinner subsections rather than separate documents. Section numbers §20 and §21 will be retained for traceability.
+> **Platform variants (v3.1):** The WordPress (§20) and Drupal (§21) platform variants live in this file as of v3.1 — they were separate files in v3.0. Each applies only when that platform is present; the §0.9 gate above covers them (no separate ledger entry). Section numbers §20 and §21 are retained — existing cross-references resolve unchanged.
 
-**Loading order:** A CMS project loads three layers:
+**Loading order:** A CMS project loads two layers:
 1. [umami.md](../../umami.md) — core guardrails
-2. This file (`umami-cms.md`) — CMS-generic practices
-3. The platform-specific file (e.g., `cms/umami-wordpress.md`) — platform-specific implementation
+2. This file (`umami-cms.md`) — CMS-generic practices (§25) plus the platform part that matches the site (§20 WordPress or §21 Drupal)
 
 ---
 
@@ -384,3 +383,479 @@ Sometimes a core or contributed extension bug genuinely blocks your project and 
 - [ ] Backup verification — confirm backups are restorable, not just present (monthly).
 - [ ] Error logs reviewed — recurring errors identified and addressed (weekly) (§25.7).
 - [ ] Scheduled task health verified (monthly) (§25.7).
+
+---
+
+## 20. WordPress (platform variant — folded into this file at v3.1)
+
+This part covers WordPress-specific development — themes, plugins, and site builds. It implements the shared CMS guardrails (§25) for WordPress; apply it only when the platform is WordPress. The §0.9 gate at the top of this file covers it — no separate ledger entry. For general CMS practices (extension audits, update management, security fundamentals, deployment discipline), see §25 above.
+
+### 20.1 WordPress Security Implementation
+
+WordPress templates have **no auto-escaping**. Unlike Twig-based CMS platforms, every piece of dynamic output must be manually escaped. This is the single most important WordPress-specific discipline. §25.3 covers the general principles; these are the WordPress rules:
+
+- **Never echo unescaped data. No exceptions.** Treat every `echo $variable` without an escaping function as a bug. Escape for the output context — `esc_html()` for HTML content, `esc_attr()` for attributes, `esc_url()` for URLs, `esc_js()` for JavaScript, `wp_kses()` / `wp_kses_post()` where limited HTML is allowed, `esc_html__()` / `esc_attr__()` for translated strings. Full function-by-context tables: the [official escaping reference](https://developer.wordpress.org/apis/security/escaping/).
+- **Sanitize input at the boundary with the type-appropriate function** — `sanitize_text_field()`, `sanitize_email()`, `esc_url_raw()` (for storage), `sanitize_file_name()`, `absint()`; map over arrays (`array_map( 'sanitize_text_field', $array )`). Full table: the [official sanitization reference](https://developer.wordpress.org/apis/security/sanitizing/). Never trust client-side validation alone (§25.3).
+- **Every form submission and AJAX handler verifies a nonce before any processing** (WordPress's CSRF protection, per §25.3): `wp_nonce_field()` in the form, `wp_verify_nonce()` at the top of the handler, `check_ajax_referer()` for AJAX.
+- **Check capabilities, not roles** (per §25.3): `current_user_can( 'manage_options' )` is correct; checking `$user->role === 'administrator'` is fragile and bypassable.
+- **Always use `$wpdb->prepare()` for SQL with user input. No exceptions.** Prefer WordPress API functions (`WP_Query`, `get_posts()`, `get_option()`) over direct database queries — the API handles escaping and caching (per §25.3).
+- **File uploads:** validate MIME type server-side (not just extension) with `wp_check_filetype()` and restrict to expected types; never allow PHP file uploads; store uploads via `wp_handle_upload()` — never custom directories without `.htaccess` protection.
+
+### 20.2 WordPress Plugin Specifics
+
+The general extension audit framework is in §25.1. This section covers WordPress-specific plugin concerns.
+
+**Plugin-specific selection criteria** — in addition to the §25.1 criteria:
+
+- [ ] **WordPress.org repo vs. premium** — WordPress.org plugins get basic review; premium plugins may not.
+- [ ] **WPScan vulnerability history** — search the WPScan Vulnerability Database for past CVEs.
+- [ ] **Asset loading behavior** — does it load CSS/JS on every page, or only where needed?
+
+**Plugin conflict testing.** Plugin conflicts are the most common source of WordPress bugs. Two plugins hooking the same filter with incompatible transforms create bugs that are invisible until they collide.
+
+- Enable one plugin at a time in staging. Test core functionality after each activation.
+- After enabling all plugins, run a full regression pass on critical user flows.
+- When a conflict is found, use `remove_filter()` / `remove_action()` to unhook the conflicting callback — never edit plugin files directly.
+
+**Core and plugin update specifics** — in addition to the §25.2 update framework:
+
+- **Core minor updates** (e.g., 6.5.1 → 6.5.2): Auto-update is generally safe for security patches.
+- **Core major updates** (e.g., 6.5 → 6.6): Check plugin compatibility announcements before updating.
+- **Theme updates**: If using a child theme (you should be), parent theme updates are safe. Test in staging.
+
+### 20.3 Theme Architecture
+
+**Child theme rule: never edit a parent theme directly.** Parent theme updates will overwrite your changes (§25.5 covers the principle). All customizations live in a child theme — its `style.css`, its `functions.php`, and template overrides under `template-parts/`.
+
+**functions.php discipline.** `functions.php` is the most commonly bloated file in WordPress. Apply §11 (File Size Budgets):
+
+- Split into focused includes: `inc/custom-post-types.php`, `inc/enqueue.php`, `inc/customizer.php`.
+- `functions.php` itself should only contain `require` statements.
+- Each include file has a single responsibility.
+
+### 20.4 Hook System Discipline
+
+WordPress's hook system (actions and filters) is its primary extension mechanism — and its primary source of debugging complexity.
+
+#### Rules
+
+- **Prefix everything.** All custom functions, hooks, and global variables must use a project prefix. `get_user_data()` will collide; use `myproject_get_user_data()`.
+- **Document hook priority.** When using a non-default priority (not 10), comment why: `add_filter( 'the_content', 'myproject_filter', 20 ); // After shortcodes process at priority 11`.
+- **Never remove core hooks without an ADR** (§7). Removing a core hook can break expectations for other plugins and future updates.
+- **Use `has_filter()` / `has_action()` defensively** before removing hooks or relying on filter output.
+
+#### Debugging Hooks
+
+1. **Identify which hooks fire.** Use Query Monitor plugin or `add_action( 'all', function( $tag ) { error_log( $tag ); } );` temporarily.
+2. **Check priority order.** Multiple callbacks on the same hook execute in priority order.
+3. **Check return values.** Filters must return a value. A filter callback that forgets to `return` silently nullifies the data.
+
+### 20.5 WordPress Performance
+
+#### wp_options Bloat
+
+The `wp_options` table is loaded on every page request (autoloaded rows). Plugins that store large serialized arrays with `autoload = 'yes'` slow down every page.
+
+- Query autoloaded options size: `SELECT SUM(LENGTH(option_value)) FROM wp_options WHERE autoload = 'yes';`
+- Anything over 1MB of autoloaded data is a performance problem.
+- Transient data (`_transient_*`) should have expiration times. Orphaned transients accumulate indefinitely.
+
+#### Query Performance
+
+- **Use `WP_Query` with specific fields.** `'fields' => 'ids'` when you only need IDs. `'no_found_rows' => true` when you don't need pagination counts.
+- **Avoid `meta_query` on unindexed meta keys** in large databases. Consider custom tables for high-query-volume data.
+- **Use object caching** (Redis, Memcached) for production sites.
+- **Use the Transients API** for caching expensive operations. Always set an expiration.
+
+#### Asset Loading
+
+- Always use `wp_enqueue_script()` / `wp_enqueue_style()` on the `wp_enqueue_scripts` hook — never inline tags (per §25.5).
+- Load assets conditionally — only on pages that need them (gate on conditionals like `is_singular( 'product' )`).
+- Specify dependencies explicitly.
+- Use versioning for cache busting.
+
+### 20.6 WordPress Deployment
+
+#### Version Control (WordPress-specific, extends §25.6)
+
+| Include | Exclude |
+|---------|---------|
+| Custom themes (child theme) | `wp-content/uploads/` (user media) |
+| Custom plugins | `wp-config.php` with production secrets |
+| `wp-config.php` template (with placeholders) | `.htaccess` (environment-specific) |
+| `composer.json` / `composer.lock` (if using Composer) | Database dumps |
+
+#### Environment Configuration
+
+- Set `WP_ENVIRONMENT_TYPE` (`local` / `development` / `staging` / `production`) in `wp-config.php` and branch on `wp_get_environment_type()`.
+- Debug flags (`WP_DEBUG`, `WP_DEBUG_LOG`, `WP_DEBUG_DISPLAY`, `SCRIPT_DEBUG`) are enabled in development only.
+- Production always defines `DISALLOW_FILE_EDIT` (the §25.3 "code editing from admin panel disabled" rule).
+
+#### Database URL Rewriting
+
+```bash
+# WP-CLI — search-replace for environment migration
+wp search-replace 'https://staging.example.com' 'https://example.com' --all-tables --dry-run
+```
+
+Always `--dry-run` first. Always back up before production. Use `--all-tables` to catch serialized data. Never manually edit serialized data (per §25.6).
+
+### 20.7 WordPress Testing Layers
+
+Extends §25.8 with WordPress-specific tooling:
+
+| Layer | Tool |
+|-------|------|
+| PHP lint | `php -l`, PHP_CodeSniffer with WordPress standards |
+| Coding standards | PHPCS with `WordPress` ruleset |
+| Security scan | WPScan, Wordfence, Sucuri |
+| Unit tests | PHPUnit + `WP_UnitTestCase` |
+| E2E tests | Playwright, Cypress |
+| Performance | Query Monitor, Lighthouse, GTmetrix |
+
+**Minimum viable WordPress CI:** PHP lint + PHPCS with WordPress standards + security scan + unit tests on every PR.
+
+### 20.8 WordPress Production Monitoring
+
+Extends §25.7 with WordPress-specific implementation:
+
+#### Error Logging
+
+In production: `WP_DEBUG` and `WP_DEBUG_LOG` enabled (errors written to `wp-content/debug.log`), `WP_DEBUG_DISPLAY` disabled and `display_errors` off — errors are logged, never shown to visitors (per §25.7).
+
+#### WP-Cron
+
+WordPress's pseudo-cron depends on site visits (§25.7). For reliable scheduling, configure a real system cron:
+```
+*/5 * * * * curl -s https://example.com/wp-cron.php > /dev/null 2>&1
+```
+
+#### Monitoring Tools
+
+- **Query Monitor** — query count, hook execution, asset loading (development/staging).
+- **Site Health API** — `/wp-json/wp-site-health/v1/tests/` for automated health checks.
+- **Object cache hit rate** — if using Redis/Memcached, monitor hit rates.
+
+### WordPress-Specific Anti-Patterns
+
+These are in addition to the common CMS anti-patterns in §25.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **Everything in functions.php** | A 2,000-line file with post types, shortcodes, AJAX handlers, and business logic. | Decompose into focused includes (§20.3). |
+| **Direct database queries for things APIs handle** | `$wpdb->query()` for operations that `WP_Query` or `get_option()` handle. Bypasses caching, escaping, hooks. | Use WordPress API functions first (§20.1, §20.5). |
+
+### WordPress Checklist (extends §25 CMS Checklist)
+
+#### Before Every WordPress Change
+- [ ] Output escaping verified on every `echo` of dynamic data (§20.1).
+- [ ] Nonce fields present on all forms; handlers verify them (§20.1).
+- [ ] Capability checks present on all privileged actions (§20.1).
+- [ ] Database queries use `$wpdb->prepare()` or WordPress API functions (§20.1).
+- [ ] Custom functions and hooks use project prefix (§20.4).
+- [ ] Assets loaded conditionally with `wp_enqueue_*()` (§20.5).
+
+---
+
+## 21. Drupal (platform variant — folded into this file at v3.1)
+
+This part covers Drupal-specific development — custom and contributed modules, themes, configuration management, and site builds. It implements the shared CMS guardrails (§25) for Drupal; apply it only when the platform is Drupal. The §0.9 gate at the top of this file covers it — no separate ledger entry. For general CMS practices (extension audits, update management, security fundamentals, deployment discipline), see §25 above.
+
+Drupal differs from other CMS platforms in key architectural ways: Symfony-based request handling, Twig auto-escaping, a formal configuration management system, a sophisticated caching layer, and Composer-based dependency management. These differences require distinct guardrails.
+
+### 21.1 Drupal Security Implementation
+
+Drupal has a dedicated Security Team and a formal Security Advisory (SA) process. The platform's security posture is strong by default — but only if developers use the APIs correctly. See §25.3 for general CMS security principles; this section covers Drupal's specific implementation.
+
+#### Twig Auto-Escaping — What It Does and Doesn't Cover
+
+Drupal's Twig templates auto-escape by default. `{{ variable }}` is safe in most contexts. However:
+
+| Context | Auto-escaped? | What to do |
+|---------|--------------|------------|
+| HTML content / attributes | Yes | Safe by default |
+| URLs in `href` / `src` | Partially | Use `{{ url }}` or `{{ path() }}`. Validate user URLs for `javascript:` injection |
+| Raw HTML (`{{ variable\|raw }}`) | **No** | Avoid `\|raw` unless already sanitized. Every `\|raw` is a potential XSS vector |
+| JavaScript context | **No** | Use `drupalSettings` to pass data from PHP to JS — never inject into `<script>` |
+| CSS context | **No** | Never allow user input in inline styles |
+
+**Rule: Audit every use of `|raw` in templates.** Each one needs a comment explaining why it's safe.
+
+#### Form API and CSRF Protection
+
+Drupal's Form API handles CSRF tokens automatically. The risk is bypassing it:
+- **Always use the Form API** — don't build raw HTML forms.
+- **Custom AJAX callbacks** must use proper access callbacks and CSRF validation.
+- **Custom routes** must define access requirements:
+
+```yaml
+# CORRECT: access check defined
+mymodule.admin_page:
+  path: '/admin/mymodule/settings'
+  defaults:
+    _controller: '\Drupal\mymodule\Controller\AdminController::settings'
+  requirements:
+    _permission: 'administer mymodule'
+```
+
+Every route must have `_permission`, `_role`, `_access`, or a custom `_access_check` service.
+
+#### Entity Query Access
+
+**Always call `->accessCheck(TRUE)` on entity queries** unless you explicitly need to bypass access (admin operations, cron). Drupal 10+ requires this call.
+
+#### Database Security
+
+- **Use the Database API** — `\Drupal::database()->select()`, `->insert()`, etc. It handles parameterization.
+- **For raw SQL**, use placeholders: `$db->query('SELECT * FROM {table} WHERE uid = :uid', [':uid' => $uid])`.
+- **Entity queries** (`\Drupal::entityQuery()`) are preferred for entity data — they respect access control.
+
+### 21.2 Drupal Module Specifics
+
+The general extension audit framework is in §25.1. This section covers Drupal-specific module concerns.
+
+#### Security Coverage
+
+Drupal's Security Team reviews opted-in modules — a significant quality signal:
+
+- **Covered modules** (green shield on drupal.org): Security Team monitors and coordinates disclosure. Prefer these.
+- **Uncovered modules**: No Security Team oversight. Audit the code yourself or document the risk in §8.
+
+#### Module-Specific Selection Criteria
+
+In addition to §25.1:
+- [ ] **Security coverage** — green shield on drupal.org?
+- [ ] **Drupal version compatibility** — stable release for your major version?
+- [ ] **Dependency chain** — what other modules does it require?
+- [ ] **Existing core solutions** — Views, Layout Builder, Media, Content Moderation are all core. Check before adding contrib.
+
+#### Update Specifics
+
+In addition to §25.2:
+- **Security advisories published Wednesdays.** Subscribe to the mailing list.
+- **Use Upgrade Status module** for major version upgrades (e.g., 10 → 11).
+
+```bash
+# Check for available updates
+composer outdated drupal/*
+
+# Targeted update
+composer update drupal/module_name --with-dependencies
+drush updatedb
+drush cache:rebuild
+```
+
+### 21.3 Configuration Management
+
+Drupal's configuration management system is one of its strongest features — and one of the most common sources of deployment problems when misused. Configuration is exportable as YAML files that can be version-controlled.
+
+#### The Configuration Workflow
+
+```
+Development → Export config → Commit to git → Deploy → Import config
+```
+
+```bash
+drush config:export    # Export to sync directory
+git diff config/sync/  # Review changes
+drush config:import    # Import on target environment
+```
+
+#### Rules
+
+- **All configuration changes happen in code, not in production.** Never make config changes directly in production.
+- **The `config/sync/` directory is version-controlled.** This is your configuration source of truth.
+- **Review config diffs before committing.** `drush config:export` may include unrelated changes.
+- **Never edit YAML config files by hand** unless you understand the schema. Use the admin UI, then export.
+- **Config split for environment-specific settings.** Use Config Split to separate dev-only modules (Devel, Kint) from production config.
+
+#### Config vs. Content
+
+| Configuration (version-controlled) | Content (database only) |
+|-------------------------------------|------------------------|
+| Content types, fields, view modes | Nodes, taxonomy terms, media entities |
+| Views, blocks, menus (structure) | Menu links (content), block content |
+| Permissions, roles | User accounts |
+| Module settings, workflows | Webform submissions, log entries |
+
+### 21.4 Caching Architecture
+
+Drupal's caching system uses cache tags, cache contexts, and cache max-age for fine-grained control. Misusing or bypassing caching creates performance problems or stale content.
+
+#### Cache Metadata
+
+Every render array should declare its cacheability:
+
+| Property | What it controls | Example |
+|----------|-----------------|---------|
+| **Cache tags** | What data does this depend on? | `node:42`, `user:1`, `config:system.site` |
+| **Cache contexts** | What context varies the output? | `user.roles`, `url.query_args`, `languages` |
+| **Cache max-age** | How long is this valid? | `0` (never), `3600` (1 hour), `Cache::PERMANENT` |
+
+```php
+$build['content'] = [
+  '#markup' => $this->t('Hello, @name', ['@name' => $user->getDisplayName()]),
+  '#cache' => [
+    'tags' => ['user:' . $user->id()],
+    'contexts' => ['user'],
+    'max-age' => 3600,
+  ],
+];
+```
+
+#### Rules
+
+- **Never set `max-age` to 0 as a shortcut.** It bubbles up and can disable page caching entirely. Use cache tags instead.
+- **Always declare cache tags** on render arrays displaying entity data.
+- **Use cache contexts** when output varies by user role, language, URL, etc.
+- **Debug with `http.response.debug_cacheability_headers`** in `development.services.yml`.
+
+### 21.5 Theming and Render System
+
+Drupal's render arrays → Twig templates pipeline is the correct extension point. Bypassing it bypasses caching, access control, and alter hooks.
+
+#### Rules
+
+- **Never echo/print directly.** Return render arrays. Let Drupal's render pipeline handle output.
+- **Use render arrays, not HTML strings.** `'#markup'` is a last resort. Use `'#theme'`, `'#type'`, or custom theme hooks.
+- **Preprocess functions add variables to templates** — they should not contain business logic.
+- **Custom theme hooks** (`hook_theme()`) for reusable template patterns.
+
+#### Template Override Discipline
+
+- Use Drupal's template naming conventions. Enable Twig debugging for template suggestions.
+- **Never modify templates in contributed themes or modules** (per §25.5). Override in your custom theme.
+- All CSS and JavaScript declared in `*.libraries.yml`. Attach libraries to render arrays.
+
+### 21.6 Coding Standards and Service Architecture
+
+#### Coding Standards
+
+```bash
+phpcs --standard=Drupal,DrupalPractice web/modules/custom/
+phpcbf --standard=Drupal,DrupalPractice web/modules/custom/
+```
+
+Enforce in CI. Coding standards violations should fail the build.
+
+#### Service Architecture
+
+- **Controllers**: thin — delegate to services.
+- **Services**: business logic, defined in `mymodule.services.yml`, injected via constructors.
+- **Event subscribers**: replace many hooks.
+- **Plugins** (Blocks, Fields, Formatters): annotated, auto-discovered.
+
+**Anti-patterns:**
+- Business logic in `.module` files → use services.
+- Static `\Drupal::service()` in services/controllers → use dependency injection.
+- God services → one service = one responsibility.
+
+#### Update Hooks
+
+Schema and data migrations use `hook_update_N()`:
+- Numbers are sequential and never reused.
+- Each has a descriptive docblock.
+- Must be idempotent. Use `$sandbox` for large data migrations.
+
+### 21.7 Drupal Deployment Pipeline
+
+#### Recommended Flow
+
+```bash
+drush state:set system.maintenance_mode 1   # Maintenance mode (optional)
+git pull origin main
+composer install --no-dev --optimize-autoloader
+drush updatedb -y
+drush config:import -y
+drush cache:rebuild
+drush state:set system.maintenance_mode 0
+```
+
+#### Composer Discipline
+
+- `composer.lock` is committed to git.
+- Use `composer require` to add modules — never download manually.
+- Use `composer update drupal/module_name --with-dependencies` — never bare `composer update`.
+- Use `cweagans/composer-patches` for patches (§25.9 managed patching). Document each with an issue link. Remove when upstream fixes land.
+
+#### Drush as Operational Standard
+
+All repeatable operations should be Drush commands:
+
+```bash
+drush cr          # Cache rebuild
+drush cex         # Config export
+drush cim         # Config import
+drush updb        # Database updates
+drush uli         # One-time login link
+drush sql:dump    # Database backup
+```
+
+**Rule: If you can do it with Drush, do it with Drush.** Manual admin clicks are unrepeatable and undocumented.
+
+### 21.8 Drupal Testing Layers
+
+Extends §25.8 with Drupal-specific tooling:
+
+| Layer | Tool |
+|-------|------|
+| Coding standards | PHPCS with `Drupal` + `DrupalPractice` |
+| Static analysis | PHPStan with `phpstan-drupal` |
+| Unit tests | PHPUnit (`UnitTestCase`) |
+| Kernel tests | PHPUnit (`KernelTestBase`) |
+| Functional tests | PHPUnit (`BrowserTestBase`) |
+| JavaScript tests | Nightwatch.js (core) or Cypress |
+| Security scan | `drush pm:security` / Drupal Security Advisories |
+| Config validation | `drush config:status` |
+| Performance | Webprofiler module, Blackfire |
+
+**Minimum viable Drupal CI:** Coding standards + static analysis + unit/kernel tests + `drush config:status` + security scan on every PR.
+
+### 21.9 Drupal Production Monitoring
+
+Extends §25.7 with Drupal-specific implementation:
+
+#### Logging
+
+**Use Syslog in production, not Database Logging.** `dblog` writes to the database — every log write is a database insert competing with content queries.
+
+```bash
+drush pm:install syslog
+drush pm:uninstall dblog
+```
+
+Route syslog to centralized logging (Loki, Elasticsearch, CloudWatch). Use `watchdog` severity levels consistently.
+
+#### Health Monitoring
+
+- **`drush core:requirements --severity=2`** — automated status report checking.
+- **Cron**: use external trigger (`*/5 * * * * drush cron`), not poor-man's-cron.
+- **Cache hit rates**: use Webprofiler (dev) to identify uncacheable responses.
+
+### Drupal-Specific Anti-Patterns
+
+These are in addition to the common CMS anti-patterns in §25.
+
+| Anti-pattern | Why it's harmful | What to do instead |
+|---|---|---|
+| **Config changes in production** | Next `drush config:import` overwrites them, or config drift makes imports fail. | All config: dev → export → commit → deploy → import (§21.3). |
+| **Bypassing the render system** | Echoing HTML bypasses caching, access control, alter hooks, and auto-escaping. | Return render arrays (§21.5). |
+| **Untargeted `composer update`** | Updates everything simultaneously — impossible to isolate regressions. | `composer update drupal/module_name --with-dependencies` (§21.7). |
+| **`max-age: 0` as a shortcut** | Disables page caching entirely (bubbles up). | Use cache tags (§21.4). |
+| **Static `\Drupal::` calls in services** | Makes code untestable, hides dependencies. | Dependency injection (§21.6). |
+
+### Drupal Checklist (extends §25 CMS Checklist)
+
+#### Before Every Drupal Change
+- [ ] Routes have access requirements, no unescaped `|raw` without justification, entity queries use `->accessCheck()` (§21.1).
+- [ ] Configuration exported and committed after admin UI changes (§21.3).
+- [ ] Cache metadata declared on all render arrays with entity data (§21.4).
+- [ ] Coding standards pass: `phpcs --standard=Drupal,DrupalPractice` (§21.6).
+- [ ] Custom services use dependency injection, not static `\Drupal::` calls (§21.6).
+
+#### Before Every Deployment
+- [ ] `drush config:status` shows no unexpected differences (§21.3).
+- [ ] `composer.lock` committed and matches production (§21.7).
+- [ ] Database updates tested in staging (§21.7).
+- [ ] Config import tested in staging (§21.7).
+- [ ] Security advisories reviewed for all contrib modules (§21.2).

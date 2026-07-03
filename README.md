@@ -49,7 +49,7 @@ umami/
 ├── ext/                      ← domain extensions
 │   ├── umami-{web,data,iac,mobile,...}.md
 │   ├── cms/                  ← shared+variant cluster
-│   │   └── umami-{cms,wordpress,drupal}.md
+│   │   └── umami-cms.md      ← incl. §20 WordPress + §21 Drupal (folded in at v3.1)
 │   └── desktop/
 │       └── umami-{desktop,linux,spa-wrapper}.md
 └── recipes/                  ← drop-in implementation artifacts (cross-cutting features)
@@ -68,9 +68,7 @@ umami/
 | [`ext/umami-data.md`](ext/umami-data.md) | Data quality testing, pipeline idempotency, schema evolution, boundary contracts, data observability (pipeline tracing, structured logging), backward/forward compatibility, delivery guarantees, derived data, batch vs stream |
 | [`ext/umami-iac.md`](ext/umami-iac.md) | Dry-run culture, blast radius, state hygiene, cost awareness, secrets, drift detection, reliability engineering, scalability, SLOs/SLIs, observability as infrastructure (OTEL, alerting, dashboards, cost management), CI/CD pipeline discipline, security governance, platform engineering, common anti-patterns |
 | [`ext/umami-mobile.md`](ext/umami-mobile.md) | Device matrix, release discipline, offline-first, platform testing, app store compliance, mobile observability (crash reporting, release health) |
-| [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) | Extension inventory and audits, update management, CMS security fundamentals, content/config/code separation, core integrity, theme architecture, deployment discipline, production monitoring |
-| [`ext/cms/umami-wordpress.md`](ext/cms/umami-wordpress.md) | *(Planned rollup into §25 in v3.1 — the dedicated WordPress sub-extension will fold into `ext/cms/umami-cms.md`.)* WordPress-specific: escaping functions, nonces, capabilities, plugin conflicts, hook discipline, wp_options performance, WP-CLI |
-| [`ext/cms/umami-drupal.md`](ext/cms/umami-drupal.md) | *(Planned rollup into §25 in v3.1 — the dedicated Drupal sub-extension will fold into `ext/cms/umami-cms.md`.)* Drupal-specific: Twig escaping, Form API, config management, caching architecture, Composer discipline, Drush, service architecture |
+| [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) | Extension inventory and audits, update management, CMS security fundamentals, content/config/code separation, core integrity, theme architecture, deployment discipline, production monitoring. **Includes the platform variants as of v3.1:** WordPress (§20 — escaping, nonces, capabilities, plugin conflicts, hook discipline, wp_options performance, WP-CLI) and Drupal (§21 — Twig escaping, Form API, config management, caching architecture, Composer discipline, Drush), folded in from their former standalone files |
 | [`ext/umami-compliance.md`](ext/umami-compliance.md) | Data classification, regulated data handling (PHI/PII), incident response, disaster recovery, formal change management, audit evidence mapping, vendor risk, data lifecycle/retention, agent-as-attack-surface (prompt injection, supply chain, memory poisoning), cyber liability insurance readiness |
 | [`ext/umami-scripting.md`](ext/umami-scripting.md) | Error handling and exit codes, input validation, output discipline (stdout/stderr/structured), idempotency, dependency and environment management, secrets handling, script testing (BATS, shellcheck), cross-platform portability, script organization |
 | [`ext/umami-integration.md`](ext/umami-integration.md) | API versioning, circuit breakers, retry/backoff discipline, timeout discipline, rate limiting, graceful degradation, webhook reliability, correlation IDs and distributed tracing, contract testing, integration testing strategies |
@@ -109,7 +107,7 @@ After init, ongoing use. Init installs the first two skills by default; the othe
 
 ### Pinning a version (recommended for teams)
 
-The URLs throughout this README float on `main`, which always serves the latest released state. A project can instead pin every URL to a release tag by replacing `refs/heads/main` with `refs/tags/v3.0`. This is the same discipline the framework itself teaches for model versions (§14c) — pin, then bump deliberately: fetch the new tag, read the diff/changelog, and update the URL block in one reviewed commit.
+The URLs throughout this README float on `main`, which always serves the latest released state. A project can instead pin every URL to a release tag by replacing `refs/heads/main` with `refs/tags/v3.1` (the current release). This is the same discipline the framework itself teaches for model versions (§14c) — pin, then bump deliberately: fetch the new tag, read the diff/changelog, and update the URL block in one reviewed commit.
 
 The trust argument is the stronger one: a pinned tag is immutable, so your agents' instructions can't change under you between audits. Floating `main` means every push to this repo reaches your agent's context on its next fetch — a fetch-and-obey surface you should accept deliberately, not by default.
 
@@ -117,7 +115,7 @@ Solo and experimental projects can stay on `main` for simplicity; teams — and 
 
 ### Manual setup (fallback)
 
-**Legacy paths (v3.1+).** Pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory) **no longer resolve** — the v3.0 deprecation stubs were removed in v3.1. Adopter projects still referencing those paths get a 404 on fetch; update to the `ext/` paths shown in the URL list below, or run `/umami-init` (it detects legacy paths and offers automatic migration to the v3 layout).
+**Legacy paths (v3.1+).** Pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory) **no longer resolve** — the v3.0 deprecation stubs were removed in v3.1. The v3.0-era CMS variant files `ext/cms/umami-wordpress.md` and `ext/cms/umami-drupal.md` also no longer resolve — their content (§20/§21) folded into `ext/cms/umami-cms.md` at v3.1. Adopter projects still referencing dead paths get a 404 on fetch; update to the URL list below, or run `/umami-init` (it detects dead paths and offers automatic migration).
 
 If your harness can't write files, or you prefer manual control, paste this URL list into your project's `CLAUDE.md` (or equivalent) — keeping only the extensions that match your project shape (see §0.5 for the mapping):
 
@@ -138,11 +136,6 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-mobile.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
-# WordPress and Drupal sub-extensions below — planned rollup into umami-cms.md in v3.1.
-# These two URLs will stop resolving when the rollup lands; if you add them now, expect to
-# swap them for umami-cms.md alone at v3.1 (or re-run /umami-init, which detects dead paths).
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-wordpress.md
-https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-drupal.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-compliance.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-scripting.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-integration.md
@@ -268,8 +261,6 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-mobile.md
 - Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
-- Extension — WordPress (*planned rollup into §25 in v3.1*): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-wordpress.md
-- Extension — Drupal (*planned rollup into §25 in v3.1*): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-drupal.md
 - Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-compliance.md
 - Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-scripting.md
 - Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-integration.md
@@ -335,9 +326,7 @@ The core spans 6 files in v3. Section numbers are stable across files; the **Fil
 | [`ext/umami-data.md`](ext/umami-data.md) | §18.1–18.11 | Project has data ingestion, pipelines, or a data warehouse |
 | [`ext/umami-iac.md`](ext/umami-iac.md) | §16.1–16.19 | Project has infrastructure-as-code or cloud provisioning |
 | [`ext/umami-mobile.md`](ext/umami-mobile.md) | §19.1–19.7 | Project has a native or cross-platform mobile app |
-| [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) | §25.1–25.9 | Project is built on any CMS |
-| [`ext/cms/umami-wordpress.md`](ext/cms/umami-wordpress.md) | §20.1–20.8 | Project is built on WordPress (loads with §25). **Planned rollup into §25 in v3.1** — this file will be removed; content folds into `ext/cms/umami-cms.md`. |
-| [`ext/cms/umami-drupal.md`](ext/cms/umami-drupal.md) | §21.1–21.9 | Project is built on Drupal (loads with §25). **Planned rollup into §25 in v3.1** — this file will be removed; content folds into `ext/cms/umami-cms.md`. |
+| [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) | §25.1–25.9, plus §20.1–20.8 (WordPress) and §21.1–21.9 (Drupal) folded in at v3.1 | Project is built on any CMS; the §20/§21 platform-variant parts apply only when that platform is present |
 | [`ext/umami-compliance.md`](ext/umami-compliance.md) | §22.1–22.11 | Project has compliance/regulatory requirements or needs cyber liability insurance readiness |
 | [`ext/umami-scripting.md`](ext/umami-scripting.md) | §23.1–23.10 | Project has CLI scripts, operational automation, or scripting-language CLI tools |
 | [`ext/umami-integration.md`](ext/umami-integration.md) | §24.1–24.10 | Project integrates with external services, APIs, or message-based systems |

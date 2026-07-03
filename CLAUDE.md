@@ -18,7 +18,7 @@ If a corpus file drifts toward Claude-Code-specific assumptions, that's the slip
 
 ## Status
 
-`v3.0` released to `main` 2026-05-27 (tag `v3.0`; architectural reframe: landing + 4 core companions + repo reorg into `core/`, `ext/`, `recipes/`). **`main` now carries v3.0; canonical bootstrap + skill-fetch URLs point at `refs/heads/main`.** `develop` is the active branch for v3.1 work. The "not yet validated across projects" gaps below remain open — release doesn't gate on them; they close as external adopters report. Last updated: 2026-07-03.
+`v3.1` released to `main` 2026-07-03 (tag `v3.1`; deep-inspection remediation + structural pass, CMS rollup, §31 backend extension, landing slimmed + budgeted, tag-pinned distribution, dual license — see [`audits/v3.1-retro.md`](audits/v3.1-retro.md)). **`main` carries v3.1; canonical bootstrap + skill-fetch URLs point at `refs/heads/main`; teams can pin `refs/tags/v3.1`.** `develop` is the active branch for v3.2 work. Prior: `v3.0` 2026-05-27 (architectural reframe: landing + core companions + repo reorg into `core/`, `ext/`, `recipes/`). The "not yet validated across projects" gaps below remain open — release doesn't gate on them; they close as external adopters report. Last updated: 2026-07-03.
 
 **Just shipped (v3.0 → develop):**
 - Landing-doc-as-index architecture; Tier 1 fetch was ~13K tokens at the v3.0 split (vs ~40K monolithic). **Regrown to ~30K by 2026-07** — stale claims corrected corpus-wide 2026-07-03; slimming pre-staged in `audits/gaps.md`
@@ -46,11 +46,13 @@ If a corpus file drifts toward Claude-Code-specific assumptions, that's the slip
 - `§3d risk taxonomy + cross-provider review + §30.5 closed-loop PR review not yet validated across projects` — closes when ≥2 projects run the full pattern for ≥1 release cycle
 - Plus ~15 "not yet validated across projects" entries for individual v3.0 practices (Trust Posture, §6b, untrusted-content boundaries, etc.) — same shape, awaiting field validation
 
-**v3.1 scheduled work** (remaining; per `audits/v3.0-retro.md`):
-- Roll up §20 (WordPress) and §21 (Drupal) content into §25 (CMS); delete `ext/cms/umami-wordpress.md` and `ext/cms/umami-drupal.md` entirely (section numbers stay reserved)
-- Refine v3.0 practices based on external-adopter feedback
+**Shipped at the v3.1 tag (release chores, 2026-07-03):** §20/§21 rolled up into `ext/cms/umami-cms.md` (variant files deleted; §20.x/§21.x heading numbers preserved in-file so cross-references keep resolving); `recipes/closed-loop-pr-review.md` deprecated per the §0.9 reverse gate's forced disposition (first real firing of the retirement mechanism); `check-refs.sh` gained its third invariant (landing fails the check past 125,000 bytes ≈ ~25K tokens); pinning examples updated to `refs/tags/v3.1`; [`audits/v3.1-retro.md`](audits/v3.1-retro.md) frozen.
 
-**Next planned tag:** v3.1 — CMS rollup + first-pass external-adopter refinements (stub removal already landed on develop).
+**v3.2 scheduled work:**
+- Refine v3.0/v3.1 practices based on external-adopter feedback (the validation-report template is the funnel)
+- Revisit the deferred Tier-D readability items and the §2b/§3/§3d watch-signal/failure-mode table merges (tracked in `audits/gaps.md`)
+
+**Next planned tag:** v3.2 — first-pass external-adopter refinements.
 
 **v3 file architecture:**
 - `umami.md` — Landing (framework + Section Navigation Map + §0 + §1 + §3b + §6 + §13 + §15 + Security Essentials sidebar)
@@ -78,9 +80,7 @@ See [`audits/v3.0-retro.md`](audits/v3.0-retro.md) for the v3 architectural deci
 | `ext/umami-data.md` | Data pipelines extension — §18 |
 | `ext/umami-iac.md` | IaC / DevOps extension — §16 |
 | `ext/umami-mobile.md` | Mobile extension — §19 |
-| `ext/cms/umami-cms.md` | CMS shared extension — §25 |
-| `ext/cms/umami-wordpress.md` | WordPress extension — §20 (loads with §25). **Planned rollup into §25 in v3.1** — file will be removed; content folds into `ext/cms/umami-cms.md`. |
-| `ext/cms/umami-drupal.md` | Drupal extension — §21 (loads with §25). **Planned rollup into §25 in v3.1** — file will be removed; content folds into `ext/cms/umami-cms.md`. |
+| `ext/cms/umami-cms.md` | CMS shared extension — §25, plus the WordPress (§20) and Drupal (§21) platform variants folded in at v3.1 (§20.x/§21.x heading numbers preserved; the standalone variant files were deleted) |
 | `ext/umami-compliance.md` | Compliance / regulated industries extension — §22 |
 | `ext/umami-scripting.md` | Scripting / CLI automation extension — §23 |
 | `ext/umami-integration.md` | Systems integration extension — §24 |
@@ -96,7 +96,7 @@ See [`audits/v3.0-retro.md`](audits/v3.0-retro.md) for the v3 architectural deci
 | `README.md` | Public-facing documentation, adoption guide, comparison tables |
 | `LICENSE` | CC BY-SA 4.0 — prose and guidance documents |
 | `LICENSE-CODE` | MIT — code artifacts (fenced code blocks, `tools/` scripts, recipe implementation artifacts, skill/installer files), so adopters can embed them in proprietary codebases. Added 2026-07-03 |
-| `audits/` | Per-release retros (`v1.0-retro.md`, `v2.1-retro.md`, `v3.0-retro.md`) and rolling [`gaps.md`](audits/gaps.md) — see §8 for the retro/registry distinction |
+| `audits/` | Per-release retros (`v1.0-retro.md`, `v2.1-retro.md`, `v3.0-retro.md`, `v3.1-retro.md`) and rolling [`gaps.md`](audits/gaps.md) — see §8 for the retro/registry distinction |
 
 ## Section numbering
 
@@ -112,7 +112,7 @@ The repo follows a three-tier layout:
 
 - **Domain extensions under `ext/`.** `ext/umami-{web,data,iac,mobile,compliance,scripting,integration,homelab,agent-workflows,backend}.md` hold per-domain guardrails. Each extension is a self-contained Tier-2+ practice catalog for that domain.
 
-- **Shared+variant extension clusters under `ext/{domain}/`.** When an extension has a shared base + per-platform sub-extensions, group them in a domain subdir. The shared file and variants live together: `ext/cms/umami-{cms,wordpress,drupal}.md`, `ext/desktop/umami-{desktop,linux,spa-wrapper}.md`. New shared+variant domains follow this rule.
+- **Shared+variant extension clusters under `ext/{domain}/`.** When an extension has a shared base + per-platform sub-extensions, group them in a domain subdir. The shared file and variants live together: `ext/desktop/umami-{desktop,linux,spa-wrapper}.md`. (The CMS cluster followed this shape in v3.0; its WordPress/Drupal variants folded into `ext/cms/umami-cms.md` at v3.1, which is the other valid endgame for a variant that stays thin.) New shared+variant domains follow this rule.
 
 **Stability rules:**
 
@@ -184,7 +184,7 @@ The checklist isn't a CI gate — there's no CI on this repo. It's a manual disc
 
 ## Branching
 
-- `main` — released, tagged versions (currently v3.0; tags v1.0, v2.0, v2.1, v3.0)
+- `main` — released, tagged versions (currently v3.1; tags v1.0, v2.0, v2.1, v3.0, v3.1)
 - `develop` — active work, merged to main for releases
 
 ## What NOT to do

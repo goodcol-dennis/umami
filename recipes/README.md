@@ -38,7 +38,7 @@ Code blocks inside recipes (bash, YAML, config snippets) are MIT-licensed (see `
 |---|---|---|
 | [`activity-stream.md`](activity-stream.md) | Drafted | Consolidated activity stream (multi-source capture: Claude `Stop` hook + git `post-commit` + manual `/log`) — primary use case is billable-timesheet reconstruction; replaces the v3.0 `consulting-timesheet.md` placeholder |
 | [`claude-md-starter.md`](claude-md-starter.md) | Drafted | Distilled Tier-1 CLAUDE.md starter block — the zero-ceremony entry point; paste one block, get the guardrail floor on the next agent turn. Graduation triggers point into the full framework. |
-| [`closed-loop-pr-review.md`](closed-loop-pr-review.md) | Planned | Auto-merge ~90% of PRs via mechanical pre-flight + AI review + risk-tiered disposition, with optional cross-provider review for adversarial verification on Medium+ tiers |
+| ~~`closed-loop-pr-review.md`~~ | Deprecated (v3.1) | Was a Planned placeholder since v3.0 with no field implementation; removed per the §0.9 reverse gate. §30.5 + §3d carry the closed-loop PR-review guidance; the recipe slot returns when someone has run the pattern on a real project and can contribute the implementation |
 | `agent-cost-monthly-report.md` | Future | Aggregate agent token costs across workflows for invoicing or budget tracking |
 | `adr-template.md` | Future | Drop-in ADR template with the §7 fields pre-stubbed |
 | `recovery-runbook-template.md` | Future | Pre-filled §5 runbook for common stateful surfaces (database, secrets store, working tree) |

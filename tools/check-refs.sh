@@ -151,6 +151,21 @@ while IFS= read -r f; do
   done < "$f"
 done < <(git ls-files '*.md')
 
+# ── Third invariant: the landing stays under its token budget ──
+# The landing (umami.md) is the Tier-1 fetch; its size is a managed budget
+# (see the "Landing token budget" gap-registry entry, opened 2026-07-03 after
+# the file silently grew from ~13K to ~30K tokens past its published claim).
+# Budget: ~25K tokens ≈ 125,000 bytes (bytes/5 ≈ tokens for this markdown mix,
+# split between the word- and byte-based estimates). Growth past the budget
+# gets extracted along an orthogonal seam (§11), not absorbed — this check
+# makes the breach loud instead of silent.
+LANDING_BUDGET_BYTES=125000
+landing_bytes=$(wc -c < umami.md | tr -d ' ')
+landing_over=0
+if [ "$landing_bytes" -gt "$LANDING_BUDGET_BYTES" ]; then
+  landing_over=1
+fi
+
 if [ "$QUIET" != "1" ]; then
   echo "=== umami cross-reference fitness check ==="
   echo "Defined sections: $(echo "$defined" | wc -w)"
@@ -176,6 +191,13 @@ if [ "$QUIET" != "1" ]; then
     printf '%s' "$broken_links"
   fi
 
+  echo ""
+  if [ "$landing_over" = "0" ]; then
+    echo "✓ Landing within budget: ${landing_bytes} / ${LANDING_BUDGET_BYTES} bytes."
+  else
+    echo "✗ Landing over budget: ${landing_bytes} bytes > ${LANDING_BUDGET_BYTES}. Extract along an orthogonal seam (§11); update the budget only with a recorded rationale."
+  fi
+
   if [ "$SHOW_UNUSED" = "1" ] && [ -n "$unused" ]; then
     echo ""
     echo "Informational — sections defined but never referenced (may be intentional):"
@@ -185,7 +207,7 @@ if [ "$QUIET" != "1" ]; then
   fi
 fi
 
-# Exit code reflects both invariants; capped at 255 to fit the POSIX range.
-total=$((orphan_count + broken_link_count))
+# Exit code reflects all three invariants; capped at 255 to fit the POSIX range.
+total=$((orphan_count + broken_link_count + landing_over))
 [ "$total" -gt 255 ] && total=255
 exit "$total"

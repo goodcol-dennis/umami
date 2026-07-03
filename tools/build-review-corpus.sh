@@ -29,8 +29,6 @@ FILES=(
   ext/umami-iac.md
   ext/umami-mobile.md
   ext/cms/umami-cms.md
-  ext/cms/umami-wordpress.md
-  ext/cms/umami-drupal.md
   ext/umami-compliance.md
   ext/umami-scripting.md
   ext/umami-integration.md
@@ -43,7 +41,6 @@ FILES=(
   recipes/README.md
   recipes/claude-md-starter.md
   recipes/activity-stream.md
-  recipes/closed-loop-pr-review.md
 )
 
 : > "$OUT"

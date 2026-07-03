@@ -22,9 +22,7 @@ This document is a template for establishing processes, testing strategies, and 
 - Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-data.md
 - Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
 - Extension — Mobile: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-mobile.md
-- Extension — CMS (shared): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
-- Extension — WordPress: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-wordpress.md
-- Extension — Drupal: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-drupal.md
+- Extension — CMS (incl. §20 WordPress + §21 Drupal variants, folded in at v3.1): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/cms/umami-cms.md
 - Extension — Compliance: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-compliance.md
 - Extension — Scripting: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-scripting.md
 - Extension — Systems integration: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-integration.md
@@ -47,7 +45,7 @@ This document is a template for establishing processes, testing strategies, and 
   recommendations to apply.
 ```
 
-> **Pinning a version.** The URLs above float on `main`, which always serves the latest released state — every push to the umami repo reaches your agent's context on its next fetch. A project can instead pin to a release tag by substituting `refs/tags/v3.0` for `refs/heads/main` in every URL. Pinning is the same discipline §14c teaches for model versions: pin, then bump deliberately (fetch the new tag, read the diff, update the URL block in one reviewed commit). Solo and experimental projects can stay on `main` for simplicity; teams and compliance-bound projects should pin — an immutable tag means your agents' instructions can't change under you between audits.
+> **Pinning a version.** The URLs above float on `main`, which always serves the latest released state — every push to the umami repo reaches your agent's context on its next fetch. A project can instead pin to a release tag by substituting `refs/tags/v3.1` (the current release) for `refs/heads/main` in every URL. Pinning is the same discipline §14c teaches for model versions: pin, then bump deliberately (fetch the new tag, read the diff, update the URL block in one reviewed commit). Solo and experimental projects can stay on `main` for simplicity; teams and compliance-bound projects should pin — an immutable tag means your agents' instructions can't change under you between audits.
 
 ---
 
@@ -115,8 +113,8 @@ This document is the **landing doc** for umami v3 — it carries the framework, 
 | §17 | Web frontend | [`ext/umami-web.md`](ext/umami-web.md) |
 | §18 | Data pipelines | [`ext/umami-data.md`](ext/umami-data.md) |
 | §19 | Mobile | [`ext/umami-mobile.md`](ext/umami-mobile.md) |
-| §20 | WordPress (loads with §25) | [`ext/cms/umami-wordpress.md`](ext/cms/umami-wordpress.md) |
-| §21 | Drupal (loads with §25) | [`ext/cms/umami-drupal.md`](ext/cms/umami-drupal.md) |
+| §20 | WordPress (platform variant; folded into §25's file at v3.1) | [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) |
+| §21 | Drupal (platform variant; folded into §25's file at v3.1) | [`ext/cms/umami-cms.md`](ext/cms/umami-cms.md) |
 | §22 | Compliance | [`ext/umami-compliance.md`](ext/umami-compliance.md) |
 | §23 | Scripting / CLI | [`ext/umami-scripting.md`](ext/umami-scripting.md) |
 | §24 | Systems integration | [`ext/umami-integration.md`](ext/umami-integration.md) |
@@ -128,7 +126,7 @@ This document is the **landing doc** for umami v3 — it carries the framework, 
 | §30 | Agent workflows | [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) |
 | §31 | Backend API services | [`ext/umami-backend.md`](ext/umami-backend.md) |
 
-**Legacy paths (v3.1+):** Pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory) **no longer resolve** as of v3.1 — the v3.0 deprecation stubs were removed. Adopter `CLAUDE.md` files still referencing those paths get a 404; update them to the `ext/` paths shown in the Navigation Map above, or run `/umami-init` which detects legacy paths and offers automatic migration.
+**Legacy paths (v3.1+):** Pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory) **no longer resolve** as of v3.1 — the v3.0 deprecation stubs were removed. The v3.0-era `ext/cms/umami-wordpress.md` and `ext/cms/umami-drupal.md` also no longer resolve — §20/§21 folded into `ext/cms/umami-cms.md` at v3.1. Adopter `CLAUDE.md` files still referencing dead paths get a 404; update them per the Navigation Map above, or run `/umami-init` which detects dead paths and offers automatic migration.
 
 **Cost-aware adoption:** Tier 1 / foundation work uses `umami.md` alone — no companion file needed. Fetch concern files only when the §0.6 tier table or §0.5 mapping calls for them. Landing-only is a ~25K-token fetch after the 2026-07-03 anti-pattern-catalog extraction (estimate from ~118KB; it had grown to ~30K from ~13K at the v3.0 split; the pre-v3 monolith was ~40K). The landing's token size is a managed budget — umami's own gap registry (`audits/gaps.md` in the umami repo, not your project) tracks it; further growth gets extracted, not absorbed.
 
@@ -216,7 +214,7 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | Web frontend | §2 (design system), §3 (all test layers including visual), §3b (TDD), §7 (UX audit, style audit) | [umami-web.md](ext/umami-web.md) | — (full template applies) |
 | Mobile app | §2 (specs), §3 (unit + integration tests), §3b (TDD), §6 (strict types), §12 (release tracking) | [umami-mobile.md](ext/umami-mobile.md) | §3 visual regression (use device matrix testing instead) |
 | Infrastructure / IaC | §2 (specs — infra contracts), §6 (pinning), §7 (ADRs — cloud decisions), §8 (acknowledged gaps) | [umami-iac.md](ext/umami-iac.md) | §3 visual/E2E, §4 runtime validation (use drift detection instead) |
-| CMS (any) | §3 (testing), §3b (TDD), §6 (consistency — coding standards), §7 (ADRs — extension/architecture decisions), §8 (acknowledged gaps — extension risks) | [umami-cms.md](ext/cms/umami-cms.md) + platform file ([WordPress](ext/cms/umami-wordpress.md), [Drupal](ext/cms/umami-drupal.md)) | — |
+| CMS (any) | §3 (testing), §3b (TDD), §6 (consistency — coding standards), §7 (ADRs — extension/architecture decisions), §8 (acknowledged gaps — extension risks) | [umami-cms.md](ext/cms/umami-cms.md) (includes the §20 WordPress / §21 Drupal platform-variant parts — apply the one matching the platform) | — |
 | CLI / scripts only | §3 (unit tests), §3b (TDD + debugging), §6 (type checking), §11 (file size budgets) | [umami-scripting.md](ext/umami-scripting.md) | §3 visual/E2E, §4 runtime validation UI, §7 UX audit |
 | Multi-layer system | All sections, but **organize §10 (change propagation) per-layer** and **organize §3 (testing) per-layer**. Consider §1 workspace partitioning if discovery/analysis phase exists alongside application code. | All that apply | — |
 | Compliance requirements | §2 (specs — contracts as evidence), §3 (test evidence), §5 (state tracking — audit trail), §7 (ADRs — decision traceability), §8 (acknowledged gaps — risk register), §12 (change tracking — change management records), §15 (checklists — process evidence). These shift from "recommended" to **required**. | [umami-compliance.md](ext/umami-compliance.md) | Nothing skipped — compliance adds rigor, it doesn't remove sections. |

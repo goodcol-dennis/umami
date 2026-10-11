@@ -103,6 +103,7 @@ After init, ongoing use. Init installs the first two skills by default; the othe
 - **`/umami-auto-review`** — PR-level code review per §3d (three-layer model with AI pre-screen, risk taxonomy, optional cross-provider verification). *On demand.*
 - **`/umami-pipeline-audit`** — quarterly CI/CD pipeline audit per §6b (cycle time, gate purposes, guardrails-vs-needs fit against team / risk / deploy model / velocity). *On demand.*
 - **`/umami-drift-audit`** — periodic dropped-item audit per §8 (designs, POCs, decisions that fell off the radar). *On demand.*
+- **`/umami-wave`** — start an unattended wave session per [`recipes/wave-session.md`](recipes/wave-session.md): checks the adopt-when evidence, scaffolds the session files, runs the gap-closing pass, launches the first wave, arms the watchdog. *On demand; opt-in; not the default way to build.*
 
 ### Pinning a version (recommended for teams)
 

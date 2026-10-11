@@ -5,7 +5,7 @@ description: Periodic CI/CD pipeline audit. Measures cycle time, inventories gat
 
 # umami-pipeline-audit — Periodic CI/CD pipeline audit
 
-**Last synced:** 2026-05-16 from §6b (umami v3 multi-file architecture; guardrails-vs-needs fit; Impact + Effort + Quick-win on dispositions). Re-derive this skill from the current §6b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-10-11 from §6b (mirrored the 2026-07-03 §6b changes this skill had missed: the tax is reframed behaviorally — context-switching, batching, integration latency — not as idle minutes, and is paired with PR-size / commit-frequency / re-run-rate signals; an all-Keep audit is honest only when every Keep cites a recent catch or a live threat; §6b's adopt-when gate added to *When NOT to invoke*. Previously 2026-05-16: umami v3 multi-file architecture; guardrails-vs-needs fit; Impact + Effort + Quick-win on dispositions). Re-derive this skill from the current §6b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -34,6 +34,7 @@ The pipeline is the operational substrate that runs every change. When it's heal
 - For surfacing forgotten designs / decisions — use `/umami-drift-audit`
 - When the team is mid-incident or mid-release crunch (audit adds noise; wait for the next quiet window)
 - More frequently than quarterly without specific cause (audit fatigue produces low-quality dispositions)
+- When §6b's adopt-when hasn't fired: the whole pipeline is a short lint+test pass nobody waits on, no contributor skips local CI, and the gate config wasn't inherited from another project. Say so in one line and stop; re-check when the pipeline grows past what one person can hold in their head.
 
 ## Hard rules
 
@@ -42,6 +43,7 @@ The pipeline is the operational substrate that runs every change. When it's heal
 - **Each gate finding gets a proposed disposition.** Findings without dispositions are theater. Disposition options: Keep / Move local / Demote nightly / Remove / Add.
 - **Both dimensions matter.** Don't skip the guardrails-vs-needs fit check just because the technical health looks fine. A pipeline can be fast and clean but mismatched to the team.
 - **Default disposition leans against keeping debt.** If a gate has caught nothing meaningful in N months and the team can't name its purpose, default is Remove or Demote nightly — not Keep.
+- **Every Keep cites a recent catch or a live threat.** All-Keep *can* be the honest outcome, but a blanket Keep with no per-gate citation is the audit rubber-stamping itself (§6b watch signal; §0.6 "Documentation theater" applied to the pipeline).
 - **Never recommend more than 5 dispositions per audit run.** Larger lists overwhelm; batch the rest into the next quarterly run.
 - **Always fetch the landing document fresh** from the canonical URL `https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/umami.md` (use `refs/heads/develop` only for bleeding-edge, not-yet-released practices). Never cache locally.
 - **Consult the Section Navigation Map** in the landing to identify §6b's home (`core/umami-runtime.md`). Fetch that companion for the full audit protocol. Tier 1 / discovery only needs the landing; pipeline-audit scope requires the runtime companion.
@@ -55,7 +57,7 @@ The pipeline is the operational substrate that runs every change. When it's heal
 
 3. **Audit per-gate purpose** — for each gate, attempt to name (a) the specific failure mode it catches and (b) a recent example. If the answer is "we've always had it" or "for compliance" without naming the specific control, the gate is unmoored from its purpose. Flag for disposition.
 
-4. **Calculate the tax** — cycle time × commits per day × contributors = contributor-hours per week spent waiting. Surface this as a concrete number; the team usually hasn't done this math and the number is often surprising.
+4. **Calculate the tax** — cycle time × commits per day × contributors gives an upper bound on wall-clock exposure. It overstates idle time (contributors pipeline other work while CI runs) but trends the behavioral tax well enough to act on: the real cost is **context-switching** (each long run invites a task switch and a re-orientation on return), **batching** (changes bundled to amortize the wait — bigger, riskier merges) and **integration latency** (merge queues and flaky re-runs stacking where they block others). Pair the number with the behavioral signals: median PR size over time, commit-frequency trend, re-run rate. The value side is step 2's last-caught-something dates — gates justify their share of the tax with concrete recent catches, not plausibility.
 
 5. **Check guardrails-vs-needs fit** — evaluate the gate set as a whole against the team's actual context, not just per-gate purpose:
    - **Team structure** — size, distribution, on-call coverage. A 2-person team rarely needs the same approval gates as a 30-person team.

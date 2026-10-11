@@ -5,7 +5,7 @@ description: Periodic dropped-item audit. Surfaces designs, explorations, POCs, 
 
 # umami-drift-audit — Periodic dropped-item audit
 
-**Last synced:** 2026-05-16 from §8 (umami v3 multi-file architecture; shipped-features scan-location; Impact + Effort + Quick-win on dispositions). Re-derive this skill from the current §8 when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-10-11 from §8 (re-verified: `git diff` of `core/umami-process.md` since the 2026-05-16 sync shows no substantive change to §8 — only the file-header paragraph; skill body unchanged. Previously 2026-05-16: umami v3 multi-file architecture; shipped-features scan-location; Impact + Effort + Quick-win on dispositions). Re-derive this skill from the current §8 when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 

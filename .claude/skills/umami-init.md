@@ -5,7 +5,7 @@ description: First-time umami setup or upgrade-existing-setup. Discovers project
 
 # umami-init — Initialization protocol
 
-**Last synced:** 2026-07-03 from §0.7b (step 4 now names the on-demand skills — `umami-auto-review` / `umami-pipeline-audit` / `umami-drift-audit` install only when discovery shows their protocol applies, closing the README-promises-five-commands vs. init-installs-two gap; previously: §0.9 adoption-ledger seeding + default-deny adoption on init 2026-06-18; auto-chain into `/umami-audit` on successful apply 2026-05-22). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-10-11 from §0.7b (`umami-wave` added to the on-demand skill list — offered when discovery finds a buildable backlog larger than a sitting clears; previously 2026-07-03: step 4 names the on-demand skills — `umami-auto-review` / `umami-pipeline-audit` / `umami-drift-audit` install only when discovery shows their protocol applies, closing the README-promises-five-commands vs. init-installs-two gap; previously: §0.9 adoption-ledger seeding + default-deny adoption on init 2026-06-18; auto-chain into `/umami-audit` on successful apply 2026-05-22). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -49,7 +49,7 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
 4. **Compute the diff** against current state:
    - **Adds:** companion files (if Tier 2+) and domain extensions to add to the URL list.
    - **Removes:** files referenced but not relevant (rare; usually keep, just flag).
-   - **Skill installations:** `.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md` with `**Last synced:** YYYY-MM-DD` set to today. The other three skills (`umami-auto-review`, `umami-pipeline-audit`, `umami-drift-audit`) install **on demand, not by default** — offer each only when discovery shows its protocol applies (§3d review at agentic velocity, §6b when the project has a CI pipeline, §8 when a backlog of designs/decisions exists) and include any accepted ones in the same diff.
+   - **Skill installations:** `.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md` with `**Last synced:** YYYY-MM-DD` set to today. The other four skills (`umami-auto-review`, `umami-pipeline-audit`, `umami-drift-audit`, `umami-wave`) install **on demand, not by default** — offer each only when discovery shows its protocol applies (§3d review at agentic velocity, §6b when the project has a CI pipeline, §8 when a backlog of designs/decisions exists, `recipes/wave-session.md` when a backlog of independent buildable units exceeds what a sitting clears and the human wants it run unattended) and include any accepted ones in the same diff.
 
 5. **Show the user the proposed changes, then present the four-option dialog.** Enumerate every file that would be modified or created — paths, line counts, the exact URL block that would land in each instruction file, which skill files would be created or updated and at what `Last synced:` date. The user must be able to read the diff before deciding. Then surface the dialog (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
 

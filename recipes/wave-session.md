@@ -36,6 +36,85 @@ The body uses harness-neutral terms; this table maps them to the **Claude Code r
 
 ---
 
+## The recipe — what to type
+
+**Step 0 — one command (Claude Code).** Install `/umami-wave` (`.claude/skills/umami-wave.md` in the umami repo; `/umami-init` offers it on demand when discovery finds a buildable backlog) and run it. It checks the adopt-when against your files, scaffolds steps 1–4 below, derives the preamble from your instruction file, runs the gap-closing pass, writes the briefs, launches the first wave and arms the watchdog — then hands off. The steps are spelled out so another harness, or a human, can do them by hand.
+
+**Step 1 — scratch layout and board.**
+
+```bash
+S="<scratch>/wave"; mkdir -p "$S/prompts" "$S/release"
+printf '# slot\twave\tbranches(comma)\ttask_id\tattempts\tnote (DONE:… | BLOCKED:… | STOPPED:… = complete)\n' > "$S/slots.tsv"
+printf '# Waves — %s\n\n## Rulings\n\n## Waves\n\n## Next promotion\n' "$(date -u +%F)" > "$S/waves.md"
+```
+
+**Step 2 — preamble skeleton** (`agent-preamble.md`; fill every `<…>` from the project's instruction file and build config):
+
+```markdown
+# Ground rules — read in full before anything else
+- Read <instruction file> first: branch workflow, lanes, risk levels, test-first, verification. For <surface> work also read <domain doc> in full.
+- Verify first: the brief may be stale. Read the governing record in full (never head/cut/truncated grep); build only what is missing; nothing missing → report and stop, no branch, no PR.
+- Scratch only under <scratch>/wave/<slot>/. Worktree: `git fetch origin && git worktree add .claude/worktrees/<slot> -b <branch> origin/<integration branch>`, then a real dependency install there.
+- Test resources: `<make-test-resource cmd> <slot>`; drop only your own, by exact name.
+- Never git stash / reset / checkout in the main checkout; never touch another worktree; never reinstall shared caches.
+- Local gate: `<fast-lanes cmd>` plus targeted `<test cmd> <files>`; never `<heavy build cmd>` on this machine — CI owns it.
+- Production: no reads, no writes. Measure on <dev env>, read-only, and say so in the PR; a step that needs production stops and reports.
+- Test-first (RED → GREEN). A changed assertion answers "why was the old one wrong?".
+- Forge CLI called bare; PR bodies via --body-file; trailers: <trailers>. Before pushing: <touched-file checks>; update the unit's <roadmap/register> row in the same PR.
+- Gate: Low merges on green (<required statuses>, poll the merge result); High stops at green for <human>. Put the hunks that matter at the top of the PR body.
+- Side-effect record (<record cmd>) if infrastructure, cluster or data store was touched: Authority / Why / Action / Target / Outcome / Undo, every line filled.
+- Final report: PR + merge SHA; what a user sees; tests (counts, RED → GREEN); assertions changed and why; screenshot paths; deliberately not built; left open.
+```
+
+**Step 3 — brief:** copy the template under *The Session Files* into `prompts/<slot>.md`.
+
+**Step 4 — watchdog file and wake-up.**
+
+```markdown
+# watchdog.md — armed <date UTC> on <human>'s words: "<quote>". Wake-up id <id>, <schedule>.
+
+## Ground rules for restarts
+Dev only; no production reads or writes; local gate = <cmd>; check `df -i` before restarting anything; model <model>, background launch.
+
+## In flight
+### <slot | run id> — <title>
+Brief/script: <path>. Stalls (quiet 30+ min, no notification, no CI running) → <relaunch | resume from run id>. On completion → <next action>. Needs the human's word: <list | none>.
+
+## Exceptions
+none
+
+## Each pass
+1. Read slots.tsv; rows without DONE/BLOCKED/STOPPED are running.  2. Dead-worker test — all three conditions.
+3. Read the last report; write DONE/BLOCKED or relaunch with the fixed prompt; attempts +1; cap 3.  4. Stalled pipeline → resume.
+5. Hygiene.  6. Gated starts on their named condition only.  7. Healthy → one line, stop.
+```
+
+Wake-up prompt, every 20 minutes off the hour: *"Wave watchdog pass: read `<scratch>/wave/watchdog.md` and follow it. If a usage limit interrupted workers or a pipeline, resume them from their briefs and run id. If all is healthy, say so in one line and stop."*
+
+**Step 5 — status line** (`wave_status.sh`; forge CLI shown as `gh`):
+
+```bash
+#!/usr/bin/env bash
+# One line per slot — state derived from slots.tsv, PR state and live-output mtime; never from a worker's say-so.
+S=${1:-<scratch>/wave}; T=${TASKS:-<session dir>/tasks}; Q=${QUIET_MIN:-20}
+tail -n +2 "$S/slots.tsv" | while IFS=$'\t' read -r slot wave branches tid attempts note; do
+  case "$note" in
+    DONE:*) st=DONE ;; BLOCKED:*) st=BLOCKED ;; STOPPED:*) st=STOPPED ;;
+    *) merged=1
+       for b in ${branches//,/ }; do gh pr list --state merged --head "$b" --json number -q '.[0].number' | grep -q . || merged=0; done
+       if   [ "$merged" = 1 ]; then st=MERGED
+       elif [ "$tid" = "-" ]; then st=PENDING
+       elif [ -f "$T/$tid.output" ] && [ -n "$(find "$T/$tid.output" -mmin -"$Q")" ]; then st=LIVE
+       else st=STALLED; fi ;;
+  esac
+  printf '%-8s %-4s %-8s %s\n' "$slot" "$wave" "$st" "$note"
+done
+```
+
+**Step 6 — cite and ledger.** One line in the instruction file ("unattended sessions run per `recipes/wave-session.md`") and one §0.9 ledger row: triggering evidence (the backlog or the incident, cited), the cost profile above, the kill criterion above.
+
+---
+
 ## The Shape
 
 ```

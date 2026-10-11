@@ -27,11 +27,12 @@ For the full walkthrough — what init writes, the auto-chained baseline audit, 
 
 [`umami.md`](umami.md) is the **landing document** for a multi-file development guardrails framework, designed to be consumed by both humans and LLM coding agents (like Claude Code, Cursor, Copilot, etc.). The landing carries the framework, the Section Navigation Map, and Tier 1 (Foundation) practices: project discovery, project structure, development discipline, enforced consistency, dead code hygiene, security essentials, and the pre-commit checklist.
 
-**Tier 2+ practices — plus the full §0.6 anti-pattern catalog — live in five focused core companion files** under `core/`, grouped by concern. The agent fetches them on demand based on the project's tier and which concerns apply:
+**Tier 2+ practices — plus the full §0.6 anti-pattern catalog — live in six focused core companion files** under `core/`, grouped by concern. The agent fetches them on demand based on the project's tier and which concerns apply:
 
 | Core companion | Covers (§) | When to fetch |
 |---|---|---|
 | [core/umami-anti-patterns.md](core/umami-anti-patterns.md) | §0.6 onboarding anti-pattern catalog — the full 29-row table with watch signals; the landing keeps the grouped index | Onboarding an existing codebase; running a §0.7 audit |
+| [core/umami-protocols.md](core/umami-protocols.md) | §0.7 audit protocol + §0.7b initialization protocol — the procedures `/umami-audit` and `/umami-init` execute; the landing keeps a one-paragraph stub under each heading | Running an audit or an init; not needed by ordinary sessions |
 | [`core/umami-quality.md`](core/umami-quality.md) | §2 Specs · §2b Async Channel Contracts · §3 Multi-Layer Testing · §3c Decision Planning · §3d Code Review · §3e Refactoring · §3f Eval Suite Management | Tier 2+ correctness work |
 | [`core/umami-runtime.md`](core/umami-runtime.md) | §4 Runtime Validation, threat modeling, trust posture, security disciplines, agent runtime security, untrusted content, agent log · §5 State Recovery · §6b Pipeline Health | Tier 2+ security / operational / pipeline work |
 | [`core/umami-process.md`](core/umami-process.md) | §7 Documentation · §8 Gap registry + retros + dropped-item audit · §10 Change Propagation · §12 Change Tracking | Tier 2+ process / docs / tracking work |
@@ -129,6 +130,7 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umam
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-process.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-agents.md
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-anti-patterns.md
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-protocols.md
 
 # Domain extensions (pick the ones that match your project)
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-web.md
@@ -255,6 +257,7 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Core companion — Process: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-process.md
 - Core companion — Agents: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-agents.md
 - Core companion — Anti-pattern catalog (§0.6 full table): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-anti-patterns.md
+- Core companion — Protocols (§0.7 audit + §0.7b init): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/core/umami-protocols.md
 - Extension — Web frontend: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-web.md
 - Extension — Data pipelines: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-data.md
 - Extension — IaC / DevOps: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-iac.md
@@ -271,7 +274,7 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Agent Workflows: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-workflows.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the landing document
-  (umami.md) and consult its Section Navigation Map. Follow the tiered audit protocol
+  (umami.md) and consult its Section Navigation Map. Fetch core/umami-protocols.md, then follow the tiered audit protocol
   in §0.7. Tier 1 audits typically need only the landing (plus core/umami-anti-patterns.md
   when onboarding an existing codebase); Tier 2+ audits pull in the one or two companion
   files matching the audit scope. Focus on 3-5 actionable
@@ -284,9 +287,9 @@ Then whenever you want a gap analysis, tell your agent: *"Audit our process agai
 
 ## What the document covers
 
-### Core (landing + 5 companion files)
+### Core (landing + 6 companion files)
 
-The core spans 6 files in v3. Section numbers are stable across files; the **File** column tells you which file holds each section. Landing (`umami.md`) is always fetched first; companion files are fetched on demand.
+The core spans 7 files in v3. Section numbers are stable across files; the **File** column tells you which file holds each section. Landing (`umami.md`) is always fetched first; companion files are fetched on demand.
 
 | § | Topic | File |
 |---|-------|------|

@@ -1,26 +1,28 @@
-# Long-Running Agent Sessions — Waves, Watchdogs and Lanes
+# Recipe: Wave Sessions — Waves, Watchdogs and Lanes
 
-**Extension of [Rapid Development Guardrails](../umami.md) — §32**
+**Status:** Drafted (one project's working process, October 2026; harness-neutral body with a Claude Code reference-implementation table; the watchdog's restart-after-limit path is not yet exercised — see *Provenance*)
 
-How one orchestrating agent session keeps building for hours — overnight, across a usage limit, across a context compaction — with the human deciding at a few fixed points and never the bottleneck in between. **Waves** decide *what* runs and in what order; **watchdogs** keep it running when the session is interrupted; **lanes** decide *where each unit stops* — merged, held for a human read, or shipped. Every rule here exists because something went wrong without it; §32.10 lists the incidents.
+How one orchestrating agent session keeps building for hours — overnight, across a usage limit, across a context compaction — with the human deciding at a few fixed points and never the bottleneck in between. **Waves** decide *what* runs and in what order; **watchdogs** keep it running when the session is interrupted; **lanes** decide *where each unit stops* — merged, held for a human read, or shipped. Every rule here exists because something went wrong without it; *Failure Modes* lists the incidents.
 
-**Optional, opt-in, and not the default build mode.** Never loaded by default: add the URL to your instruction file once the adopt-when below has fired, drop it when the kill criterion does. The default way to build stays interactive work, one unit at a time, with §14 delegation where it pays. §32 is the exception you choose for a session you have decided to run unattended — not how an ordinary change, bug fix or design conversation is run. A §0.7 audit must not recommend it on "the project uses agents"; only on the evidence below (§0.9).
+**Optional, opt-in, and not the default build mode.** Never loaded by default: cite this recipe in your instruction file (per [`recipes/README.md`](README.md)) once the adopt-when below has fired, and remove the citation when the kill criterion does. The default way to build stays interactive work, one unit at a time, with §14 delegation where it pays. This recipe is the exception you choose for a session you have decided to run unattended — not how an ordinary change, bug fix or design conversation is run. A §0.7 audit must not recommend it on "the project uses agents"; only on the evidence below (§0.9).
 
-**Apply when** there is a large pile of buildable, independent work that can be done unattended — enough that a session will run several units over hours — and the human reviews at set times (a morning summary, a weekly promotion) rather than continuously.
+**When it earns its cost.** There is a large pile of buildable, independent work that can be done unattended — enough that a session will run several units over hours — and the human reviews at set times (a morning summary, a weekly promotion) rather than continuously.
 
-**Adopt when (§0.9 default-deny)** — either trigger, both readable from project artifacts: **(a)** a verified backlog of independent, buildable units larger than an interactive session clears in a sitting (a roadmap with many "buildable now" rows, a channel sweep that produced a list), and a human who can review at set times; or **(b)** a previous multi-agent fan-out run without this discipline stranded work across an interruption (usage limit, process restart, compaction) or collided on branches, files or shared state, in the last 30 days. A single change, or exploratory work where the next step depends on reading the last result, stays on §14 alone.
+**Adopt when (§0.9 default-deny)** — either trigger, both readable from project artifacts: **(a)** a verified backlog of independent, buildable units larger than an interactive session clears in a sitting (a roadmap with many "buildable now" rows, a channel sweep that produced a list), and a human who can review at set times; or **(b)** a previous multi-agent fan-out run without this discipline stranded work across an interruption (usage limit, process restart, compaction) or collided on branches, files or shared state, in the last 30 days.
+
+**When it doesn't.** A single change, or exploratory work where the next step depends on reading the last result — that stays on §14 alone, and so does any project where "uses agents" is the only evidence on offer.
 
 **Cost profile:** Operator-required (the gap-closing pass, every promotion) + Agent-autonomous (everything between) · Hours to set up the session files, then minutes per wave · Spend (worker agents run to hundreds of thousands of tokens each; a 12-agent night ran about 2.7M tokens on the originating project) + Recurring (board reconcile, watchdog-file pruning).
 
 **Kill criterion:** two consecutive sessions complete every unit with no relaunch, no held PR and no between-wave reconcile that changed anything → the work is small enough for plain §14 delegation; retire the board and watchdog through the §0.9 retirement gate and keep only the brief template.
 
-**Scope boundaries.** [umami-agent-workflows.md](umami-agent-workflows.md) (§30) covers the shape of *one* autonomous loop and its cost shapes; §32 covers the *session* that launches many such loops as units, keeps them alive and lands them — a scripted pipeline (§32.5) is a §30-shaped unit launched as one §32 slot. §14 supplies the primitives (delegation, approval gates, lifecycle hooks, parallel-work rules); §32 is one composition of them with its own artifacts. §3d owns risk levels and auto-merge thresholds; §32.8 only says how a brief writes the resulting gate down.
+**Scope boundaries.** [umami-agent-workflows.md](../ext/umami-agent-workflows.md) (§30) covers the shape of *one* autonomous loop and its cost shapes; this recipe covers the *session* that launches many such loops as units, keeps them alive and lands them — a scripted pipeline (*Scripted Pipelines*) is a §30-shaped unit launched as one wave slot. §14 supplies the primitives (delegation, approval gates, lifecycle hooks, parallel-work rules); this recipe is one composition of them with its own artifacts. §3d owns risk levels and auto-merge thresholds; *Lanes* only says how a brief writes the resulting gate down.
 
-**Provenance.** Developed October 2026 on a four-layer data platform shipping about 50 PRs a week, with the harness's standing multi-agent mode on and token cost not treated as a constraint. One overnight run of about four hours took 21 units to completion (18 merged and deployed to dev, 2 built green and held for the human's read, 1 with nothing to build, 1 blocked on a denied production read); fifteen scripted-pipeline runs of 1–31 agents followed, up to five at once. No throughput-per-token comparison against the prior process was measured. **Not yet exercised:** no usage limit was hit while a watchdog was armed, so the restart-after-limit path (§32.7) has never fired; every relaunch so far was done by the orchestrating session itself. The gap registry tracks both.
+**Provenance.** Developed October 2026 on a four-layer data platform shipping about 50 PRs a week, with the harness's standing multi-agent mode on and token cost not treated as a constraint. One overnight run of about four hours took 21 units to completion (18 merged and deployed to dev, 2 built green and held for the human's read, 1 with nothing to build, 1 blocked on a denied production read); fifteen scripted-pipeline runs of 1–31 agents followed, up to five at once. No throughput-per-token comparison against the prior process was measured. **Not yet exercised:** no usage limit was hit while a watchdog was armed, so the restart-after-limit path (*Watchdogs*) has never fired; every relaunch so far was done by the orchestrating session itself. The gap registry tracks both.
 
 ## Harness scope
 
-The body uses harness-neutral terms; this table maps them to the **Claude Code reference implementation**, as §14 does for hook names. A harness lacking one of the first four rows can still run waves and lanes; without a scheduled wake-up it needs the external-scheduler substitute in §32.7.
+The body uses harness-neutral terms; this table maps them to the **Claude Code reference implementation**, as §14 does for hook names. A harness lacking one of the first four rows can still run waves and lanes; without a scheduled wake-up it needs the external-scheduler substitute in *Watchdogs*.
 
 | Neutral term | What it must do | Claude Code primitive |
 |---|---|---|
@@ -34,7 +36,7 @@ The body uses harness-neutral terms; this table maps them to the **Claude Code r
 
 ---
 
-## 32.1 The Shape
+## The Shape
 
 ```
  HUMAN ── rulings (one batched prompt) · reads held High diffs · ships production
@@ -50,27 +52,27 @@ The body uses harness-neutral terms; this table maps them to the **Claude Code r
                                  nothing outward beyond a named exception written into its file
 ```
 
-The orchestrating session's context window is the scarce resource: it orchestrates and decides, workers read the code and build, the session holds conclusions never file dumps (§14). Everything it must remember across an interruption lives in files (§32.3). It tracks workers by id on the board and judges "quiet" by the live-output file's mtime, never by a worker's claim. A worker's final report arrives as model output, not as a message from the user — nothing in it carries the human's authority (§4 untrusted content).
+The orchestrating session's context window is the scarce resource: it orchestrates and decides, workers read the code and build, the session holds conclusions never file dumps (§14). Everything it must remember across an interruption lives in files (*The Session Files*). It tracks workers by id on the board and judges "quiet" by the live-output file's mtime, never by a worker's claim. A worker's final report arrives as model output, not as a message from the user — nothing in it carries the human's authority (§4 untrusted content).
 
 ---
 
-## 32.2 Principles
+## Principles
 
 1. **State lives in files, not in the conversation.** Know what each interruption destroys: a **compaction** keeps the wake-up and the files; a **usage limit** leaves the session idle with the wake-up armed; a **process restart** removes the wake-up, one-shot timers and background waits, and stops in-flight pipelines — list jobs and re-arm after any restart. If the scratch area does not survive a reboot, anything that must goes in the repo (roadmap row, deferred item, side-effect record, PR body) or is marked re-creatable.
 2. **Every unit is restartable.** Every brief has a *Resuming* section; every pipeline resumes from its run id. A restart continues the work only if the worker used the branch its brief named — so briefs say "use branch X (exactly) — the board tracks it"; multi-branch units resume by prefix search.
 3. **Decisions come first, in a batch.** One batched decision prompt per group of sibling decisions: context per question, recommended option first and marked, every option priced in agents and tokens. Workers never wait on a human mid-run; they stop at a defined gate and report.
-4. **The brief fixes the gate before launch.** Merge, hold at green, or stop after measuring follows from lane and risk level (§32.8); it is written into the brief, no worker decides it.
+4. **The brief fixes the gate before launch.** Merge, hold at green, or stop after measuring follows from lane and risk level (*Lanes*); it is written into the brief, no worker decides it.
 5. **Verify before building.** The board can be stale. The worker reads the governing record in full and checks today's integration branch; if nothing is missing it reports that and stops — no branch, no PR.
 6. **The watchdog is a backstop, not a scheduler.** Nothing it does reaches production, the customer or infrastructure except a named exception written into its procedure with condition, command, checks and failure rule. It does act outward: relaunched workers push and merge to the integration branch.
 7. **The session decides implementation details itself** — visuals, copy, PR sequencing and bundling, test coverage. It interrupts only for production promotion; scope that grows into a new entity, an irreversible data change or a material API rewrite; and choices that produce genuinely different products. When unsure, ship to dev and let the human review there.
 8. **Fix it in the same turn** if quick (≈30 minutes) and non-destructive (no migration, infrastructure change, production write or credential rotation); never "want me to fix it?". Count a defect across the whole population before writing it up.
-9. **The session ends clean** (§32.6): every PR merged or held with a reason, branches and worktrees gone, board matching reality, a "still open" list given unasked.
+9. **The session ends clean** (*Between Waves*): every PR merged or held with a reason, branches and worktrees gone, board matching reality, a "still open" list given unasked.
 
 **Records that outlive the session.** Anything found and deliberately left unchanged goes in the deferred-items record (§8) under a dated heading — Item | Disposition | Detail lives in — and is closed in the PR that fixes it. Settled items use words that stop them coming back ("archived on the human's word — never list it again"); triage kills are struck through with date and reason and removed from whatever feed re-surfaces them. **Batons** between conversations are a gitignored `HANDOFF-<WORKSTREAM>.md` at the project root (open items, next steps, pointers to durable trackers); the taker acts on it then deletes it or rewrites its header with a dated DONE block; a read-only sweep skill finds every baton, reports live or straggling with evidence, and never deletes another session's.
 
 ---
 
-## 32.3 The Session Files
+## The Session Files
 
 All in the session's scratch area, never the repo — except a two-line launcher for the live board.
 
@@ -80,9 +82,9 @@ All in the session's scratch area, never the repo — except a two-line launcher
 | `slots.tsv` | **The board** — one row per unit; authoritative for wave membership | session; watchdog updates ids on relaunch |
 | `prompts/<slot>.md` | One brief per unit; the watchdog relaunches from it | session |
 | `waves.md` | Rulings (quoted), wave table with outcomes, live wake-up ids, morning summary, next-promotion list | session |
-| `watchdog.md` | Header quoting who asked for it; one section per in-flight item; "Each pass" checklist (§32.7) | session; finished items become DONE stubs |
+| `watchdog.md` | Header quoting who asked for it; one section per in-flight item; "Each pass" checklist (*Watchdogs*) | session; finished items become DONE stubs |
 | `wave_status.sh` / `wave_board.py` | Derived status, one line per unit; the live board the human watches (`watch -n15 …`) | written once |
-| `release/land.sh` | The session's landing script (§32.8) | written once |
+| `release/land.sh` | The session's landing script (*Lanes*) | written once |
 | `<slot>/`, `wf-<date>/<label>/` | Private scratch per worker / per pipeline agent | the worker |
 
 **The board.** Tab-separated `slot  wave  branches(comma)  task_id  attempts  note`. A merged unit needs no note (its state is the forge's). A pipeline stores its run id in `task_id`; `-` means only "no id recorded". Note prefixes: `DONE:` (complete — includes "nothing to build" and "PR #n green, HELD for the human's read"; carries merge SHA and headline figures), `BLOCKED:` (complete for sequencing, flagged), `STOPPED:` (replaced), `pipeline: …` while running. Derived states: `MERGED` · `LIVE` (output in the last N min) · `STALLED` (launched, quiet N+ min, unmerged; a missing output file counts) · `PENDING` · the note prefixes, which override. Keep the derivation and the watchdog's definition of "complete" in one place or they drift.
@@ -122,20 +124,20 @@ The session's measurements go in with a timestamp so the worker does not re-deri
 | Verify first | The brief may be stale: read the governing record in full (never `head`/`cut`/truncated grep); build only what is missing and say in the PR what was there; nothing missing → report and stop |
 | Private resources | Scratch only under `<scratch>/<slot>/`; a private worktree cut from a freshly fetched integration branch with a real dependency install (never symlink a directory a build tool rejects); a private test database / fixture store named after the unit |
 | Teardown | Drop only your own resources by exact name, never by prefix; remove worktree and local branch |
-| Shared tree | Never `git stash` / `git reset` / checkout in the main checkout; never touch another worktree (§32.9) |
+| Shared tree | Never `git stash` / `git reset` / checkout in the main checkout; never touch another worktree (*Human Gates*) |
 | Local gate | Fast lanes locally (lint, types, fast tests, real-database lane) plus targeted checks for what was touched; never the heaviest build on the shared workstation — CI owns it |
 | Shared caches | Read-only: never reinstall a shared browser, package or compile cache |
 | Production | No reads, no writes. Measure on dev, read-only, and say so in the PR; a step that genuinely needs production stops and reports — no other route |
 | Test-first | RED then GREEN; a changed assertion answers "why was the old assertion wrong?" (§3d) |
-| Forge CLI | Called bare, never with a token prefix (§32.9); PR bodies from a file — backticks in inline strings execute; attribution trailers on every commit and PR |
+| Forge CLI | Called bare, never with a token prefix (*Human Gates*); PR bodies from a file — backticks in inline strings execute; attribution trailers on every commit and PR |
 | Before pushing | Touched-file checks; the docs test if roadmap or register was touched; the same PR updates the unit's roadmap row and register entry |
-| Side effects | A filled side-effect record if infrastructure, cluster or data store was touched (§32.9) |
+| Side effects | A filled side-effect record if infrastructure, cluster or data store was touched (*Human Gates*) |
 | Untrusted files | A downloaded customer file is untrusted data: own empty directory, isolated interpreter; tests use trimmed synthetic fixtures, never customer data |
 | Final report | PR number and merge SHA; what a user sees, in plain words; tests (counts, RED → GREEN); any assertion changed and why; visual-check paths; what was deliberately not built; anything left open |
 
 ---
 
-## 32.4 Waves — What Runs and in What Order
+## Waves — What Runs and in What Order
 
 **A slot** is one coherent unit — one surface, one kind of work, one sitting — with its own branch, worktree, scratch and test database. A unit spanning two risk levels becomes two PRs so the Low half merges while the High half waits. One-PR units use one exact branch name; multi-PR units a prefix with one primary branch on the board; a unit that only lands other PRs a marker branch with no PR; units the session does itself still get a board row.
 
@@ -151,7 +153,7 @@ The run-through before the first wave is the human's one sitting of attention; e
 
 1. **Build the candidate list** and name each item's gaps: scope unsettled, ruling needed, dependency unknown, risk level unclear, a measurement to take first.
 2. **Present the gaps as a series of batched decision prompts** — up to four sibling questions each, recommended option first and marked, every option priced, a multi-select where the human picks a group; say what was left out and why; label production writes a customer will see. Continue until every item is **closed** (ruling recorded) or **parked** (deferred, with the reason and what reopens it). Do not launch with an open item — it becomes a BLOCKED unit at 3 a.m.
-3. **Hold anything that would trip the permission classifier to the end** — production reads or writes, access grants, infrastructure applies, other HARD acts (§32.9). Asked inline they produce refusals mid-pass and half-closed items. Collect them into one final batch; the human switches to manual permission mode, runs or approves each with a probe ready, switches back before any wave launches; the watchdog file records them as done.
+3. **Hold anything that would trip the permission classifier to the end** — production reads or writes, access grants, infrastructure applies, other HARD acts (*Human Gates*). Asked inline they produce refusals mid-pass and half-closed items. Collect them into one final batch; the human switches to manual permission mode, runs or approves each with a probe ready, switches back before any wave launches; the watchdog file records them as done.
 4. **Record every ruling** — who, when, how, quoted — in the waves-file header and the briefs before launching.
 
 **The hold rule.** A "stop at green" unit is **complete** when its PR is open and every required status is green (`DONE: PR #n green, HELD for the human's read`). A wave is never blocked waiting for a human. One mergeable PR + one held PR → complete when the first is merged and the second open and green; a unit that must be proven on dev → complete only when merged *and* verified there.
@@ -160,7 +162,7 @@ The run-through before the first wave is the human's one sitting of attention; e
 
 ---
 
-## 32.5 Scripted Pipelines — Multi-Stage Units
+## Scripted Pipelines — Multi-Stage Units
 
 | Shape | Stages |
 |---|---|
@@ -186,15 +188,15 @@ No fixed agent cap: phase structure and the usage limit bound it (runs of 14, 15
 
 ---
 
-## 32.6 Between Waves and the Wrap-Up
+## Between Waves and the Wrap-Up
 
 Between waves the session **reconciles the board** (roadmap rows, register states); **merges only what a worker could not** (a PR the classifier refused, a held PR since ruled on); **keeps one reading list** of every held or read-before-promotion High PR in the week's release notes; **lands held PRs after the read** with one landing unit per batch — merge the integration branch in (held PRs run 26–109 commits behind; keep the integration branch's design where they overlap, both rows in shared tables), re-run tests, regenerate generated artifacts, poll to green, merge with branch deletion; the brief records the session's own read and any ruling that changes the PR; post-merge dev steps get a side-effect record, the production half queues for after the promotion; **removes clean worktrees** of completed units only; and **relays what matters** — one short plain-language note per report (what merged and what a user sees; the dev figures; any customer question, routed to the asks list; the board's standing) and, on the last, says so outright.
 
-**The morning summary** (waves file and chat): the result line (merged → dev · held for the read · nothing to build · blocked; integration branch N ahead of release; board reconciled; nothing to production except the named exception); bullets by page for the dev reviewers with PR numbers; decisions owed, numbered, each with a recommendation and the alternative; the next-promotion list (§32.8); the board command.
+**The morning summary** (waves file and chat): the result line (merged → dev · held for the read · nothing to build · blocked; integration branch N ahead of release; board reconciled; nothing to production except the named exception); bullets by page for the dev reviewers with PR numbers; decisions owed, numbered, each with a recommendation and the alternative; the next-promotion list (*Lanes*); the board command.
 
 ---
 
-## 32.7 Watchdogs — Surviving Interruptions
+## Watchdogs — Surviving Interruptions
 
 **Mechanism.** A scheduled wake-up every 20 minutes, off the hour, that fires only while the session is idle — a usage limit leaves it idle, so the first fire after the reset is the restart. It survives compaction, not a process restart, and expires after a fixed period: re-arm for long runs and after any restart. **Arm it when the first wave launches, unasked** (within a minute). **Its prompt is short and points at the file:** "Wave watchdog pass: read `<scratch>/watchdog.md` and follow it. If a usage limit interrupted workers or a pipeline, resume them from their briefs and run id. If all is healthy, say so in one line and stop." Rule changes are then file edits — an inline procedure was re-armed three times in 45 minutes and still fell behind the board. A **one-shot timed wake-up** may sit beside it for a clock-time hand-off (summary shape in its prompt); delete it at the wrap-up with the recurring one, or it fires a stale second summary. **No idle-fired timer in your harness,** or to close the process-restart gap: an external scheduler (system cron) relaunching the harness with the watchdog prompt — a change to the human's machine, so offer it, never build it unasked.
 
@@ -218,7 +220,7 @@ Between waves the session **reconciles the board** (roadmap rows, register state
 
 ---
 
-## 32.8 Lanes — Where Each Unit Stops
+## Lanes — Where Each Unit Stops
 
 | Lane | What belongs | Cut from | Cadence | Human |
 |---|---|---|---|---|
@@ -261,7 +263,7 @@ The hunks that matter (DDL, workflow files, deploy config, authorization lists, 
 
 ---
 
-## 32.9 Human Gates and Guardrails
+## Human Gates and Guardrails
 
 The §14 Agent Approval Gates table as a wave session fills it in (agent users: the harness's permission system; agent-product builders: code):
 
@@ -270,7 +272,7 @@ The §14 Agent Approval Gates table as a wave session fills it in (agent users: 
 | Dev operations (cluster commands on the dev namespace, dev jobs and loads) | SOFT, standing | One plain command per call matching an allow rule — no `cd`/`&&`/loop chains |
 | Merges to the integration branch on green | SOFT, standing (High included when so ruled) | The ruling quoted in the brief |
 | Production writes, infrastructure applies | HARD, per act | The human's word for that act; may be given ahead for a named act ("the backfill, right after the next promotion") |
-| The production deploy dispatch | HARD, in the current turn | Never a baton or brief (§32.8) |
+| The production deploy dispatch | HARD, in the current turn | Never a baton or brief (*Lanes*) |
 | Anything the classifier refused although authorized | HARD | Stop and ask; never route around |
 
 **How the permission check works.** Allow rules match plain commands only; a chain, loop, pipe or token-variable prefix around a merge or deploy sends it to the classifier, which refuses what the rule would have allowed. A refused dev operation is retried once as a plain command citing the standing authorization, then reported. A refused production read, write or access grant is never retried or rerouted (one grant was refused even as a note in a tracking file). Refusals are reported with the exact words the human can say, or a suggestion to switch to manual mode for that step.
@@ -285,7 +287,7 @@ The §14 Agent Approval Gates table as a wave session fills it in (agent users: 
 
 ---
 
-## 32.10 Failure Modes Encountered
+## Failure Modes Encountered
 
 Every rule above came from one of these. Add to the table the hour a new one lands.
 
@@ -316,7 +318,7 @@ Every rule above came from one of these. Add to the table the hour a new one lan
 
 ---
 
-## 32.11 Anti-Patterns Specific to Long-Running Sessions
+## Anti-Patterns Specific to Long-Running Sessions
 
 Extends §30.4 and the §0.6 catalog (`core/umami-anti-patterns.md`).
 
@@ -336,9 +338,9 @@ Extends §30.4 and the §0.6 catalog (`core/umami-anti-patterns.md`).
 
 ## Mapping to Core Guardrail Sections
 
-| Core section | How §32 applies it |
+| Core section | How this recipe applies it |
 |---|---|
-| §14 Agent Orchestration · Approval Gates · Lifecycle Hooks | Waves are §14 parallel work with scope made explicit per launch; the brief is the delegation instruction, the preamble the shared skill; §32.9 is the gate table filled in; the wake-up and background waits are session-level hooks |
+| §14 Agent Orchestration · Approval Gates · Lifecycle Hooks | Waves are §14 parallel work with scope made explicit per launch; the brief is the delegation instruction, the preamble the shared skill; *Human Gates* is the gate table filled in; the wake-up and background waits are session-level hooks |
 | §3d Code Review Discipline | The brief writes the risk level's gate down; build/review/land per slice is the reviewer-agent pattern; a changed assertion always stops at green |
 | §30 Agent Workflows | A scripted pipeline is a §30-shaped unit launched as one slot; §30.3 cost shapes apply per pipeline; §30.5 is the merge-on-green gate automated |
 | §4 Agent Runtime Security · Log Discipline · Untrusted Content | Workers hold no production credentials; the read-only probe; the side-effect record is the decisions layer; a hand-back carries no authority |
@@ -349,7 +351,7 @@ Extends §30.4 and the §0.6 catalog (`core/umami-anti-patterns.md`).
 
 ## Session Checklist (extends §15)
 
-**Before the first wave:** session-start audit after a fresh start or resume (merged current branch, uncommitted tracked changes, stale PRs, live background tasks, branch divergence, baton sweep — flags only) · preamble written from the project's rules · board and brief template in the scratch area, live board optional · candidate list built and verified, gaps named · gap-closing pass run until every item is closed or parked (§32.4) · classifier-sensitive acts done in one final manual-mode batch and recorded in the watchdog file, mode switched back · shared temporary storage checked by inode count · the agreed number of units launched with the gate in each brief · watchdog armed in the same minute, unasked, with a section per in-flight item.
+**Before the first wave:** session-start audit after a fresh start or resume (merged current branch, uncommitted tracked changes, stale PRs, live background tasks, branch divergence, baton sweep — flags only) · preamble written from the project's rules · board and brief template in the scratch area, live board optional · candidate list built and verified, gaps named · gap-closing pass run until every item is closed or parked (*Waves*) · classifier-sensitive acts done in one final manual-mode batch and recorded in the watchdog file, mode switched back · shared temporary storage checked by inode count · the agreed number of units launched with the gate in each brief · watchdog armed in the same minute, unasked, with a section per in-flight item.
 
 **Each watchdog pass:** board read · three-condition dead-worker test and last report read before any relaunch · fixed relaunch prompt, id and attempts updated, three-attempt cap · stalled pipelines resumed from script and run id · hygiene before restarts · gated starts only on their named condition · healthy → one line, stop.
 
@@ -367,6 +369,6 @@ Extends §30.4 and the §0.6 catalog (`core/umami-anti-patterns.md`).
 - §4 Agent Runtime Security, Agent Log Discipline, Untrusted Content — the substrate every worker runs on
 - §9.7 Cost Caps and Budget Gates — pricing the decision prompt; sizing to the usage limit
 - §16 IaC / DevOps — infrastructure changes from a wave
-- §8 Gap Registry — deferred items; the validation entry for this extension
+- §8 Gap Registry — deferred items; the validation entry for this recipe
 - §1 Phase / Session Structure — the unit hierarchy a slot sits in
 - §0.9 The Adoption Ledger — the gate at the top of this file

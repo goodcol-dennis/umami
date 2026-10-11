@@ -1,6 +1,6 @@
 # Umami Recipes
 
-**Recipes are drop-in implementation artifacts for cross-cutting features** — opinionated, copyable, often spanning multiple files. They live alongside the umami framework but aren't part of the §0–§32 numbered guidance.
+**Recipes are drop-in implementation artifacts for cross-cutting features** — opinionated, copyable, often spanning multiple files. They live alongside the umami framework but aren't part of the §0–§31 numbered guidance.
 
 ## What recipes are (and aren't)
 
@@ -39,7 +39,7 @@ Code blocks inside recipes (bash, YAML, config snippets) are MIT-licensed (see `
 | [`activity-stream.md`](activity-stream.md) | Drafted | Consolidated activity stream (multi-source capture: Claude `Stop` hook + git `post-commit` + manual `/log`) — primary use case is billable-timesheet reconstruction; replaces the v3.0 `consulting-timesheet.md` placeholder |
 | [`claude-md-starter.md`](claude-md-starter.md) | Drafted | Distilled Tier-1 CLAUDE.md starter block — the zero-ceremony entry point; paste one block, get the guardrail floor on the next agent turn. Graduation triggers point into the full framework. |
 | ~~`closed-loop-pr-review.md`~~ | Deprecated (v3.1) | Was a Planned placeholder since v3.0 with no field implementation; removed per the §0.9 reverse gate. §30.5 + §3d carry the closed-loop PR-review guidance; the recipe slot returns when someone has run the pattern on a real project and can contribute the implementation |
-| `wave-session-kit.md` | Future | Drop-in session files for §32 ([`ext/umami-agent-sessions.md`](../ext/umami-agent-sessions.md)): the board (`slots.tsv`), brief template, preamble skeleton, `watchdog.md` skeleton, status script and landing script — the "what to type" half of waves / watchdogs / lanes. Lands when a second project has run the pattern (the §0.9 rule that retired `closed-loop-pr-review.md` applies here too) |
+| [`wave-session.md`](wave-session.md) | Drafted | **Opt-in; not the default build mode.** One orchestrating agent session runs a large pile of buildable, independent work unattended for hours — **waves** (board `slots.tsv`, brief template, preamble, wave sizing, the pre-launch gap-closing pass, scripted multi-stage pipelines), **watchdogs** (idle-fired scheduled wake-up pointing at a `watchdog.md` procedure; dead-worker test; tombstones), **lanes** (§3d risk level → the gate written into each brief; merge gate; landing script; promotion checklist), human gates, and a failure-mode table. Claude Code reference implementation via one primitive-mapping table; sits above §30 (one autonomous loop) and on §14 (the primitives). Watchdog restart-after-limit path not yet exercised |
 | `agent-cost-monthly-report.md` | Future | Aggregate agent token costs across workflows for invoicing or budget tracking |
 | `adr-template.md` | Future | Drop-in ADR template with the §7 fields pre-stubbed |
 | `recovery-runbook-template.md` | Future | Pre-filled §5 runbook for common stateful surfaces (database, secrets store, working tree) |
@@ -82,4 +82,4 @@ If a recipe matures into a full discipline that applies broadly, consider promot
 
 ## Relationship to the v3 architecture
 
-Recipes were introduced as a directory in v3.0 as the architectural slot for drop-in artifacts. They're independent of the §0–§32 numbering — a recipe isn't a section, it's an implementation aid.
+Recipes were introduced as a directory in v3.0 as the architectural slot for drop-in artifacts. They're independent of the §0–§31 numbering — a recipe isn't a section, it's an implementation aid.

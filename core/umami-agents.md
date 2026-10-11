@@ -447,6 +447,8 @@ The highest-value use of multi-agent orchestration is **parallel review and anal
 - Workers should report in a **structured format** so the lead can synthesize without re-reading raw output.
 - Use a **shared task list** if your tooling supports it — workers claim tasks, preventing duplicate effort.
 
+**Scaling this to hours, unattended.** When the parallel work is a large pile of independent, buildable units and the human will review at set times rather than continuously, the patterns above need a board, briefs with a resume section, a watchdog that relaunches what an interruption killed, and a pre-written gate per unit. `recipes/wave-session.md` is the drop-in version of that (opt-in; not the default way to work — see its adopt-when).
+
 ### External Tool Integration
 
 Most AI development tools support connecting agents to external services — issue trackers, monitoring, databases, CI/CD. The agent equivalent of giving a developer tool access.

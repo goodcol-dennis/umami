@@ -32,7 +32,6 @@ This document is a template for establishing processes, testing strategies, and 
 - Extension — Desktop Linux: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-linux.md
 - Extension — SPA Wrapper: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-spa-wrapper.md
 - Extension — Agent Workflows: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-workflows.md
-- Extension — Long-running agent sessions (waves, watchdogs, lanes): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-sessions.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the landing document
   (umami.md) first and consult its Section Navigation Map to identify which companion
@@ -106,7 +105,7 @@ This document is the **landing doc** for umami v3 — it carries the framework, 
 - [`core/umami-process.md`](core/umami-process.md) — §7 · §8 · §10 · §12 — documentation, gap registry, change propagation, change tracking
 - [`core/umami-agents.md`](core/umami-agents.md) — §9 · §11 · §14 · §14b · §14c · §14d — token efficiency, file size budgets, agent orchestration, prompt/instruction-file engineering, model pinning & drift, agent-failure debugging
 
-**Domain extensions** (§16–§32) live in [`ext/`](ext/), with shared+variant clusters grouped under `ext/{domain}/` (currently `ext/cms/` and `ext/desktop/`). See [README](README.md) for the full catalog with descriptions. Quick §→file index for targeted fetches:
+**Domain extensions** (§16–§31) live in [`ext/`](ext/), with shared+variant clusters grouped under `ext/{domain}/` (currently `ext/cms/` and `ext/desktop/`). See [README](README.md) for the full catalog with descriptions. Quick §→file index for targeted fetches:
 
 | § | Extension | File |
 |---|---|---|
@@ -126,7 +125,7 @@ This document is the **landing doc** for umami v3 — it carries the framework, 
 | §29 | SPA wrapper (loads with §27+§28) | [`ext/desktop/umami-spa-wrapper.md`](ext/desktop/umami-spa-wrapper.md) |
 | §30 | Agent workflows | [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) |
 | §31 | Backend API services | [`ext/umami-backend.md`](ext/umami-backend.md) |
-| §32 | Long-running agent sessions (waves, watchdogs, lanes) | [`ext/umami-agent-sessions.md`](ext/umami-agent-sessions.md) |
+**Recipes** ([`recipes/`](recipes/), catalog in [`recipes/README.md`](recipes/README.md)) are drop-in implementation artifacts for cross-cutting *ways of working* — an activity stream, a starter instruction block, a wave-session kit for running a pile of independent work unattended. They carry no § number and sit in no tier table: a recipe applies because the team chose to work that way, not because of the system's shape. Discover them from the section where the need shows up (§14 and §30 point at the ones that extend them) or from the catalog; cite one in your instruction file when you adopt it, with a §0.9 ledger row.
 
 **Legacy paths (v3.1+):** Pre-v3 paths (e.g., `umami-web.md` at the repo root, `cms/umami-wordpress.md` in the old `cms/` directory) **no longer resolve** as of v3.1 — the v3.0 deprecation stubs were removed. The v3.0-era `ext/cms/umami-wordpress.md` and `ext/cms/umami-drupal.md` also no longer resolve — §20/§21 folded into `ext/cms/umami-cms.md` at v3.1. Adopter `CLAUDE.md` files still referencing dead paths get a 404; update them per the Navigation Map above, or run `/umami-init` which detects dead paths and offers automatic migration.
 
@@ -226,8 +225,6 @@ Once the questionnaire is complete, use this mapping to determine which core sec
 | AI-assisted development (any project using agents) | §3c (interactive decision planning when designs compound), §3d (code review at agentic velocity), §9 (token efficiency), §14 (agent orchestration — delegation, modes of AI use, skills, parallel review, tool integration) | — | — |
 | LLM-feature product (ships features that ingest external content via LLMs) | §4 (untrusted-content boundaries — typed wrapper, provenance, per-provider spotlighting, audit-on-add), §3d (add an "untrusted-content-surface" project-specific risk dimension), §9.6 (MCP and tool context costs apply to product-side LLM features), §14 (modes of AI use — products typically span all three) | — | §3 visual regression unless the product also has a UI |
 | Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI, scheduled remote agents) | §14 (orchestration building blocks), §9.7 (cost caps non-negotiable for autonomous workflows), §4 (kill switches, sandboxing, identity isolation), §3 (verification gates for closed-loop patterns) | [umami-agent-workflows.md](ext/umami-agent-workflows.md) | — |
-| A large pile of buildable, independent work that can run unattended (hours / overnight; the human reviews at set times, not continuously) | §14 (delegation, approval gates, lifecycle hooks), §3d (risk level → the gate written into each brief), §30 (the single-loop units a wave launches), §9.7 (pricing the decision prompt; sizing to the usage limit), §4 (runtime security, log discipline) | [umami-agent-sessions.md](ext/umami-agent-sessions.md) — opt-in, not the default build mode | — (a single change or exploratory work stays on §14 alone) |
-
 **Extension files** contain domain-specific guardrails that supplement the core template. Each extension maps back to core sections, adds specialized subsections, and includes its own checklist items that extend §15. Only read the extensions that match your project's system shape — the core template plus relevant extensions is your complete guardrail set.
 
 **Adapt the process, don't serve it.** This template is a starting point, not a compliance checklist. If a section doesn't fit your project, skip it — the "Skip or defer" column exists for this reason. If a recommended practice creates more overhead than value for your specific context, drop it and document why in an ADR (§7). The worst application of these guardrails is treating them as rules to satisfy rather than tools to use. A team that follows 8 sections well will outperform a team that mechanically follows all 15 poorly.
@@ -301,9 +298,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Three-layer code review with AI pre-screen | §3d | Code generation outpaces human review capacity; the team is rubber-stamping or bottlenecking on review |
 | Risk taxonomy with auto-merge thresholds | §3d | Auto-merge is on the table; team needs to agree explicitly on what merges without humans (most projects: 60–90% of changes are eligible) |
 | Cross-provider code review | §3d | Medium+ risk-level changes on LLM-feature products where same-family blind spots are expensive; budget supports parallel review |
-| Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or has become rubber-stamping |
-| Long-running agent sessions (waves · watchdogs · lanes) — opt-in extension, not the default build mode | §32 | A large pile of buildable, independent work exists that can run unattended and the human can review at set times rather than continuously — or a prior multi-agent fan-out stranded work across an interruption or collided on branches / files. Never recommended on "the project uses agents" alone |
-| Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
+| Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or has become rubber-stamping || Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting / audit-on-add) | §4 | Project ships LLM-powered features that ingest external content (web fetches, user input, tool outputs, file contents) and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-level matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior; bench reveals provider-specific quirks lib/bin tests can't reach |
 | Architectural fitness functions | §3 | Project has clear architectural boundaries that linter rules can't express; team has been bitten by boundary violations |
 | Agent log discipline (5-layer log + retention + review cadence) | §4 | Project has agents taking consequential actions in production where audit trail matters for incident response, compliance, or operational debugging |

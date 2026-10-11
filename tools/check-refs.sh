@@ -77,7 +77,8 @@ referenced=$(grep -rhoE "$REFERENCE_RE" --include="*.md" . \
 # Maintain a small allowlist of section IDs that are expected NOT to resolve.
 # Future: replace with an inline annotation system (<!-- nofitness --> in markdown).
 # 2026-07-03: §31 removed from the allowlist — ext/umami-backend.md now defines it; §32 is the new next-available marker.
-EXPECTED_UNRESOLVED="32"
+# 2026-10-11: §32 removed — ext/umami-agent-sessions.md now defines it; §33 is the new next-available marker.
+EXPECTED_UNRESOLVED="33"
 
 # Report orphan references
 # A reference §N resolves if EITHER the exact section is defined OR any sub-section §N.X is defined.

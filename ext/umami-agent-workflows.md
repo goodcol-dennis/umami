@@ -19,6 +19,8 @@ This extension covers **agent-as-substrate workflow patterns** — patterns wher
 
 **Relationship to §14.** §14 covers what an agent *can do* (the building blocks). This extension covers patterns of *how to compose those building blocks into workflows* that run beyond a single interactive session. A project can adopt §14 fully without ever needing this extension; this extension assumes §14 is already in place.
 
+**Relationship to §32.** §30 covers the shape of *one* autonomous loop and its cost shapes. [umami-agent-sessions.md](umami-agent-sessions.md) (§32) covers the *session* that launches many such loops as units, keeps them alive across usage limits and restarts (watchdogs), and lands them (lanes) — the layer above. A §30-shaped loop run as a scripted pipeline inside a wave is a §32 slot; §32.5 is where the two meet.
+
 **Adopt when (§0.9 default-deny):** the project actually runs — or is concretely about to run — an autonomous agent workflow (production CI agent, scheduled remote agent, closed-loop remediation), not merely interactive assistants. Each §30.x pattern below carries its own adopt-when and cost profile; this file-level gate only asks whether the substrate exists.
 **Cost profile:** varies per pattern (each §30.x states its own); the common floor is Operator-required · Days (observation infrastructure, with §14 gates already in place).
 **Kill criterion:** retire any pattern that has run for 2 consecutive review cycles without producing a merged fix, a caught regression, or a consulted artifact (§0.9 retirement pass); if no autonomous workflow remains, drop this extension from the URL block.
@@ -250,6 +252,7 @@ The agent drives mechanical pre-flight → AI review → risk classification →
 ### Cross-references
 
 - §14 Agent Orchestration — the building blocks this extension composes
+- §32 Long-Running Agent Sessions — the session layer that launches §30-shaped units as wave slots, keeps them alive (watchdogs) and lands them (lanes); §32.11 extends §30.4's anti-patterns
 - §9.7 Cost Caps and Budget Gates — per-task / per-session / per-day caps that bound every workflow
 - §4 Agent Runtime Security — kill switches, sandboxing, identity isolation; non-negotiable substrate
 - §4 Agent Log Discipline — workflow output must reach human review on some cadence

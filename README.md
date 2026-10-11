@@ -56,7 +56,7 @@ umami/
     └── *.md                  ← e.g., activity-stream, adr-template, gitignore-stack-*
 ```
 
-**About `recipes/`:** Drop-in artifacts for cross-cutting features (e.g., a consulting timesheet pipeline, an ADR template, a status-block starter). Extensions tell you *why* you'd want a discipline; recipes tell you *exactly what to type / copy* to implement it. See [`recipes/README.md`](recipes/README.md) for the catalog and contribution model. Recipes are independent of the §0–§31 numbering — they're implementation aids, not numbered practices.
+**About `recipes/`:** Drop-in artifacts for cross-cutting features (e.g., a consulting timesheet pipeline, an ADR template, a status-block starter). Extensions tell you *why* you'd want a discipline; recipes tell you *exactly what to type / copy* to implement it. See [`recipes/README.md`](recipes/README.md) for the catalog and contribution model. Recipes are independent of the §0–§32 numbering — they're implementation aids, not numbered practices.
 
 > **A note on `CLAUDE.md`:** This template references `CLAUDE.md` as the project instruction file because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
 
@@ -78,6 +78,7 @@ umami/
 | [`ext/desktop/umami-spa-wrapper.md`](ext/desktop/umami-spa-wrapper.md) | WebKitGTK session persistence (ITP, cookies, IndexedDB), clipboard bridge (GTK ↔ JS), notification forwarding, navigation policy (domain allow-lists), SSO/OAuth in-app handling, dock badge wiring, audio/media permissions, context menu suppression. Narrowest extension in the corpus — a worked example of §27 + §28 for one specific build pattern, not a domain peer. |
 | [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) | Agent-as-substrate workflow patterns. Closed-loop auto-remediation (the observe → diagnose → fix → verify loop), production agentic CI (placeholder pre-staged), workflow cost patterns (loop / recursion / fallback / polling / bench / idle shapes), workflow-specific anti-patterns. Peer to §14 (orchestration building blocks); this extension covers what you *compose* from them. |
 | [ext/umami-backend.md](ext/umami-backend.md) | Backend API services — §31: authn/authz boundaries, session & token handling, OLTP schema-migration discipline (expand→migrate→contract), transaction boundaries & idempotency, ORM/N+1 discipline, pagination & error contracts, backend observability. Complements §24 (integration covers the client side of remote calls; §31 covers the service you own). |
+| [ext/umami-agent-sessions.md](ext/umami-agent-sessions.md) | Long-running agent sessions — §32 (opt-in; not the default build mode): how one orchestrating session keeps building for hours across usage limits, restarts and compactions. **Waves** (board / briefs / preamble, wave sizing, batched decisions, verify-first, scripted multi-stage pipelines with adversarial stages), **watchdogs** (idle-fired wake-up pointing at a procedure file; dead-worker test; tombstones; the busy-session limit), **lanes** (§3d risk level → the gate written into the brief; merge gate as workers meet it; landing; promotion checklist), human gates, and a 20-row table of failure modes that produced each rule. The layer above §30: §30 is one autonomous loop, §32 is the session that launches many and keeps them alive. |
 
 **Observability is a cross-cutting concern.** Rather than a separate extension, each domain extension includes its own observability guidance — what to monitor, how to alert, what to log — tailored to that domain's specific failure modes. The core template (§4) covers the foundational concepts (three signals, structured logging, instrumentation discipline).
 
@@ -146,6 +147,8 @@ https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/deskt
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-workflows.md
 # Backend API services
 https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-backend.md
+# Long-running agent sessions (waves, watchdogs, lanes)
+https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-sessions.md
 ```
 
 Then ask the agent:
@@ -220,6 +223,7 @@ These are heavier practices that solve real problems in larger, longer-lived, or
 | Risk taxonomy with auto-merge thresholds | §3d | Auto-merge is on the table; team needs to agree explicitly on what merges without humans |
 | Cross-provider code review | §3d | Tier Medium+ changes on LLM-feature products; budget supports parallel review across two model families |
 | Closed-loop PR review workflow | §30.5 | Project ships at agentic velocity; 60%+ of changes are Trivial/Low; human review is the bottleneck or rubber-stamping |
+| Long-running agent sessions (waves · watchdogs · lanes) — opt-in, not the default build mode | §32 | A large pile of buildable, independent work can run unattended and the human reviews at set times, not continuously — or a prior fan-out stranded work or collided |
 | Untrusted-content boundary discipline (typed wrapper / provenance / spotlighting) | §4 | LLM-feature product ingests external content and reaches users in production |
 | Multi-provider behavioral testing (provider × substrate-tier matrix) | §3 | LLM-feature product serves multiple providers and correctness depends on model behavior |
 | Architectural fitness functions | §3 | Project has clear architectural boundaries linter rules can't express; team has been bitten by boundary violations |
@@ -270,6 +274,7 @@ Add this to your project's `CLAUDE.md` (or equivalent instruction file) so the U
 - Extension — Desktop Linux: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-linux.md
 - Extension — SPA Wrapper: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/desktop/umami-spa-wrapper.md
 - Extension — Agent Workflows: https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-workflows.md
+- Extension — Long-running agent sessions (waves, watchdogs, lanes): https://raw.githubusercontent.com/goodcol-dennis/umami/refs/heads/main/ext/umami-agent-sessions.md
   Do NOT fetch these every session. These are reference URLs for periodic process reviews.
   When the user asks you to audit the development process, fetch the landing document
   (umami.md) and consult its Section Navigation Map. Follow the tiered audit protocol
@@ -336,6 +341,7 @@ The core spans 6 files in v3. Section numbers are stable across files; the **Fil
 | [`ext/desktop/umami-spa-wrapper.md`](ext/desktop/umami-spa-wrapper.md) | §29.1–29.12 | Desktop app wraps a web app in WebKitGTK (loads with §27 + §28) |
 | [`ext/umami-agent-workflows.md`](ext/umami-agent-workflows.md) | §30.1–30.5 | Project runs agents as substrate (autonomous workflows, closed-loop auto-remediation, production agentic CI, workflow cost patterns, closed-loop PR review with risk-tiered auto-merge) — not just as interactive coding assistants |
 | [`ext/umami-backend.md`](ext/umami-backend.md) | §31.1–31.7 | Project exposes a backend API service (REST/GraphQL/gRPC) with its own datastore — the service you own. §24 covers the remote calls it makes; §18 covers analytics pipelines |
+| [`ext/umami-agent-sessions.md`](ext/umami-agent-sessions.md) | §32.1–32.11 | **Opt-in; not the default build mode.** A large pile of buildable, independent work exists that can run unattended: one orchestrating agent session runs many units over hours (often overnight) and must survive usage limits, restarts and compactions; the human reviews at a morning summary and a weekly promotion. Sits above §30 (one autonomous loop) and on §14 (the primitives) |
 
 ## Compliance and regulated environments
 

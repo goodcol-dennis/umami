@@ -5,7 +5,7 @@ description: Periodic process audit against the Umami framework. Read-only — p
 
 # umami-audit — Process audit against the Umami framework
 
-**Last synced:** 2026-10-11 from §0.7 (recipes are never tier-gap recommendations — surfaced only via the section that points at them or as latent-practice codification; pinned tags more than one release behind are flagged, not overridden; previously 2026-06-18: added the §0.9 retirement pass + default-deny adoption rule — the audit is now bidirectional, adopt and retire; plus the AI-feature posture/verification step from §0.6b spectrum + tests-vs-evals per §3; umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on recommendations). Re-derive this skill from the current §0.7 when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-10-11 from §0.7 (new step 8 *framework freshness*: every audit compares what the project has — URL block, installed skills, ledger — against what the fresh spec offers — extension index, §0.7b skill list, recipes catalog — reports `### New in umami since your setup`, and asks one multi-select before the findings dialog; selections install via scoped `/umami-init`; recipes are never tier-gap recommendations — surfaced only via the section that points at them or as latent-practice codification; pinned tags more than one release behind are flagged, not overridden; previously 2026-06-18: added the §0.9 retirement pass + default-deny adoption rule — the audit is now bidirectional, adopt and retire; plus the AI-feature posture/verification step from §0.6b spectrum + tests-vs-evals per §3; umami v3 multi-file architecture; Impact + Effort + Quick-win annotations on recommendations). Re-derive this skill from the current §0.7 when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -35,6 +35,7 @@ Audits the project's development PROCESS against the Umami framework — testing
 7. **Run the §0.9 retirement pass — the audit is bidirectional.** Steps 1–2 are the *adopt* half. The *retire* half reads the §0.9 adoption ledger (`docs/umami-adoption.md`) and, per practice, checks its kill criterion + the 30-day litmus; flag any that no longer earn their keep with a **Deprecate / Remove** recommendation. Adoption follows default-deny: cite a concrete project artifact as evidence of pain — "the project lacks §X" is not a finding. An add-only audit is the *Monotonic process accretion* anti-pattern.
 8. **Audit is read-only** — do not modify code or docs during the audit phase.
 9. **Check for skill drift before finalizing.** Compare this skill's embedded shape against the freshly-fetched §0.7: count of disposition options in the four-option dialog, count of hard rules below, shape of the output-format block. Also check the `**Last synced:**` header against today. If structural drift OR `Last synced` is >3 months old, append a non-blocking `### Skill drift` callout to the report (one line, doesn't count toward the ≤5 limit).
+10. **Check framework freshness — what umami gained since this project's setup.** Read what the project has: the URL block (files + ref), `.claude/skills/umami-*.md` and their `Last synced:` dates, the ledger. Compare against the fresh spec: the landing's §16+ extension index + §0.5 mapping (an extension now matching the project's shape but absent from the URL block); the §0.7b step-4 skill list (a skill not installed whose trigger discovery shows applies); and `recipes/README.md` (fetch it — small) for a recipe whose pointer section's trigger is met or whose artifacts the project already keeps by hand. Report applicable items under `### New in umami since your setup` — what it is · why it applies here (cited artifact / §0.7b trigger / pointer section) · install action; non-applicable ones under *Not yet relevant* with their trigger. Outside the ≤5 limit. **Before the findings dialog**, ask one multi-select ("Add these umami options now?") with evidence-backed items marked "(Recommended)". Selections install by invoking `/umami-init` in upgrade mode scoped to that list; init writes files and returns without chaining back. Nothing is written without the selection.
 
 ## Hard rules (non-negotiable)
 
@@ -51,6 +52,7 @@ These are not advisory. The skill drifts when constraints are advisory; it holds
 - **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
 - **Every recommendation cites Impact and Effort.** Impact names a specific improvement (anti-pattern closed, gap entry resolved, measurable pain reduced — ideally falsifiable). Effort uses the §4 cost-profile scheme. Flag **Quick win** only when Impact is concrete and Effort is Hours.
 - **Surface latent practices.** Beyond tier-gap recommendations, look for practices the team is *already exercising* that aren't yet codified — either in the project's own CLAUDE.md / process docs, or in umami's spec. Evidence: hooks doing something the docs don't describe, scripts doing operations not captured in process, conventions visible across commits but not in CLAUDE.md, gap-registry entries pre-staging work that isn't reflected in any tier-table practice. When found, surface them in the "Latent practices observed" section of the report and recommend codification — either in the project's docs or, if universally applicable, as a contribution to umami itself.
+- **Check framework freshness every run** (step 10). An audit that never reports what umami gained since the project's setup leaves adopters on a frozen snapshot. The `### New in umami since your setup` section and its multi-select prompt run on every audit; "nothing new applies" is a valid one-line outcome.
 
 ## Self-audit special case
 
@@ -94,6 +96,9 @@ Cite §0.6's onboarding anti-patterns. Name a watch signal for each flagged item
 ### Not yet relevant
 Practices checked but not yet applicable, with the trigger that would make them relevant.
 
+### New in umami since your setup
+- [Skill / recipe / extension] — what it is · why it applies here: [cited artifact / §0.7b trigger / pointer section] · install: [files]. *(Outside the ≤5 limit; one line "nothing new applies" when empty.)*
+
 ### Skill drift (only if detected)
 *One line, non-blocking, outside the priority list.*
 
@@ -106,6 +111,8 @@ Read-only. Present a four-option dialog using `AskUserQuestion` (or equivalent s
 4. **Skip** — discard without action.
 ```
 
-## After the audit — describe changes, then present the four-option dialog
+## After the audit — new options first, then the four-option dialog
+
+If step 10 found applicable new options, ask about them first: one multi-select `AskUserQuestion` ("Add these umami options now?"), evidence-backed items "(Recommended)". Selections install through `/umami-init` in scoped upgrade mode; init returns the files written and does not re-run the audit. Then the findings dialog.
 
 Each recommendation must describe the specific changes it would require — which files would be created, modified, or restructured. Then present the four-option dialog (apply all / selective / other / skip). No default — the right disposition depends on the user's situation, not the audit's. *"Save findings to a file"* is one example of an "Other" action, not a built-in default.

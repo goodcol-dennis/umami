@@ -5,7 +5,7 @@ description: First-time umami setup or upgrade-existing-setup. Discovers project
 
 # umami-init — Initialization protocol
 
-**Last synced:** 2026-10-11 from §0.7b (`umami-wave` added to the on-demand skill list — offered when discovery finds a buildable backlog larger than a sitting clears; previously 2026-07-03: step 4 names the on-demand skills — `umami-auto-review` / `umami-pipeline-audit` / `umami-drift-audit` install only when discovery shows their protocol applies, closing the README-promises-five-commands vs. init-installs-two gap; previously: §0.9 adoption-ledger seeding + default-deny adoption on init 2026-06-18; auto-chain into `/umami-audit` on successful apply 2026-05-22). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
+**Last synced:** 2026-10-11 from §0.7b (scoped **upgrade mode**: when invoked by `/umami-audit`'s framework-freshness step with a selected item list, skip discovery, diff exactly those items, apply on approval, never auto-chain back; `umami-wave` added to the on-demand skill list — offered when discovery finds a buildable backlog larger than a sitting clears; previously 2026-07-03: step 4 names the on-demand skills — `umami-auto-review` / `umami-pipeline-audit` / `umami-drift-audit` install only when discovery shows their protocol applies, closing the README-promises-five-commands vs. init-installs-two gap; previously: §0.9 adoption-ledger seeding + default-deny adoption on init 2026-06-18; auto-chain into `/umami-audit` on successful apply 2026-05-22). Re-derive this skill from the current §0.7b when this date is >3 months old or when an audit reports structural drift.
 
 ## What this skill does
 
@@ -24,6 +24,7 @@ Bootstrap or upgrade umami in a project. Three jobs:
 - Project has no umami presence (first-time setup).
 - Project shape has changed (added a frontend, added a data layer, became multi-layer, added compliance requirements).
 - Cloning or onboarding to a project that references umami URLs but has no skills installed.
+- **Scoped upgrade** — invoked by `/umami-audit`'s framework-freshness step (§0.7 step 8) with the list of new options the user selected. Skip steps 2–3; compute the diff for exactly those items (skill files, URL lines, ledger rows); show it; apply on approval; return the files written to the audit. Never auto-chain in this mode.
 
 ## When NOT to invoke
 
@@ -57,7 +58,7 @@ Skill files are invocation aids. They contain procedure shape and hard rules so 
 
 7. **Check for skill drift before finalizing.** Compare this skill's embedded shape against the freshly-fetched §0.7b: count of disposition options in the four-option dialog, count of hard rules below, structure of the procedure. Also check the `**Last synced:**` header against today. If structural drift OR `Last synced` is >3 months old, append a non-blocking `### Skill drift` callout to the report (one line, doesn't count toward the ≤5 limit).
 
-8. **On apply, auto-chain into the first audit.** When step 6 actually wrote files, immediately invoke `/umami-audit` to produce a baseline process audit against the freshly-installed configuration. Announce: *"Init complete — wrote {file list}. Running first process audit now…"* and proceed without further confirmation. The audit runs its full §0.7 procedure — read-only fetch, findings report, its own four-option findings-disposition dialog at the end — so the user still chooses interactively what to act on; auto-chain only removes the manual `/umami-audit` invocation step, not the findings dialog. If init was skipped at the four-option dialog (no files written), do **not** auto-chain; hand off with *"Init skipped — re-invoke `/umami-init` when you're ready."*
+8. **On apply, auto-chain into the first audit.** When step 6 actually wrote files, immediately invoke `/umami-audit` to produce a baseline process audit against the freshly-installed configuration. Announce: *"Init complete — wrote {file list}. Running first process audit now…"* and proceed without further confirmation. The audit runs its full §0.7 procedure — read-only fetch, findings report, its own four-option findings-disposition dialog at the end — so the user still chooses interactively what to act on; auto-chain only removes the manual `/umami-audit` invocation step, not the findings dialog. If init was skipped at the four-option dialog (no files written), do **not** auto-chain; hand off with *"Init skipped — re-invoke `/umami-init` when you're ready."* In **scoped upgrade mode** (invoked from an audit), never auto-chain — the audit is already running; return to it with the list of files written.
 
 ## Hard rules (non-negotiable)
 

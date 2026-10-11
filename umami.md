@@ -386,6 +386,8 @@ Auditing the full document against a project is expensive — both in tokens and
 
 7. **Run the §0.9 retirement pass — the audit is bidirectional.** Auditing one tier above (steps 1–2) is the *adopt* half. The *retire* half reads the §0.9 adoption ledger and, for each adopted practice, checks its kill criterion and the 30-day litmus; practices that have stopped earning their keep get a **Deprecate / Remove** recommendation. An audit that only ever adds practices is itself the *Monotonic process accretion* anti-pattern (§0.6). Adoption recommendations follow default-deny: cite a concrete project artifact as evidence of the pain (per §0.9) — "the project doesn't have §X yet" is not a finding. Retirements use the same findings-disposition dialog as additions.
 
+8. **Check framework freshness — surface what umami gained since this project's setup.** The spec evolves between audits; a project set up in May knows nothing about a skill or recipe added in October. Read what the project *has*: the URL block (files referenced, and the ref — `main` or a pinned tag), the installed `umami-*` skill files with their `Last synced:` dates, and the ledger. Compare against what the freshly fetched spec *offers*: the §16+ extension index and the §0.5 mapping (an extension that now matches the project's shape but isn't in the URL block), the §0.7b step-4 skill list (a skill not installed whose trigger discovery shows applies), and the recipes catalog (`recipes/README.md` — fetch it; it is small) for a recipe whose pointer section's trigger is met, or whose artifacts the project already keeps by hand. List every applicable item under `### New in umami since your setup` with what it is, why it applies *here* (a cited artifact — §0.9 still governs extensions and practices; a skill cites its §0.7b trigger; a recipe cites its pointer section or the latent evidence), and the install action. Items that exist but don't apply go under *Not yet relevant* with their trigger. The section sits outside the ≤5 recommendations. Then, **before the findings dialog**, ask once: a multi-select prompt listing the applicable items, those with cited evidence marked "(Recommended)". Selected items are installed by invoking `/umami-init` in **upgrade mode scoped to that list** (§0.7b — init writes the skill files and URL lines, seeds the ledger rows, and does not chain back into an audit). Nothing is written without that selection; the audit stays read-only.
+
 **Audit output format:**
 
 ```markdown
@@ -415,6 +417,9 @@ Auditing the full document against a project is expensive — both in tokens and
    - **Changes required:** [...]
    - **Conflict risk:** [low/medium/high]
 
+### New in umami since your setup
+- [Skill / recipe / extension] — what it is · why it applies here: [cited artifact or §0.7b trigger] · install: [files written]. *(Outside the ≤5 limit; omit the section when nothing new applies.)*
+
 ### Latent practices observed
 - [Practice X] — evidence: [hook / script / file / pattern showing the team exercises this]. Currently uncodified in [target doc / spec section]. Recommendation: codify in [the project's CLAUDE.md / a process doc / surface for umami contribution if universally applicable].
 
@@ -428,7 +433,7 @@ This format keeps the audit focused and actionable. A project should come away w
 
 Each recommendation in the audit report must describe the specific changes it would require — which files would be created, modified, or restructured, and what the modification involves. This lets the team assess impact, spot conflicts with in-progress work, and make informed decisions before any code is touched.
 
-Once the report is complete, present a structured dialog asking how to proceed. Use the harness's structured-prompt mechanism (e.g., `AskUserQuestion` or equivalent) so the question is self-contained in its UI surface without requiring chat scroll-back — see §3b "Make each prompt self-contained."
+If step 8 found applicable new options, ask about them first — one multi-select prompt, evidence-backed items marked "(Recommended)"; selections install through scoped `/umami-init`. Then present the findings dialog below. Once the report is complete, present a structured dialog asking how to proceed. Use the harness's structured-prompt mechanism (e.g., `AskUserQuestion` or equivalent) so the question is self-contained in its UI surface without requiring chat scroll-back — see §3b "Make each prompt self-contained."
 
 | Option | What happens |
 |---|---|
@@ -468,6 +473,7 @@ This callout sits **outside** the priority-ordered recommendations list and does
 - **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
 - **Every recommendation cites Impact and Effort.** Impact names a specific improvement (anti-pattern closed, gap-registry entry resolved, measurable pain reduced — ideally with a falsifiable signal). Effort uses the §4 *Reading the cost profiles* scheme (Who · Magnitude · Shape). Both are required; vague impact ("improves quality") and vague effort ("not too bad") defeat prioritization. **Flag Quick win** only when Impact is concrete AND Effort is Hours; the flag dilutes if applied to medium-effort items. Unflagged recommendations are still actionable — readers prioritize from the Impact/Effort dimensions themselves.
 - **Surface latent practices.** Beyond tier-gap recommendations, look for practices the team is *already exercising* that aren't yet codified — either in the project's own `CLAUDE.md` / process docs, or in umami's spec. Evidence: hooks doing something the docs don't describe, scripts doing operations not captured in process, conventions visible across commits but not in `CLAUDE.md`, gap-registry entries pre-staging work that isn't reflected in any tier-table practice. When found, recommend codification.
+- **Check framework freshness every run** (step 8). An audit that reports on the project's practices but never on what umami itself gained since the project's setup leaves adopters on a frozen snapshot. The `### New in umami since your setup` section and its multi-select prompt are part of every audit; "nothing new applies" is a valid one-line outcome.
 
 When the audit flags an anti-pattern, name the watch signal that would confirm or refute the verdict (see §0.6). Verdicts without falsifiers become opinion.
 
@@ -500,6 +506,7 @@ Skill files are invocation aids — they encode procedure shape, hard rules, and
    - **None** — first-time setup.
    - **Partial** — some umami URLs present; missing relevant companion files, missing relevant domain extensions, or referencing extensions for layers the project doesn't have.
    - **Complete** — references match the project shape; recommend `/umami-audit` instead.
+   - **Upgrade (scoped)** — invoked by `/umami-audit`'s framework-freshness step (§0.7 step 8) with the list of new options the user selected. Skip discovery; compute the diff for exactly those items; apply on approval; do not auto-chain back into an audit.
 
 2. **Run §0.1–§0.4 discovery** interactively, one decision at a time per §3c when answers compound.
 
@@ -511,7 +518,7 @@ Skill files are invocation aids — they encode procedure shape, hard rules, and
 
 6. **Apply on approval.** Update all detected instruction files in lockstep (a project with both `CLAUDE.md` and `AGENTS.md` gets identical URL lists in both). Write the skill files. Don't overwrite existing skill files without diffing first. **Seed the §0.9 adoption ledger** (`docs/umami-adoption.md` or equivalent): one row per Tier-2+ practice this init adopts, each with its triggering evidence (the concrete artifact found during discovery) and a falsifiable kill criterion. Adopt under default-deny — only practices a discovery artifact justifies; a bare URL-list entry is not an adoption.
 
-7. **On apply, auto-chain into the first audit.** When step 6 actually wrote files, immediately invoke `/umami-audit` to produce a baseline process audit against the freshly-installed configuration. Announce the transition (*"Init complete — wrote {file list}. Running first process audit now…"*) and proceed without further confirmation; the user already consented to the workflow at the four-option dialog. The audit runs its full §0.7 procedure — read-only fetch, findings report, and its own four-option findings-disposition dialog at the end — so the user still chooses interactively what to act on. Init's job isn't done when the skills are on disk; it's done when the user has seen where they stand. If init was skipped at the dialog (no files written), do not auto-chain; hand off with *"Init skipped — re-invoke `/umami-init` when you're ready."*
+7. **On apply, auto-chain into the first audit.** When step 6 actually wrote files, immediately invoke `/umami-audit` to produce a baseline process audit against the freshly-installed configuration. Announce the transition (*"Init complete — wrote {file list}. Running first process audit now…"*) and proceed without further confirmation; the user already consented to the workflow at the four-option dialog. The audit runs its full §0.7 procedure — read-only fetch, findings report, and its own four-option findings-disposition dialog at the end — so the user still chooses interactively what to act on. Init's job isn't done when the skills are on disk; it's done when the user has seen where they stand. If init was skipped at the dialog (no files written), do not auto-chain; hand off with *"Init skipped — re-invoke `/umami-init` when you're ready."* In **scoped upgrade mode** (invoked from an audit), never auto-chain — the audit is already running; return to it with the list of files written.
 
 **Hard rules** mirror §0.7:
 

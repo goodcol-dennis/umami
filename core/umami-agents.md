@@ -59,6 +59,8 @@ Maintain a memory file that carries learnings between conversations:
 - **Architecture patterns** — e.g., "adding a new component type requires updates in these 6 files." Prevents a codebase search every time.
 - **Pre-existing failures** — known test failures that aren't your bugs. Prevents the AI from spending tokens diagnosing out-of-scope issues.
 
+*Reference implementation (Claude Code):* auto-memory — on by default, stored outside the repo at `~/.claude/projects/<project>/memory/` with a `MEMORY.md` index whose first 200 lines load each session — is this practice in per-developer form. It does not replace the committed project file: teammates' and CI agents' sessions never see it, so anything the team must share goes in the repo.
+
 ### 9.3 Pre-Derived Codebase Understanding
 
 The most expensive repeated cost is not file reads — it's the agent re-deriving the same conclusions about your codebase every session. "This is an Express app, routes go here, services call the db layer, config lives in env vars" — that understanding gets rebuilt from scratch each time unless you write it down as statements of fact.
@@ -125,7 +127,7 @@ This shows up in four domains, all instances of the same pattern:
 
 | Domain | Static (default) | Progressive disclosure |
 |---|---|---|
-| **Tool schemas** | All MCP/tool schemas live in context every turn — measured at 40–80% of context cost on tool-heavy setups | `search` → `describe` → `execute` pattern: cheap meta-tool to discover what's available, on-demand schema load for the chosen tool, then call it |
+| **Tool schemas** | All MCP/tool schemas live in context every turn — measured at 40–80% of context cost on tool-heavy setups | `search` → `describe` → `execute` pattern: cheap meta-tool to discover what's available, on-demand schema load for the chosen tool, then call it. Reference implementation: Claude Code defers tool schemas and fetches them on demand through `ToolSearch`; the Claude API's tool search with `defer_loading` is the API-side form |
 | **Tool inventory** | Every available tool's full description is exposed up front | Top-K retrieval over the toolset; load the 3–5 most relevant tools for this turn's task |
 | **Data** | Fetch full records, full diffs, full logs into context | Fetch summaries / IDs / row counts first; pull the full record only when the agent needs the detail; summarize what's been used rather than carrying it forward |
 | **Workflow** | LLM orchestrates each step in natural language; intermediate state lives in context | Pre-agent CLI work for known-deterministic data gathering; LLM emits code that runs the workflow elsewhere; only the final result returns to context |
@@ -142,7 +144,7 @@ This shows up in four domains, all instances of the same pattern:
 - Latency-critical interactive work where the extra round-trips hurt UX more than the tokens cost.
 - Workflows where the LLM legitimately needs to see intermediate state to make the next decision.
 
-**Conversation cache as ally.** When a tool's schema has already been loaded earlier in the conversation, the harness's prompt cache typically holds it cheaply for the rest of the session. Lazy loading isn't lazy *forever* — it's lazy on first use, then cached. Design the discovery flow so frequently-used tools end up loaded once and reused.
+**Conversation cache as ally.** When a tool's schema has already been loaded earlier in the conversation, the provider's prompt cache typically holds it cheaply while the session stays active (cache TTLs run from 5 minutes to an hour of inactivity, so an idle gap re-pays the load once). Lazy loading isn't lazy *forever* — it's lazy on first use, then cached. Design the discovery flow so frequently-used tools end up loaded once and reused.
 
 ### 9.6 Context Window Optimization
 
@@ -172,13 +174,13 @@ Most agent harnesses automatically compact conversation history when the context
 
 **MCP and tool context costs:**
 
-External tool integrations (MCP servers, database connections, API integrations) consume context window space for their tool definitions, schemas, and response payloads. This cost is ongoing — every tool's schema is present in context even when not in use, and **measured at scale, tool metadata routinely accounts for 40–80% of total context cost** depending on toolset size. It's the largest single dimension to leave unmanaged.
+External tool integrations (MCP servers, database connections, API integrations) consume context window space for their tool definitions, schemas, and response payloads. On a static loadout this cost is ongoing — every tool's schema is present in context even when not in use (a harness that defers schemas and loads them on demand, as Claude Code does through `ToolSearch`, pays only for what it fetches), and **measured at scale, tool metadata routinely accounts for 40–80% of total context cost** depending on toolset size. It's the largest single dimension to leave unmanaged.
 
 Three layers of mitigation:
 
 1. **Prune what you don't need.** Enable only the tools required for the current task. An agent doing code review doesn't need database and deployment integrations loaded. Audit the tool list periodically — a single unused tool can account for the majority of tool-call traffic in a workflow.
 2. **Lazy-load what you do need.** Prefer MCP servers that follow a `search` → `describe` → `execute` pattern (or equivalent dynamic-toolset architecture) — schemas load on demand rather than at session start. With a dynamic toolset, context cost stays roughly constant in the number of tools available; with a static one, it grows linearly. See §9.5b for the broader principle.
-3. **Wrap when you can't redesign.** When the underlying server is static and you can't change it, wrap it: route through a thin proxy, expose only the subset of tools you actually use, or substitute a CLI wrapper bundled into a skill. The skill loads on demand; the MCP server's tool definitions occupy context permanently.
+3. **Wrap when you can't redesign.** When the underlying server is static and you can't change it, wrap it: route through a thin proxy, expose only the subset of tools you actually use, or substitute a CLI wrapper bundled into a skill. The skill loads on demand; on a static loadout the MCP server's tool definitions occupy context for the whole session.
 
 **On tool *design* (when you're building, not consuming):** tools designed for agentic workflows look different from API wrappers. They're single-purpose at the workflow level (one tool per task the agent actually needs to do, not one tool per HTTP endpoint), have clear and constrained inputs, return only what's needed, and bundle related operations (a `manage_X` tool that handles common workflows usually beats separate `create` / `update` / `delete` tools). API wrappers that mirror every endpoint produce the bloat this section is trying to mitigate.
 
@@ -191,10 +193,10 @@ Raw token counts mislead when models or workloads shift. Two metrics give you a 
 **Effective Tokens (ET).** Apply model-cost multipliers and token-type weights so a "10% savings" means the same thing regardless of which model ran it:
 
 ```
-ET = m × (1.0 × input + 0.1 × cache_read + 4.0 × output)
+ET = m × (1.0 × input + 0.1 × cache_read + 5.0 × output)
 ```
 
-Approximate model multipliers (set yours from current pricing): Haiku-class ≈ 0.25×, Sonnet-class ≈ 1.0×, Opus-class ≈ 5.0×. Cache-read tokens are weighted at ~0.1× because they cost roughly an order of magnitude less than fresh inputs. Output tokens are weighted at ~4× because they cost several times more per token than inputs.
+Approximate model multipliers (set yours from current pricing — these are the 2026-10 first-party list-price ratios, normalized to Sonnet-class): Haiku-class ≈ 0.05×, Sonnet-class ≈ 1.0×, Opus-class ≈ 2.0×, frontier-class ≈ 5.0×. Cache-read tokens are weighted at ~0.1× because they cost roughly an order of magnitude less than fresh inputs. Output tokens are weighted at ~5× because that is the current output:input list-price ratio across the lineup.
 
 A 10% ET reduction means a genuine 10% cost reduction, regardless of the model mix that produced it. A 10% raw-token reduction can be illusion (you switched a workload from Opus to Haiku) or worse-than-it-looks (you switched the other way).
 
@@ -342,7 +344,7 @@ When working with AI agents, distinguish three modes. They have different prompt
 
 Not every sub-task requires your most capable (and most expensive) model. Model routing is the practice of matching task complexity to model cost — sending expensive reasoning to a flagship model and routine work to a cheaper, faster one.
 
-**Why this matters for token budgets:** A flagship model (Opus-class) may cost 10–15x more per token than a fast model (Haiku-class). If 60% of your agent's work is exploration, search, and boilerplate — tasks any competent model handles — you're overspending by 6–9x on that portion. Model routing isn't optimization theater; it's the single highest-leverage token cost reduction available.
+**Why this matters for token budgets:** A flagship model (Opus-class) costs an order of magnitude or more per token than a fast model (Haiku-class) — about 40× at 2026-10 list prices. If 60% of your agent's work is exploration, search, and boilerplate — tasks any competent model handles — you're overspending by many times on that portion. Model routing isn't optimization theater; it's the single highest-leverage token cost reduction available.
 
 #### Routing Decision Table
 
@@ -417,7 +419,7 @@ project-root/
 
 Skills come in all three modes from "Modes of AI Use" above. Implementation-mode skills act (write code, make changes, summarize). Thinking-mode skills produce *reasoning visible in output* (alternatives, tradeoffs, recommendations with rationale). Reviewing-mode skills produce *structured findings* (audits, code review flags documents). Tag each skill with its mode so the harness invokes it with the right expectations.
 
-**Standard skills — `umami-audit`, `umami-init`, `umami-auto-review`:** Every project using umami should have these three reviewing-mode skills (§0.7, §0.7b, §3d). They share the same architecture: fetch the canonical spec fresh, follow the protocol, output structured findings. Each skill includes the raw URL of the umami spec so the agent doesn't search for it. See `.claude/skills/` in the umami repo for the canonical templates.
+**Standard skills — `umami-audit`, `umami-init`, `umami-auto-review`:** Every project using umami should have these three reviewing-mode skills (§0.7, §0.7b, §3d). They share the same architecture: fetch the canonical spec fresh, follow the protocol, output structured findings. Each skill includes the raw URL of the umami spec so the agent doesn't search for it. See `.claude/skills/` in the umami repo for the canonical templates, and install each in your harness's skill layout (Claude Code: `.claude/skills/<name>/SKILL.md` — a flat `.claude/skills/<name>.md` is not loaded; the legacy `.claude/commands/<name>.md` form still works).
 
 **What makes a good skill:**
 
@@ -425,6 +427,8 @@ Skills come in all three modes from "Modes of AI Use" above. Implementation-mode
 - Defines a clear output format so results are consistent and comparable across runs.
 - Specifies which tools the agent needs (and which it doesn't — restricting tools reduces risk and token spend).
 - Can inject dynamic context (current git diff, recent errors, open issues) so the agent starts with fresh state, not stale instructions.
+
+*Reference implementation (Claude Code):* each of these is a `SKILL.md` frontmatter field — `description` (the trigger), `allowed-tools` / `disallowed-tools` (tool scope), `model` / `effort` (tier), `context: fork` (run in a fresh subagent context) — so a skill's scope is declared, not narrated.
 
 **When to create a skill:** You've given the same instructions to an agent 3+ times, or a task requires domain-specific checklists (security review, accessibility audit, compliance check).
 
@@ -484,6 +488,8 @@ For projects where agents take consequential actions (write files, run commands,
 
 **Applies to — two audiences, differently.** Agent *users*: the gates already exist — they are your harness's permission system; your gate table documents which harness setting, permission rule, or hook implements each row, so the *Implementation pointer* column points at configuration, not code you write. Agent-*product* builders: you implement the gates yourselves, and the pointer names the module. The severity model and the table shape are the same for both.
 
+*Reference implementation (Claude Code):* `permissions.deny` / `ask` / `allow` rules are evaluated in that order — first match wins, so an allow rule cannot carve an exception out of a deny — with `permissions.defaultMode` selecting the mode; the optional sandbox (`sandbox.*`, off by default, Bash-scope only) adds a network allowlist and credential deny/mask. Point the *Implementation pointer* column at those keys.
+
 **Severity model:**
 
 | Severity | Meaning |
@@ -522,7 +528,7 @@ Document these explicitly in the gate table with a note that the severity is HAR
 
 | Log | Location | Retention |
 |---|---|---|
-| Tool-call log (per-message) | Project-specific (chat sessions storage, etc.) | Harness default: until session deleted. Set an explicit horizon (e.g., 90 days) when compliance or incident-response needs one |
+| Tool-call log (per-message) | Project-specific (chat sessions storage, etc.) | Harness default varies and is often a sweep, not retention — Claude Code deletes session transcripts after `cleanupPeriodDays` (30 by default). Set an explicit horizon (e.g., 90 days) when compliance or incident-response needs one |
 | Grant decisions | Grants registry | Harness default: until user clears. Add a review cadence — stale grants widen access silently |
 | Commit log (agent-driven commits) | Standard `git log` | Permanent by design — the one layer where permanence is a chosen policy (git history), not a default |
 | Hook execution log | User-controlled | Set explicitly per hook; "user-controlled" with no stated horizon is the handwave §4 warns about |
@@ -574,7 +580,7 @@ Most agentic harnesses expose **lifecycle hooks** — user-controlled extension 
 | **Codex CLI** | (check OpenAI Codex CLI docs) | (varies) | (varies) | (varies) |
 | **Goose** | extension `PreInvoke` (MCP-layer) | extension `PostInvoke` | extension load on session | extension `on_complete` |
 
-The category names matter; the specific identifiers don't. When this document or a recipe refers to "the turn-end hook" or "the session-start hook," substitute your harness's name. The naming table above is a starting position — fill in the row for your harness with confidence once you've validated against its current documentation. The `core/umami-agents.md` §14 hook examples and `recipes/activity-stream.md` Stop-hook snippets use the Claude Code identifiers because that's the harness this corpus is field-tested on.
+The category names matter; the specific identifiers don't. When this document or a recipe refers to "the turn-end hook" or "the session-start hook," substitute your harness's name. The naming table above is a starting position — fill in the row for your harness with confidence once you've validated against its current documentation. The naming table above and the `recipes/activity-stream.md` hook snippets use the Claude Code identifiers because that's the harness this corpus is field-tested on.
 
 **The "from now on when X" insight.** Any automated behavior of the form *"from now on, every time Y happens, do Z"* requires a hook. Memory and process documentation cannot fulfill these — the agent is not the runtime, the harness is. If a user says "remember to log every git push" or "block tool calls that touch /etc," that's a hook configuration, not a memory entry. Process docs that say "we always do X" are aspiration unless wired through hooks.
 
@@ -653,7 +659,7 @@ Providers ship model updates that silently change behavior, and floating aliases
 **Cost profile:** Operator-required · Hours setup + per-bump eval cost · Recurring.
 
 **The practice:**
-- **Pin exact model IDs** (dated / version-locked), never floating aliases, in agent config — and record the pinned version where the §0.9 ledger or config can show it.
+- **Pin exact model IDs** (version-locked — current first-party IDs carry a version number, not a date suffix), never floating aliases, in agent config — and record the pinned version where the §0.9 ledger or config can show it.
 - **Gate every model bump on evals.** Before adopting a new version, run the §3f suite against the held-out golden set on the new model; compare scores; canary on a slice of traffic before full cutover.
 - **Keep a rollback.** The prior pinned version stays available; revert on regression rather than firefighting forward.
 - **Track deprecation.** Note provider EOL dates; schedule migrations through the eval gate, not under deadline pressure.

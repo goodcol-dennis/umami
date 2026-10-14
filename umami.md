@@ -8,7 +8,7 @@ This document is a template for establishing processes, testing strategies, and 
 
 **This file lives in the [goodcol-dennis/umami](https://github.com/goodcol-dennis/umami) repo** so it can be shared across projects. Do NOT copy it into a project's `docs/` folder. Instead, keep the URL in each project's `CLAUDE.md` as a reference for on-demand process audits.
 
-> **A note on `CLAUDE.md`:** This template uses `CLAUDE.md` as the instruction file name throughout because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
+> **A note on `CLAUDE.md`:** This template uses `CLAUDE.md` as the instruction file name throughout because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly (`AGENTS.md` is the cross-tool option — Claude Code also reads it when no `CLAUDE.md` is present, v2.1.277+). The practices are tool-agnostic; only the filename is convention.
 
 ```markdown
 ## Process Audit Reference
@@ -148,7 +148,7 @@ Do NOT present these as blank questions and wait for answers. That wastes the us
 1. **Explore first.** Read the project's CLAUDE.md, README, directory structure, existing docs, package files, and a sample of the source code. Most answers are discoverable from the codebase.
 2. **Propose answers.** Fill in the questionnaire with your best understanding based on what you found. Be specific — cite file paths, quote config values, reference existing docs.
 3. **Present for confirmation.** Show the user your proposed answers and ask them to correct anything wrong. Frame it as: "Here's what I understand about the project — what did I get wrong?"
-4. **Capture corrections.** Any corrections from the user are high-value context. Write them into MEMORY.md or the project instruction file immediately.
+4. **Capture corrections.** Any corrections from the user are high-value context. Write them into the project instruction file immediately (committed, so every contributor's agent inherits them); the agent's own per-user memory may mirror them but is not a substitute.
 
 This "propose-then-confirm" pattern typically costs 2,000-5,000 tokens for the exploration + one round of user confirmation. Asking blank questions and waiting costs the same in tokens but takes 4-6 rounds of back-and-forth and risks the user providing incomplete answers because they don't know what level of detail you need.
 
@@ -902,7 +902,7 @@ Dead code discipline does not override scope discipline (§3b). The rule is:
 - [ ] New endpoints/inputs have boundary validation — untrusted data sanitized at entry points (§4).
 - [ ] New dependencies justified — not duplicating existing packages, actively maintained, vulnerability-free (§6).
 - [ ] New dependency names verified against official registry — exact name, publisher, download count match expectations (§6).
-- [ ] New agent skills, hooks, or MCP configurations reviewed for prompt injection and over-broad permissions (§4).
+- [ ] New agent skills, subagents, hooks, plugins, or MCP configurations reviewed for prompt injection and over-broad permissions (§4) — a plugin install brings all of these at once.
 
 ---
 

@@ -21,7 +21,7 @@ Auditing the full document against a project is expensive — both in tokens and
 
 **Audits are read-only by default.** An umami audit assesses process maturity and identifies gaps — it does not modify code, configuration, or project files. Do not restructure directories, add tests, insert logging, refactor code, or apply recommendations during the audit phase. The audit produces a findings report. The user decides what to act on, when, and how. See "After the audit" below.
 
-1. **Determine the project's current tier.** Read the project's `CLAUDE.md`, test infrastructure, and documentation. Match the project's current state to the adoption tiers (§0.6, in the landing). Most projects are between Tier 1 and Tier 2.
+1. **Determine the project's current tier.** Read the project's instruction file(s) (`CLAUDE.md` / `AGENTS.md` / `.cursorrules`), test infrastructure, and documentation. Match the project's current state to the adoption tiers (§0.6, in the landing). Most projects are between Tier 1 and Tier 2.
 
 2. **Audit one tier above current.** If the project is solidly at Tier 1, audit against Tier 2 practices. If it's at Tier 2, audit against Tier 3. Don't audit practices two tiers above — they'll create recommendations the project isn't ready to act on.
 
@@ -70,7 +70,7 @@ Auditing the full document against a project is expensive — both in tokens and
 - [Skill / recipe / extension] — what it is · why it applies here: [cited artifact or §0.7b trigger] · install: [files written]. *(Outside the ≤5 limit; omit the section when nothing new applies.)*
 
 ### Latent practices observed
-- [Practice X] — evidence: [hook / script / file / pattern showing the team exercises this]. Currently uncodified in [target doc / spec section]. Recommendation: codify in [the project's CLAUDE.md / a process doc / surface for umami contribution if universally applicable].
+- [Practice X] — evidence: [hook / script / file / pattern showing the team exercises this]. Currently uncodified in [target doc / spec section]. Recommendation: codify in [the project's instruction file (`CLAUDE.md` / `AGENTS.md`) / a process doc / surface for umami contribution if universally applicable].
 
 ### Not yet relevant
 - [Practices that were checked but don't apply yet, with the trigger that would make them relevant]
@@ -91,7 +91,7 @@ If step 8 found applicable new options, ask about them first — one multi-selec
 | **Do something else** (free-text prompt) | The user describes a different action — save findings to a file for team review, branch and apply, escalate to a teammate, defer to a specific date, narrow the scope, etc. The catch-all when none of the structured options fit. |
 | **Skip** | Discard the findings without action. The audit was informational. |
 
-The four options compose: *all / selective / other / none*. They cover the full disposition space without forcing a default the audit cannot know is right — *"save findings to a file"* is now an instance of "do something else," not a built-in default, because the right disposition depends on the user's situation (solo vs. team, urgency, branch state, coordination needs).
+The four options compose: *all / selective / other / none*. They cover the full disposition space without forcing a default the audit cannot know is right — *"save findings to a file"* is an instance of "do something else," not a built-in default, because the right disposition depends on the user's situation (solo vs. team, urgency, branch state, coordination needs).
 
 If the user chooses **Apply all** or **Selective walkthrough**, ask about active branches and in-progress work first. Use a dedicated branch for remediation. Prefer small, focused changes over sweeping refactors.
 
@@ -106,14 +106,14 @@ If the user chooses **Apply all** or **Selective walkthrough**, ask about active
 
 When either check trips, append a single non-blocking line to the audit report under a `### Skill drift` heading:
 
-> *"Audit skill body diverges from §0.7 ({structural / calendar / both}). Re-sync recommended — derive a fresh `umami-audit.md` from the current §0.7."*
+> *"Audit skill body diverges from §0.7 ({structural / calendar / both}). Re-sync recommended — derive a fresh `umami-audit` skill body (`.claude/skills/umami-audit/SKILL.md` on Claude Code) from the current §0.7."*
 
 This callout sits **outside** the priority-ordered recommendations list and does **not** count against the ≤5 recommendations rule. It's a maintenance signal about the audit infrastructure itself, separate from process findings about the project.
 
 **Hard rules for the audit skill** — encode these as non-negotiable constraints in the skill body, not just as suggestions in the audit text. Skills drift when their constraints are advisory; they hold when constraints are stated as rules:
 
 - **Read-only.** Never modify code or docs during the audit. Even obvious cleanup belongs in a follow-up, not in the audit itself.
-- **Always fetch the landing document fresh from the canonical URL** (`https://raw.githubusercontent.com/.../umami.md`). Never cache locally. The framework evolves; cached copies go stale silently. Projects that pin a release tag (see *Pinning a version* near the top of the landing document) substitute `refs/tags/vX.Y` for `refs/heads/main` — honor the pin, fetch that tag fresh, and note the pinned version in the report. If the project pins a release tag (`refs/tags/vX.Y` — see the pinning note under the landing's URL block), honor the pin: fetch the pinned tag, note the pinned version in the report, and flag — don't silently override — when the pin is more than one release behind.
+- **Always fetch the landing document fresh from the canonical URL** (`https://raw.githubusercontent.com/.../umami.md`). Never cache locally. The framework evolves; cached copies go stale silently. If the project pins a release tag (`refs/tags/vX.Y` — see the pinning note under the landing's URL block), honor the pin: fetch the pinned tag, note the pinned version in the report, and flag — don't silently override — when the pin is more than one release behind.
 - **Consult the Section Navigation Map.** Identify which core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`, plus `umami-anti-patterns.md` when onboarding an existing codebase) and which domain extensions apply before fetching anything beyond the landing document. Fetch only what the audit scope requires.
 - **If the fetch fails, tell the user and stop.** Do not fall back to a stale local copy. An audit against three-month-old guidance is worse than no audit — it produces confident, wrong recommendations.
 - **Never recommend more than 5 things.** A wall of recommendations is not actionable. Prioritize ruthlessly.
@@ -121,7 +121,7 @@ This callout sits **outside** the priority-ordered recommendations list and does
 - **Don't fetch companion or extension files unless they apply.** A Tier 1 audit doesn't need any companion file. A web project doesn't need `umami-data.md`. Confirm scope relevance before pulling.
 - **Audit one tier above current — never two.** Recommendations the project isn't ready for create noise, not value.
 - **Every recommendation cites Impact and Effort.** Impact names a specific improvement (anti-pattern closed, gap-registry entry resolved, measurable pain reduced — ideally with a falsifiable signal). Effort uses the §4 *Reading the cost profiles* scheme (Who · Magnitude · Shape). Both are required; vague impact ("improves quality") and vague effort ("not too bad") defeat prioritization. **Flag Quick win** only when Impact is concrete AND Effort is Hours; the flag dilutes if applied to medium-effort items. Unflagged recommendations are still actionable — readers prioritize from the Impact/Effort dimensions themselves.
-- **Surface latent practices.** Beyond tier-gap recommendations, look for practices the team is *already exercising* that aren't yet codified — either in the project's own `CLAUDE.md` / process docs, or in umami's spec. Evidence: hooks doing something the docs don't describe, scripts doing operations not captured in process, conventions visible across commits but not in `CLAUDE.md`, gap-registry entries pre-staging work that isn't reflected in any tier-table practice. When found, recommend codification.
+- **Surface latent practices.** Beyond tier-gap recommendations, look for practices the team is *already exercising* that aren't yet codified — either in the project's own instruction file (`CLAUDE.md` / `AGENTS.md` / equivalent) / process docs, or in umami's spec. Evidence: hooks doing something the docs don't describe, scripts doing operations not captured in process, conventions visible across commits but not in the instruction file, gap-registry entries pre-staging work that isn't reflected in any tier-table practice. When found, recommend codification.
 - **Check framework freshness every run** (step 8). An audit that reports on the project's practices but never on what umami itself gained since the project's setup leaves adopters on a frozen snapshot. The `### New in umami since your setup` section and its multi-select prompt are part of every audit; "nothing new applies" is a valid one-line outcome.
 
 When the audit flags an anti-pattern, name the watch signal that would confirm or refute the verdict (see §0.6). Verdicts without falsifiers become opinion.
@@ -140,11 +140,11 @@ The agent fetches the spec, follows this section, and during the apply phase ins
 
 **This is a lightweight setup, not a framework install.** Init writes only URL references and small invocation-aid skill files. There is no framework copy, no runtime dependency, no library to keep updated. The umami spec stays at its canonical URL and is fetched fresh on every run; the local artifacts are just a way to make access to umami consistent and harness-recognized as commands.
 
-**Harness note (reference implementation).** The paths below — `.claude/skills/…`, `.claude/settings.json` — are Claude Code's layout, used here as one concrete reference. On another harness, substitute its command/skill directory and config file (e.g., Cursor's `.cursor/`, Aider's config, a Codex/Goose equivalent). The skill *content* and the URL references are harness-neutral; only where they live changes. See §14 for the per-harness mapping.
+**Harness note (reference implementation).** The paths below — `.claude/skills/<name>/SKILL.md` — are Claude Code's layout (a skill is a directory holding `SKILL.md`; a flat `.claude/skills/<name>.md` is not loaded), used here as one concrete reference. On another harness, substitute its command/skill directory (e.g., Cursor's `.cursor/`, Aider's config, a Codex/Goose equivalent). The skill *content* and the URL references are harness-neutral; only where they live changes. See §14 for the per-harness mapping.
 
 **What gets stored locally vs. fetched fresh:**
 
-- **Stored locally:** URL *references* to the canonical umami spec (in instruction files like `CLAUDE.md`) and *skill files* (`.claude/skills/umami-init.md`, `.claude/skills/umami-audit.md`) that describe *how to invoke* the protocol.
+- **Stored locally:** URL *references* to the canonical umami spec (in instruction files like `CLAUDE.md`) and *skill files* (`.claude/skills/umami-init/SKILL.md`, `.claude/skills/umami-audit/SKILL.md`) that describe *how to invoke* the protocol.
 - **Never stored locally:** the umami spec itself. Always fetched fresh from the canonical URL on every audit/init run.
 
 Skill files are invocation aids — they encode procedure shape, hard rules, and bootstrap text so the harness recognizes `/umami-init` and `/umami-audit` as commands. They do **not** contain a copy of umami.md. Drift between an installed skill and the canonical spec is detected per §0.7 (structural + calendar drift checks).
@@ -161,7 +161,7 @@ Skill files are invocation aids — they encode procedure shape, hard rules, and
 
 3. **Derive recommended URL set** via §0.5 mapping. The URL block always includes the **landing document** (`umami.md`). Core companion files (`umami-quality.md`, `umami-runtime.md`, `umami-process.md`, `umami-agents.md`; `umami-anti-patterns.md` is fetched during onboarding/audits rather than listed per-tier) and domain extensions are added based on the tier the project is targeting and which concerns apply. For Tier 1 / first-pass adoption, the URL block may legitimately list only the landing document plus relevant domain extensions — companion files can be added when the project escalates to Tier 2.
 
-4. **Compute the diff:** adds (companion files + domain extensions to add to URL list), removes (rare; usually flag-only), and skill installations (`.claude/skills/umami-init.md` and `.claude/skills/umami-audit.md`, each with `**Last synced:** YYYY-MM-DD` set to today). The other four skills (`umami-auto-review`, `umami-pipeline-audit`, `umami-drift-audit`, `umami-wave`) install **on demand, not by default** — offer each only when discovery shows its protocol applies (§3d review at agentic velocity, §6b when the project has a CI pipeline, §8 when a backlog of designs/decisions exists, `recipes/wave-session.md` when a backlog of independent buildable units exceeds what a sitting clears and the human wants it run unattended) and include any accepted ones in the same diff.
+4. **Compute the diff:** adds (companion files + domain extensions to add to URL list), removes (rare; usually flag-only), and skill installations (`.claude/skills/umami-init/SKILL.md` and `.claude/skills/umami-audit/SKILL.md`, each with `**Last synced:** YYYY-MM-DD` set to today). The other four skills (`umami-auto-review`, `umami-pipeline-audit`, `umami-drift-audit`, `umami-wave`) install **on demand, not by default** — offer each only when discovery shows its protocol applies (§3d review at agentic velocity, §6b when the project has a CI pipeline, §8 when a backlog of designs/decisions exists, `recipes/wave-session.md` when a backlog of independent buildable units exceeds what a sitting clears and the human wants it run unattended) and include any accepted ones in the same diff.
 
 5. **Show the user the proposed changes, then present the four-option dialog.** Enumerate every file that would be modified or created — paths, line counts, the exact URL block that would land in each instruction file, which skill files would be created or updated and at what `Last synced:` date. The user must be able to read the diff before deciding. Then surface the dialog (apply all / selective walkthrough / do something else / skip) per §0.7. Self-contained prompt per §3b.
 

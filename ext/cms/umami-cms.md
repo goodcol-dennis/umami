@@ -318,7 +318,7 @@ Sometimes a core or contributed extension bug genuinely blocks your project and 
 - [ ] Contributed/third-party extension files verified against their distribution (no modifications).
 - [ ] Any managed patches documented with upstream issue links and review dates.
 - [ ] CI or deployment pipeline includes core integrity verification.
-- [ ] Team/agents instructed that core modification is a blocked practice.
+- [ ] Team/agents instructed that core modification is a blocked practice — and, where the harness supports permission policies, enforced as path deny rules on the core and contrib directories (§4 Agent Runtime Security).
 
 ---
 

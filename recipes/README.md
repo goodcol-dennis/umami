@@ -8,7 +8,7 @@
 |---|---|---|---|
 | **Core practices** (landing + `core/`) | universal guardrails | long-form guidance | repo root + `core/` |
 | **Domain extensions** (`ext/*`) | domain-specific guardrails | long-form guidance | `ext/` |
-| **Agent skills** (`.claude/skills/*`) | how to invoke a workflow | procedure files + hard rules | `.claude/skills/` |
+| **Agent skills** (`.claude/skills/<name>/SKILL.md`) | how to invoke a workflow | procedure files + hard rules | `.claude/skills/` |
 | **Recipes** (this folder) | exactly how to wire up a cross-cutting feature | code snippets + config templates + setup instructions | `recipes/` |
 
 A domain extension tells you *why* you'd want time-tracking discipline for consulting work. A recipe tells you *exactly* what hooks to install, what commit-message format to use, and what script to run so an LLM can generate a billable timesheet from a month of work.
@@ -64,7 +64,7 @@ If you're starting a new project today and want a complete, opinionated AI-team-
 
 **Other AI-tooling libraries worth knowing about** (less directly recipe-shaped but adjacent):
 - [Everything Claude Code](https://github.com/affaan-m/everything-claude-code) — comparison reference in the main [README](../README.md)
-- [Anthropic's official Claude Code best practices](https://docs.anthropic.com/en/docs/claude-code) — the upstream documentation umami's discipline wraps around
+- [Anthropic's official Claude Code best practices](https://code.claude.com/docs) — the upstream documentation umami's discipline wraps around
 
 ## Contributing a recipe
 

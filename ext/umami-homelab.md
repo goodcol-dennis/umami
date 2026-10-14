@@ -44,6 +44,7 @@ This extension captures patterns that emerge from building and operating a small
 - **`.gitignore` covers `.env`, `*.key`, `*.pem`, `*.crt`** — first line of defense against accidental commits.
 - **Placeholder convention** — `<PRIVATE_KEY>`, `<VPN_PRIVATE_KEY>` in committed scripts, with env var substitution at build/deploy time.
 - **No credentials in documentation** — `CLAUDE.md` references *that credentials exist* and where to find them, never the values themselves.
+- **Agent read-deny on secret paths** — `.gitignore` keeps `secrets/` out of history, not out of the agent's context. Add the harness permission rule that denies the agent reads of `secrets/**` and `**/.env*` (§4 Agent Runtime Security; Claude Code: a `Read(./secrets/**)` entry under `permissions.deny`).
 
 **Injection strategies (choose based on scale):**
 - **Environment file** — a gitignored `secrets/credentials.env` sourced at runtime. Simplest option for a solo project or small team.

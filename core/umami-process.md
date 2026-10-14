@@ -218,7 +218,7 @@ Per-feature discipline without framework overhead.
 
 ### Starting a Feature
 
-Write 5-10 lines in the persistent memory file:
+Write 5-10 lines in the project memory file (§9.2 — the shared, committed file, not the harness's per-developer auto-memory store, which other developers and CI agents never see):
 
 ```markdown
 ## Active Change

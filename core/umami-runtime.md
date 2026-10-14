@@ -296,6 +296,8 @@ The "For AI-assisted development" guidance above covers code the agent *generate
 - When reviewing untrusted repositories, processing external documents, or working with foreign content, run the agent in an isolated environment — a container, devcontainer, VM, or remote sandbox with no egress by default.
 - The principle: if the agent gets compromised, the blast radius must be small. No access to the host filesystem, no access to credentials outside the workspace, no network access unless explicitly allowed.
 
+*Reference implementation (Claude Code):* the built-in sandbox (`sandbox.enabled`, off by default; it covers Bash and its child processes only — file tools, MCP servers and hooks run outside it under permission rules) gives Working-tier isolation: a network allowlist (`sandbox.network.allowedDomains`), filesystem deny/allow paths, and credential files or env vars marked `deny` or `mask` (a sentinel inside the sandbox, the real value injected at the proxy). A container or VM remains the Full-tier answer.
+
 **Tool and path restrictions:**
 - If your agent harness supports permission policies, start with deny rules for sensitive paths: `~/.ssh/`, `~/.aws/`, `**/.env*`, credential stores. Deny outbound network commands (`curl | bash`, `ssh`, `scp`, `nc`) unless the workflow explicitly requires them.
 - Restrict the agent's toolset to what the task requires. An agent performing code review doesn't need write access. An agent running tests doesn't need network egress.
@@ -314,8 +316,8 @@ The "For AI-assisted development" guidance above covers code the agent *generate
 - For compliance-bound projects, see §22.11 for additional agent-as-attack-surface guidance.
 
 **Supply chain awareness for agent tooling:**
-- Skills, hooks, MCP server configurations, and agent descriptors are supply chain artifacts. A malicious skill can contain prompt injection. A compromised MCP server can exfiltrate data while appearing to provide context.
-- Review agent tooling with the same rigor you apply to code dependencies (§6). Don't install skills, hooks, or MCP configurations from untrusted sources without inspection.
+- Skills, hooks, MCP server configurations, plugins (which bundle all three and run with the user's privileges), and agent descriptors are supply chain artifacts. A malicious skill can contain prompt injection. A compromised MCP server can exfiltrate data while appearing to provide context.
+- Review agent tooling with the same rigor you apply to code dependencies (§6). Don't install skills, hooks, plugins, or MCP configurations from untrusted sources without inspection; where the harness offers marketplace allow/deny lists (Claude Code: `strictKnownMarketplaces` / `blockedMarketplaces` in managed settings), use them as the organization-level control.
 - Agents installing software dependencies are vulnerable to typosquatting and dependency confusion — they'll install whatever a tutorial or error message suggests without verifying the package name. See §6 Supply Chain Attack Defenses for the full set of controls.
 
 ### Untrusted Content Boundaries and Prompt-Injection Hardening
@@ -642,7 +644,7 @@ These are heuristics, not hard rules. Your project may justify slower budgets (l
 - §15 Pre-commit checklist — what runs *before* CI; inner-loop budgets feed into this
 - §16 IaC — pipeline definition often lives in IaC; gate changes are infrastructure changes
 - §22 compliance — gates driven by compliance need explicit control mapping
-- `.claude/skills/umami-pipeline-audit.md` — invocable skill that runs the audit protocol above as a one-command flow
+- `.claude/skills/umami-pipeline-audit/SKILL.md` — invocable skill that runs the audit protocol above as a one-command flow
 
 ---
 

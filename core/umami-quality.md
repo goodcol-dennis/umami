@@ -321,7 +321,7 @@ These are gaps lib/bin tests structurally can't reach: they mock provider behavi
 |---|---|
 | Bench passes on N of M providers your product serves | Behavioral guarantee covers N; the gap between N and M is silent regression risk |
 | Substrate gap discovered in production but not in bench | Coverage hole — the cell that should have caught the gap doesn't exist or doesn't exercise the path |
-| Bench non-determinism (results vary across runs against same provider) | Bench has timing dependencies, model has temperature > 0, or substrate has a race condition |
+| Bench non-determinism (results vary across runs against same provider) | Bench has timing dependencies, model sampling is non-deterministic (temperature where the provider exposes it; current Claude models reject sampling parameters), or substrate has a race condition |
 
 **Failure modes:**
 
@@ -495,7 +495,7 @@ The three-layer model determines *who reviews*; the risk taxonomy determines *wh
 
 ### Reviewer agent pattern
 
-The **auto-review** skill is the foundation. It's invoked on every change after Layer 1 passes, does a broad sweep across the project's risk dimensions, and produces the flags document. One skill template lives in this repo (`.claude/skills/umami-auto-review.md`); each project derives its own with project-specific risk dimensions and paths.
+The **auto-review** skill is the foundation. It's invoked on every change after Layer 1 passes, does a broad sweep across the project's risk dimensions, and produces the flags document. One skill template lives in this repo (`.claude/skills/umami-auto-review/SKILL.md` — Claude Code loads skills as `skills/<name>/SKILL.md` directories, not flat files; use your harness's equivalent layout); each project derives its own with project-specific risk dimensions and paths.
 
 **Specialized reviewers** are an *optional escalation* for projects where scale demands it. A separate skill per dimension (security, performance, contract integrity, error-handling) can come off the bench when auto-review flags High in that dimension, producing deeper analysis. Most projects don't need specialized reviewers until repeated High flags on the same dimension justify the focused mandate. Per §14, scoped specialized agents are a measurable cost lever, but only useful when there's enough flagged volume to justify them.
 
@@ -674,7 +674,7 @@ The §3d code-review three-layer model (mechanical / AI pre-screen / human focus
 | Bundling refactoring with feature work | Diff is too large to review; hard to bisect; PR description becomes "refactor X and add Y" | Two commits, two PRs. Refactoring first (no behavior change), feature on top |
 | Refactoring as scope creep | Agent "improves" code unrelated to the task; PR description doesn't mention the change | Per §3b, incidental findings get reported, not edited. Refactor only code the task requires touching |
 | Premature abstraction during refactoring | Three usages of similar code → extract a base class with hooks → next usage doesn't fit the abstraction | Wait until the third usage shows the pattern. Until then, three similar lines is better than a wrong abstraction |
-| Refactoring breaking change-propagation maps | Module renamed; §10 propagation map references the old name; subsequent sessions miss the dependency | Update propagation maps in lockstep with the refactoring. CLAUDE.md change-propagation map gets a row for "rename module" |
+| Refactoring breaking change-propagation maps | Module renamed; §10 propagation map references the old name; subsequent sessions miss the dependency | Update propagation maps in lockstep with the refactoring. the instruction file's (`CLAUDE.md` / `AGENTS.md`) change-propagation map gets a row for "rename module" |
 
 ### Cross-references
 - §3b — Test-first discipline applies to refactoring; "scope creep" rule applies (incidental findings get reported, not edited)

@@ -59,7 +59,7 @@ umami/
 
 **About `recipes/`:** Drop-in artifacts for cross-cutting features (e.g., a consulting timesheet pipeline, an ADR template, a status-block starter). Extensions tell you *why* you'd want a discipline; recipes tell you *exactly what to type / copy* to implement it. See [`recipes/README.md`](recipes/README.md) for the catalog and contribution model. Recipes are independent of the §0–§31 numbering — they're implementation aids, not numbered practices.
 
-> **A note on `CLAUDE.md`:** This template references `CLAUDE.md` as the project instruction file because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly. The practices are tool-agnostic; only the filename is convention.
+> **A note on `CLAUDE.md`:** This template references `CLAUDE.md` as the project instruction file because it is the most widely recognized convention — Claude Code, Cursor, Windsurf, and other tools all read it. If your toolchain uses a different file (`.cursorrules`, `AGENTS.md`, `CODEBASE.md`, `copilot-instructions.md`), substitute accordingly (`AGENTS.md` is the cross-tool option — Claude Code also reads it when no `CLAUDE.md` is present, v2.1.277+). The practices are tool-agnostic; only the filename is convention.
 
 **Domain-specific extensions** supplement the core with guardrails tailored to specific project types:
 
@@ -95,7 +95,7 @@ The agent fetches the spec, runs §0 discovery interactively (asking which kind 
 
 **On successful apply, init auto-chains into `/umami-audit`** so the bootstrap ends with a baseline process audit rather than just a "skills installed" message — you see where the project actually stands against the §0.6 tier framework on day one. The audit runs read-only and ends with its own four-option findings-disposition dialog (apply all / selective / other / skip), so you stay in control of what to act on. If you chose **Skip** at the init dialog (no files written), the audit does not auto-chain.
 
-**This is a lightweight setup, not a framework install.** Init writes only URL references (so your agent knows where to fetch the spec) and small skill files (so the harness recognizes `/umami-init` and `/umami-audit` as commands). The umami spec itself is never stored locally — it's fetched fresh on every audit/init run from the canonical URL, which is a hard rule (§0.7) so the framework's evolution always reaches every project. There's no dependency to maintain, no library to upgrade.
+**This is a lightweight setup, not a framework install.** Init writes only URL references (so your agent knows where to fetch the spec) and small skill files — `.claude/skills/<name>/SKILL.md` on Claude Code (a flat `.claude/skills/<name>.md` is not loaded), or your harness's equivalent — so it recognizes `/umami-init` and `/umami-audit` as commands. The umami spec itself is never stored locally — it's fetched fresh on every audit/init run from the canonical URL, which is a hard rule (§0.7) so the framework's evolution always reaches every project. There's no dependency to maintain, no library to upgrade.
 
 After init, ongoing use. Init installs the first two skills by default; the other three are offered during init only when discovery shows their protocol applies, and can be added any time by asking your agent to derive them from the cited section:
 
@@ -408,7 +408,7 @@ Umami and ECC solve different problems at different layers. They're complementar
 
 ## How is this different from Anthropic's official Claude Code best practices?
 
-[Anthropic's Claude Code documentation](https://docs.claude.com/en/docs/claude-code) is the official guidance for using Claude Code effectively — covering hooks, slash commands, MCP servers, settings, agent skills, model routing, and more. It's the comprehensive reference for what the tool can do.
+[Anthropic's Claude Code documentation](https://code.claude.com/docs) — including its [best-practices page](https://code.claude.com/docs/en/best-practices) — is the official guidance for using Claude Code effectively — covering hooks, slash commands, MCP servers, settings, agent skills, model routing, and more. It's the comprehensive reference for what the tool can do.
 
 Umami is the **opinionated process layer above the tool**. The official docs answer *"what does Claude Code do?"* Umami answers *"given a tool like Claude Code, how should the project be structured to make every session efficient and every output high-quality?"*
 
@@ -416,14 +416,14 @@ Umami is the **opinionated process layer above the tool**. The official docs ans
 |---|---|---|
 | **What it is** | A process discipline framework | Official tool documentation |
 | **Scope** | Project-level practices that work across harnesses | Tool-level capabilities and configuration |
-| **Stance** | Opinionated (tiers, anti-patterns with watch signals, audit protocol) | Reference-shaped (here's what the tool does; here's how to configure it) |
+| **Stance** | Opinionated (tiers, anti-patterns with watch signals, audit protocol) | Reference-shaped for configuration (what the tool does, how to configure it), opinionated at the session level (verification-first, explore → plan → code, a short `CLAUDE.md`, hooks for must-happen rules, fresh-context review) |
 | **Audience** | Teams adopting AI-coding discipline at the project level | Anyone using Claude Code |
 | **AI-tool agnostic?** | Yes — works with Claude Code, Cursor, Codex, Goose, etc. | Claude-Code-specific (some practices generalize) |
 | **Lifecycle** | Periodic audits + version-tracked process maturity | Always-current reference |
 
 **They compose.** Anthropic's docs tell you what Claude Code can do; umami tells you what your *project* should do to make any harness most effective. A team using both gets the tool-level capabilities (from Anthropic) plus the process-level discipline (from umami).
 
-**Where they overlap:** practices around hooks, skills, MCP servers, and instruction files appear in both. Umami's §0.7 audit protocol and §0.7b init protocol depend on harness-supported skills — the underlying mechanism is what Anthropic documents. Where they diverge: tier-based adoption, anti-pattern watch signals, extension ecosystem, and cross-harness portability aren't Anthropic's job to provide — Anthropic ships the tool; umami ships the process discipline above it.
+**Where they overlap:** practices around hooks, skills, MCP servers, and instruction files appear in both, as do verification-first work (§3b), short instruction files (§11 / §14b), hooks for must-happen rules (§14), and fresh-context adversarial review (§3d). Umami's §0.7 audit protocol and §0.7b init protocol depend on harness-supported skills — the underlying mechanism is what Anthropic documents. Where they diverge: tier-based adoption, anti-pattern watch signals, extension ecosystem, and cross-harness portability aren't Anthropic's job to provide — Anthropic ships the tool; umami ships the process discipline above it.
 
 **Should you read both?** Yes. Anthropic's docs first if you're new to Claude Code; umami when you're past the "how do I make this work" phase and into "how do I structure the project for sustained good output across many sessions."
 

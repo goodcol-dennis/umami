@@ -24,7 +24,7 @@ terraform plan → review → terraform apply
 
 **Rules:**
 - Never run `apply` without reviewing the plan output first.
-- In CI/CD: plan on PR, apply on merge. Never auto-apply without human review.
+- In CI/CD: plan on PR, apply on merge. Never auto-apply without human review. When an agent runs the tool, treat `apply` and `destroy` as §14 autonomy-boundary actions (HARD, mode-independent): gate them with the harness's permission rules or a before-tool hook; `plan` may run unattended.
 - Treat "will destroy" and "must replace" lines in a plan as red flags requiring explicit justification.
 - Save plan files (`terraform plan -out=tfplan`) so what you reviewed is exactly what gets applied.
 

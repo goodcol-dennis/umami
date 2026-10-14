@@ -193,7 +193,7 @@ The agent drives mechanical pre-flight → AI review → risk classification →
 | Cost caps with per-PR budget allocation | §9.7 — cross-provider review (per §3d) multiplies per-PR token cost; the cap must accommodate |
 | §4 Agent Log Discipline | Auto-merge events must be logged at the decisions layer (with classification, reviewer's flags doc, cost, and outcome) |
 | Branch protection that respects the workflow | Auto-merge requires the workflow account to bypass the human-required-reviewer setting on auto-merge-eligible tiers, while preserving it for Medium+ |
-| Reviewer agent skill (e.g., `umami-auto-review.md`) | Project-derived from §3d, with project-specific risk dimensions and paths |
+| Reviewer agent skill (e.g., the `umami-auto-review` skill) | Project-derived from §3d, with project-specific risk dimensions and paths |
 | Approval gates per §14 | Auto-merge is a HARD action in §14 terms; gate semantics must make this explicit |
 
 **The PR-review loop protocol:**

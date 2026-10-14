@@ -181,7 +181,7 @@ WORKSTREAM=$(awk '/^default_workstream:/ {print $2; exit}' "$LOG" 2>/dev/null ||
 printf -- '- %s  [claude]    %-12s | %s\n' "$TS" "$WORKSTREAM" "$PROMPT" >> "$LOG"
 ```
 
-> **Verify the hook against your harness version before billing against it** (this is Step 4 of the adaptation procedure below applied to the reference implementation itself): run one Claude turn, then check that the new `[claude]` line carries real prompt text and not `(no prompt captured)`. Hook input schemas are harness-version-dependent; the fallback placeholder is designed to fail visibly rather than silently.
+> **Verify the hook against your harness version before billing against it** (this is Step 4 of the adaptation procedure below applied to the reference implementation itself): run one Claude turn, then check that the new `[claude]` line carries real prompt text and not `(no prompt captured)`. Hook input schemas are harness-version-dependent; the fallback placeholder is designed to fail visibly rather than silently. Current Claude Code also passes `last_assistant_message` in the Stop payload and warns that the transcript file is written asynchronously and may lag the in-memory conversation — this hook reads the *user prompt*, which lands before the turn runs, so the lag affects assistant text only; read that field instead if you want the final assistant text.
 
 The hook is deliberately dumb: timestamp, fixed source tag, default workstream from front matter, truncated raw prompt. Workstream classification is the periodic `/refine-log` skill's job (Step 5).
 
@@ -216,7 +216,7 @@ Mark it executable: `chmod +x .git/hooks/post-commit`.
 
 > **Harness scope:** Claude Code skill format. For Cursor, Aider, Codex CLI, or Goose, port the procedure text below into your harness's custom-command / rule / MCP-tool format — the operations (append a line to the log) are identical. See *Adapting for other harnesses* below.
 
-Create `.claude/skills/log.md`:
+Create `.claude/skills/log/SKILL.md` (a skill is a directory holding `SKILL.md`; a flat `.claude/skills/log.md` is not loaded):
 
 ```markdown
 ---
@@ -255,7 +255,7 @@ Examples:
 
 > **Harness scope:** Claude Code skill format, same adaptation note as Step 5.
 
-Create `.claude/skills/refine-log.md`:
+Create `.claude/skills/refine-log/SKILL.md` (same layout rule):
 
 ```markdown
 ---
@@ -348,8 +348,8 @@ Steps 3, 5, and 6 of *The recipe* use Claude Code identifiers. The pattern is ha
 |---|---|---|---|---|---|
 | **Turn-end hook** (Step 3) | `Stop` hook in `.claude/settings.json` calling `.claude/hooks/activity-log-claude.sh` | Check current Cursor docs for the turn-end equivalent (rules + hooks system); place the bash logic in the harness's hook-script location | Post-turn shell hook in `.aider.conf.yml` (`post_response: bash logs/activity-log-aider.sh`) | Consult Codex CLI documentation for the turn-end event; bash logic ports as-is | Define an extension that fires on `on_complete` and runs the append-to-log command |
 | **Source tag in entries** | `[claude]` | `[cursor]` | `[aider]` | `[codex]` | `[goose]` |
-| **Manual log command** (Step 5) | `.claude/skills/log.md` — invoked as `/log <description>` | Cursor command / rule in `.cursorrules` or `.cursor/rules/` | `/log` defined in `.aider.conf.yml` or as an alias | Codex CLI custom command | Custom MCP tool exposed by an extension |
-| **Refine-log command** (Step 6) | `.claude/skills/refine-log.md` — invoked as `/refine-log` | Same as Manual log, different command body | Same — Aider command | Same — Codex custom command | Same — MCP tool |
+| **Manual log command** (Step 5) | `.claude/skills/log/SKILL.md` — invoked as `/log <description>` | Cursor command / rule in `.cursorrules` or `.cursor/rules/` | `/log` defined in `.aider.conf.yml` or as an alias | Codex CLI custom command | Custom MCP tool exposed by an extension |
+| **Refine-log command** (Step 6) | `.claude/skills/refine-log/SKILL.md` — invoked as `/refine-log` | Same as Manual log, different command body | Same — Aider command | Same — Codex custom command | Same — MCP tool |
 | **AI-instruction file** (the project's primary AI doc) | `CLAUDE.md` | `.cursorrules` or `.cursor/rules/` | `CONVENTIONS.md` / aider.conf-referenced | (varies) | `AGENTS.md` or harness-specific |
 
 **Adaptation procedure:**

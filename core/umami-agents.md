@@ -451,7 +451,7 @@ The highest-value use of multi-agent orchestration is **parallel review and anal
 - Workers should report in a **structured format** so the lead can synthesize without re-reading raw output.
 - Use a **shared task list** if your tooling supports it — workers claim tasks, preventing duplicate effort.
 
-**Scaling this to hours, unattended.** When the parallel work is a large pile of independent, buildable units and the human will review at set times rather than continuously, the patterns above need a board, briefs with a resume section, a watchdog that relaunches what an interruption killed, and a pre-written gate per unit. `recipes/wave-session.md` is the drop-in version of that (opt-in; not the default way to work — see its adopt-when).
+**Scaling this to hours, unattended.** When the parallel work is a large pile of independent, buildable units and the human will review at set times rather than continuously, the patterns above need a plan checked by a critic before anything launches, a board with one backlog item per row, briefs that fix the lane and the risk level before launch, an independent review before every merge, checkpoints that make any stop recoverable, and a budget guard that keeps a wave inside the usage plan instead of restarting after a limit. `recipes/wave-session.md` is the drop-in version of that (opt-in; not the default way to work — see its adopt-when).
 
 ### External Tool Integration
 

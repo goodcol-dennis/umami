@@ -5,7 +5,7 @@ description: Run a pile of buildable, independent work unattended as waves, per 
 
 # umami-wave — Run a wave session
 
-**Last synced:** 2026-10-21 from `recipes/wave-session.md` *Run* section (plan-before-build with a critic; build → independent review → finish per item; the budget guard and build gate in place of the retired watchdog; the hourly queue check; merge on green after review). Previously 2026-10-11. The procedure lives in the recipe, not here; re-derive this stub when the recipe's *Run* section changes shape.
+**Last synced:** 2026-10-29 from `recipes/wave-session.md` *Run* section (2026-10-29: step 2 scaffolds the status view — `./wave-status`, six fixed sections, *The status view*; previously 2026-10-21: plan-before-build with a critic; build → independent review → finish per item; the budget guard and build gate in place of the retired watchdog; the hourly queue check; merge on green after review). Previously 2026-10-11. The procedure lives in the recipe, not here; re-derive this stub when the recipe's *Run* section changes shape.
 
 ## Invoke when
 
@@ -30,3 +30,4 @@ The human has a backlog of independent, buildable items with IDs and wants it bu
 - Every scheduled job is listed with its id, schedule and prompt in the scheduled-jobs file; a wake-up's prompt points at a file, never carries the procedure inline. Polls that need no judgment run on model-free timers.
 - Workers never touch the main checkout; worktrees live at a set path outside the repo.
 - Arm the queue check in the same minute as the first launch, unasked.
+- The status view is the recipe's (*The status view*): `./wave-status` at the project root, its six sections in their order and words, `unknown — <why>` for a missing input. Scaffold it when the project has none; never invent a project-specific layout.

@@ -1,6 +1,6 @@
 # Recipe: Wave Sessions — Plan, Waves, Budget Guard, Lanes
 
-**Status:** Drafted (one project's working process, October 2026, revised 10-15 and 10-21; harness-neutral body with a Claude Code reference-implementation table; see *Provenance* for what has and has not been exercised)
+**Status:** Drafted (one project's working process, October 2026, revised 10-15, 10-21 and 10-29 — the status view; harness-neutral body with a Claude Code reference-implementation table; see *Provenance* for what has and has not been exercised)
 
 ## Run
 
@@ -9,7 +9,7 @@
 **What the agent does** — this section is the procedure; the rest of the recipe is the rationale and the detail it points into.
 
 1. **Scan, don't ask.** Read the instruction file, the backlog (it must have IDs), the newest hand-off baton, and the build config. Note the evidence of a backlog or a prior stranded fan-out — it goes in the ledger row, not in a prompt. **The human invoking this recipe is the adopt decision;** the §0.9 evidence rule binds audits that *recommend* it, not a human who asked for it.
-2. **Scaffold the state folder silently** (*The files*): the board, the rulings file, `agent-preamble.md` derived from the instruction file and build config (base branches per lane, the required CI checks, local-gate and test-resource commands, trailers, the dev environment, how to read the usage level), the progress-notes directory, and the scheduled-jobs list. Show nothing yet.
+2. **Scaffold the state folder silently** (*The files*): the status view (`wave-status` at the project root, *The status view*) when the project has none, the board, the rulings file, `agent-preamble.md` derived from the instruction file and build config (base branches per lane, the required CI checks, local-gate and test-resource commands, trailers, the dev environment, how to read the usage level), the progress-notes directory, and the scheduled-jobs list. Show nothing yet.
 3. **Run the plan** (*The engine*, E): one read-only sweeper per channel in parallel, one synthesizer that reconciles every finding against the backlog into draft waves (one backlog item per row, each with lane, tier, owned files, dependencies), and one critic on a different model that attacks the draft. **Nothing launches before the critic returns.** When the human has already named the items, skip the sweep: plan, then critic.
 4. **One series of batched prompts.** The **first batch** carries, together: the rulings the critic says are needed; which waves to launch and in what order (multi-select, priced, recommended first); wave size (default 5–6 items; more is its own priced option); and "preamble derived from `<file>` — correct?" with the preamble quoted, *Yes (Recommended)* first. **Later batches** close the remaining open items until every one is **closed** (ruling recorded, numbered) or **parked** (reason + what reopens it). **The final batch** holds every classifier-sensitive act — production reads or writes, access grants, infrastructure applies — asked once, with "switch to manual permission mode for this batch, then back"; the orchestrator runs each with a probe ready and hands the results into briefs as stated facts, so no agent reads production.
 5. **Cut the wave.** Register each row with reserved IDs through one ledger agent; write each brief by reference to the plan file, with lane and base branch, tier, owned files, reserved IDs, governing documents, what "done" includes (the monitoring and status surfaces), the rulings by number, and a *Resuming* section.
@@ -166,7 +166,7 @@ Each practice gives the **rule**, the **incident** that made it a rule (why), th
 
 **What stays judgment, not code:** cutting waves; the lane and level tests; the review itself; which decisions to batch for the human; whether a finding is new or already known. None was automated; the critic stage exists to check them.
 
-**What a project can skip** (built because the originating project wanted to watch or measure; none changes what an agent does): a live status page with ETAs and token accounting; an approval watcher; the system timers; a PDF of the weekly measurement.
+**What a project can skip** (built because the originating project wanted to watch or measure; none changes what an agent does): an approval watcher; the system timers; a PDF of the weekly measurement. The status view is not on this list: its sections are fixed under *The status view*, and a section whose input the project lacks prints `unknown`.
 
 **What the practices lean on:** a CI gate whose checks are required; a dev environment that deploys on merge; a production deploy that only the human starts; a backlog with IDs; a way to read the usage plan.
 
@@ -191,7 +191,7 @@ Thirteen components, described so a project can build its own from the text. A�
 | **I** | **Deploy truth** | the facts a ledger pass needs | the newest successful production and dev deploy commits; the PRs merged since a date | per PR: is its merge commit an ancestor of each → live in prod, on dev, or merged with the deploy pending; the ledger writer is handed this table and never infers | `deploy_truth.py` |
 | **J** | **The CI wait** | one blocking call per PR, so no model turn is spent polling | the required statuses on the head commit | poll until all succeed or any fails; on failure print the failing lane's last log lines and its build id so the agent can retry that lane once; a second failure is real | `wait_for_cb.py` |
 | **K** | **The retro and the weekly measurement** | learn, with numbers | — | practice 15 | `wave-N-retro.md`; the `throughput` skill |
-| **L** | **The status page** (optional) | what the human watches | the board, live PR state, the meter, the pipeline journals | only reads; blocks: plan limits and level · tokens since the reset · recent runs with each agent's last action · open rows with live CI and ETAs from stage medians (build ≈ 50 min, review ≈ 13, finish ≈ 22 on the originating project) · open PRs with their lane · commits not yet in production | `wave_status.py` |
+| **L** | **The status view** | what the human watches — the same view in every project | the usage meter, the harness transcripts, the pipeline journals, the board, deploy truth, the forge | only reads; six sections in a fixed order and fixed words, a missing input printed as `unknown` (*The status view*, below); ETAs from stage medians (build ≈ 50 min, review ≈ 13, finish ≈ 22 on the originating project) | `wave_status.py` behind `./wave-status` |
 | **M** | **Where the human comes in** | — | — | one batched question for rulings after the plan's critic; the "Read at dispatch" sections once per production deploy; their word for the production dispatch, an infrastructure apply, a purchase or an irreversible deletion, and any write the client can see. Nothing else waits on them | — |
 
 ---
@@ -209,6 +209,7 @@ All in a **state folder that survives a reboot** (practice 9) — never the harn
 | `prompts/<item>.md` | a short brief by reference to the plan file (engine D) | orchestrator |
 | `progress/<item>.md` | the five-line progress note: item · branch · PR · done · next | the agent |
 | `scheduled-jobs.md` | every scheduled job: id, schedule, prompt | orchestrator |
+| `wave-status` (project root) + its config | the status view's launcher, and the names of its inputs — board, deploy record, forge, harness config directories, thresholds (*The status view*) | orchestrator, once |
 | `BATCH/wave-N-retro.md` | the retro (practice 15) | orchestrator |
 | `HANDOFF-BUDGET-<stamp>.md` (repo root) | the baton a limit stop writes: every worktree with branch, uncommitted-file count and unpushed commits; each stopped item; each unfinished run with its script path; the reset time | the limit-stop hook |
 
@@ -232,6 +233,34 @@ All in a **state folder that survives a reboot** (practice 9) — never the harn
 | The final report | per item: done, already done or not done; PR and merge SHA; what a user sees; tests (counts, RED → GREEN); changed assertions and why; what is left. In a pipeline the stages also return the fixed schema (engine F) |
 
 **A brief** (engine D) names: the item ID and title; the branch to use exactly; the lane and base branch; the level; the files this agent owns; the IDs reserved for it; the governing documents to read in full; what "done" includes, with the monitoring and status surfaces; the rulings that apply, by number; the orchestrator's own pre-launch reads, timestamped, as stated facts ("the production read is DONE by the orchestrator; do NOT read it yourself"); a *Resuming* section (how to tell whether this item already ran — forge search for the branch, `git ls-remote` — and how to continue it; never a second branch). The brief says "build the plan's item X exactly, with the critic's fixes" and points at the plan file, so there is one copy of each brief.
+
+---
+
+## The status view
+
+One command at the project root, `wave-status`, shows the human everything this recipe runs — in the same sections and the same words in every project, so a human who watches two projects reads both at a glance. `./wave-status` refreshes it every 60 seconds (`watch -c -n60` or the platform's equivalent); `./wave-status --once` prints it once. Build it from the text; the contract is shared, the code is each project's own.
+
+**Rules.**
+- Read only: never write project state, call a model, or start or stop work.
+- Print every section's heading, always. A section whose input is missing, stale or broken prints `unknown — <why>` on one line; the other sections still render. Nothing the implementation says about itself (warnings, stack traces) reaches the screen, and the exit status is 0.
+- Print no secret, token or personal data; ids and counts only for anything a client holds.
+- Name the inputs in one per-project config file — board, deploy record, forge, harness config directories, thresholds — never in the code, so the same contract fits any project's layout.
+- Times in UTC (local time in the heading); durations as `2h 6m`; whole percentages.
+
+**Sections, in this order.**
+
+| # | Heading | Shows | Reads |
+|---|---|---|---|
+| 1 | *(heading line)* | `<UTC time> · <project> · wave status` | the clock, the config |
+| 2 | **Plan limits** | the level word — `GREEN` · `AMBER` · `RED` · `UNKNOWN` — with the thresholds in force; burn per hour and the projection at the short window's reset; one bar per window (the short window, the week for all models, the week per capped model) with its percent and time to reset; the meter's age; an override when one is set | the usage meter (practice 11, engine G) |
+| 3 | **Tokens since the weekly reset** | output, fresh input and cache read — for all sessions, and for this orchestrator with its agents | the harness transcripts |
+| 4 | **Runs** | running runs first: name · agents done/total · current stage · each running agent's last action · ETA from stage medians; then runs finished in the last 24 hours: name · agents · output tokens · duration · finished ago; a failed or stopped run marked so — a run no wave row names yet (a plan run, an audit) is listed too | the pipeline journals of every orchestrator session in the project, not only the current one |
+| 5 | **Waves** | the board (engine A) grouped `Wave 1 … N` — a finished wave folds to one line, `✓ Wave N  k/k done` — then `Ops`, `Waiting`, `Later`; columns item · status · title · PR · CI · ETA · note; a row that needs the human shows `waiting on you` in the ETA column | the board file |
+| 6 | **Repo** | the integration and release branches against the last successful dev and production deploys (`ahead of prod (<sha>, deployed <time>): release N · integration N`); open PRs with their lane and CI; merged today — a project that merges without PRs lists its merges | deploy truth (engine I), the forge |
+
+**Words.** Board statuses are engine A's (`queued` · `running` · `open` · `held` · `paused` · `blocked` · `failed` · `merged` · `done`); the groups and their order are the table's; the level words are practice 11's. Colour marks status and level words only. A project-specific section goes after **Repo**, never between these six.
+
+**Is an implementation consistent?** Run it once against fixtures: a board with one row of every status and every group, a finished wave and a held row; one running and one finished pipeline journal; a usage reading at amber; no forge. It is consistent when it prints the six headings in this order, folds the finished wave, shows the held row as `waiting on you`, shows the level as `AMBER`, prints the forge part of **Repo** as `unknown — <why>`, and exits 0.
 
 ---
 
@@ -320,6 +349,7 @@ Every rule above came from one of these. Add to the table the hour a new one lan
 | A read-only ops planner ran DELETE/UPDATE-capable scripts in dry-run mode against production | Read-only means read-only; the agent writes the script, the orchestrator reads it in full and runs it, dev first |
 | A post-deploy verify timed out on five dev deploys in a row and read as *cancelled*; nothing alarmed; the PR gate never ran that suite | A sweep reads the last deploy's job conclusions, and `cancelled` counts as failed; the alarm gap registered High-level |
 | A pipeline launched while the orchestrator's working directory was a worktree; its script was saved under that worktree's folder, invisible to the status page and the baton | Launch pipelines from the main checkout, or record the script path on the board row |
+| Two projects' status views drifted apart: one printed plan limits, tokens, runs, the board and the repo; the other only its board — and "no wave running" while a plan ran, because its view read wave boards only | One contract for the status view (*The status view*): six sections in a fixed order and fixed words, every heading always printed, `unknown — <why>` when an input is missing, runs that no wave row names listed under **Runs** |
 | Asked to update the exported process document "with more details", the orchestrator re-scoped the request twice — into moving code and into a shared kit — and was corrected both times | Do what was asked, in the place asked; a structural change is offered as a question, never folded into the plan |
 | An approval watcher waited for an approval review the forge cannot accept on your own PR; six PRs sat held until the human said "approved" in chat | Check that the approval signal can be given by that identity; prefer a separate identity for agent PRs; under merge-on-green-after-review nothing waits for an approval |
 | Watcher ticks on a model cost ~1M tokens each — 115M for 113 ticks — mostly to print "no open PRs"; the queue then sat idle for hours on a green budget because the ticks never read it | Polling on model-free timers; the hourly check reads the budget first and alarms *queue idle while green* |
@@ -370,7 +400,7 @@ Extends §30.4 and the §0.6 catalog (`core/umami-anti-patterns.md`).
 
 ## Session checklist (extends §15)
 
-**Before the first wave:** session-start audit after a fresh start or resume (merged current branch, uncommitted tracked changes, stale PRs, live background tasks, branch divergence, baton sweep — flags only) · state folder as the home of everything durable · preamble written from the project's rules, with the budget flag, checkpoint discipline, the lane test and read-only-means-read-only · the usage meter readable before anything launches · plan run: sweep → synthesize → critic, and **wait for the critic** · process-now items processed the same turn · rulings asked once, batched, priced, recommended first, written to the rulings file · the wave cut: one backlog item per row, IDs reserved through the ledger agent, lane and level per row, files owned, no two rows sharing a file · build gate GO · shared temporary storage checked by inode count · launched as one pipeline, build → review → finish per row; starting usage percentages on the wave's first row · queue check armed and listed in the scheduled-jobs file.
+**Before the first wave:** `./wave-status --once` prints its six sections (`unknown` where an input is missing) · session-start audit after a fresh start or resume (merged current branch, uncommitted tracked changes, stale PRs, live background tasks, branch divergence, baton sweep — flags only) · state folder as the home of everything durable · preamble written from the project's rules, with the budget flag, checkpoint discipline, the lane test and read-only-means-read-only · the usage meter readable before anything launches · plan run: sweep → synthesize → critic, and **wait for the critic** · process-now items processed the same turn · rulings asked once, batched, priced, recommended first, written to the rulings file · the wave cut: one backlog item per row, IDs reserved through the ledger agent, lane and level per row, files owned, no two rows sharing a file · build gate GO · shared temporary storage checked by inode count · launched as one pipeline, build → review → finish per row; starting usage percentages on the wave's first row · queue check armed and listed in the scheduled-jobs file.
 
 **Each queue check:** read the gate — STOP: confirm in-flight agents have checkpointed, end · GO: merge every reviewed, green PR; launch the next rows of the lowest unfinished wave if it has free slots; update the board; one line only if something changed · *queue idle while green* is an alarm.
 

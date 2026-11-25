@@ -5,7 +5,7 @@ description: Run a pile of buildable, independent work unattended as waves, per 
 
 # umami-wave — Run a wave session
 
-**Last synced:** 2026-10-21 from `recipes/wave-session.md` *Run* section (plan-before-build with a critic; build → independent review → finish per item; the budget guard and build gate in place of the retired watchdog; the hourly queue check; merge on green after review). Previously 2026-10-11. The procedure lives in the recipe, not here; re-derive this stub when the recipe's *Run* section changes shape.
+**Last synced:** 2026-11-24 from `recipes/wave-session.md` *Run* section (harness-native components first, per *Harness scope*). Previously 2026-10-21 (plan-before-build with a critic; build → independent review → finish per item; the budget guard and build gate in place of the retired watchdog; the hourly queue check; merge on green after review) and 2026-10-11. The procedure lives in the recipe, not here; re-derive this stub when the recipe's *Run* section changes shape.
 
 ## Invoke when
 
@@ -20,6 +20,7 @@ The human has a backlog of independent, buildable items with IDs and wants it bu
 ## Hard rules (non-negotiable)
 
 - The procedure is the recipe's; never improvise from memory of it.
+- Use the harness's own component wherever the recipe's *Harness scope* table names one (pipelines, stall restarts, the usage meter, the spawn hook, fail-fast, session views); build a recipe script only for a row the harness leaves empty. The native pause at a usage limit does not replace the budget guard.
 - **No wave launches before the critic returns.** "Most of the queue doesn't depend on the sweep" is the failure, not a reason.
 - One series of batched prompts. Never a lone yes/no interruption; fold every question into a batch, recommended option first, priced. Answers go to the numbered rulings file.
 - Every wave row is one backlog item; its lane (and base branch), level, owned files and reserved IDs are written into the brief before launch; no agent decides them.

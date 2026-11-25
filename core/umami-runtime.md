@@ -611,6 +611,7 @@ These are heuristics, not hard rules. Your project may justify slower budgets (l
 | Contributors skipping local CI before pushing | Inner loop too slow; CI catches issues that should have been caught locally — but at 25× the cost |
 | "It works on my machine" reports increasing | Dev environment diverging from CI environment; either CI is wrong or local is — needs resolution |
 | Pipeline failures dismissed without investigation | Flaky tests becoming normalized; gates losing trust; eventually a real regression gets dismissed too |
+| Automatic retries that nobody counts | A bounded retry (once per lane, on a named failure class such as a load timeout) is a legitimate stopgap while the flake is fixed at its root. An uncounted one hides flakiness. Count every retry, and remove the retry rule when it fires more than about once a week or the root fix lands |
 | Identical gate configuration across multiple projects regardless of context | Pipeline cargo-culted from one project to another without local justification |
 | No gate has caught a real regression in N months | Gates documenting aspiration, not catching incidents |
 | Audit ran; every gate Kept with no per-gate justification recorded | Audit-without-disposition pattern (see §0.6 "Documentation theater" applied to pipeline). All-Keep *can* be the honest outcome — but only when each Keep cites a recent catch or a live threat; a blanket Keep with no citations is the audit rubber-stamping itself |

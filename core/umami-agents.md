@@ -524,6 +524,8 @@ Some actions are HARD-blocked regardless of whether the agent is interactive, sc
 
 Document these explicitly in the gate table with a note that the severity is HARD-mode-independent.
 
+**In unattended sessions, HARD fails fast.** A HARD gate in a session nobody is watching is a prompt nobody answers: the agent freezes, and everything waiting on it freezes too. When no human is present, an approval-gated action is **refused at once**, the agent reports it as blocked with the step it would have taken, and it moves to other work or stops. It never waits. The gate stays HARD; only the waiting is removed. *Reference implementation (Claude Code):* a `PreToolUse` hook that returns a deny decision for any action matching an `ask` rule when the session is non-interactive or a background agent.
+
 **Logging summary — companion table.** The Retention column names each layer's *default*, which per §4 agent-log discipline is a starting position to replace with an explicit policy, not a policy itself ("permanent" and "until deleted" are handwaves):
 
 | Log | Location | Retention |

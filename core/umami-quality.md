@@ -474,6 +474,8 @@ The three-layer model determines *who reviews*; the risk taxonomy determines *wh
 
 **The principle: more risk → more guardrails.** The auto-merge threshold lives in the project's `CLAUDE.md` (or equivalent process doc) so the team agrees explicitly on what merges without humans. Visibility matters more than the specific cutoff.
 
+**An AI pre-screen is a cheap pass, not a reviewer agent.** At Low, the pre-screen is a small, cheap model reading the diff and returning flags only (§14 model routing). Running a full reviewer agent on every Low change makes the row too expensive to keep, and teams then drop the pre-screen entirely. If even a cheap pass per change is unaffordable at the project's velocity, sample it and record the sample rate; don't skip it silently.
+
 **New dependencies default to High, not Medium.** A lockfile version bump of an existing package is Trivial; introducing a *new* package is a supply-chain decision an AI pre-screen reading the diff cannot vet — the risk lives in the package, not in the lockfile line, and typosquats ship working code precisely so the diff looks fine (see §6 *Supply Chain Attack Defenses*). Human eyes verify the exact name, publisher, and registry identity before merge. Downgrade to Medium only when a private-registry allowlist already gates the install path.
 
 **At solo scale, the model degrades gracefully — use the degraded form, don't build the bureaucracy.** For a solo developer, Layer 3's "human review" is you, and the Critical row's "full team review" is you, slower and on a different day. The useful solo mapping: keep Layer 1 mechanical gates absolute, run Layer 2 AI pre-screen on everything non-Trivial, and spend your own attention only on Medium+ changes — flags doc first, diff second. Skip the sampling protocol and the taxonomy file until a second reviewer exists; classify by habit, not by artifact. What survives at every scale is the discipline of asking *what kind of change is this* before deciding how much attention it gets.
@@ -529,6 +531,8 @@ Same-family review (Claude reviewing Claude, GPT reviewing GPT) tends to validat
 - Cost caps per §9.7 that account for parallel-review token spend
 - A protocol for handling disagreement (default: any High-tier disagreement escalates to human; same as auto-review's High flag)
 - A record of agreement/disagreement rates per project so the discipline calibrates
+
+**A different model is not a different provider.** Two models from the same vendor (a flagship and a faster sibling, or two generations of one family) share training lineage. Routing review to a sibling model helps, but it does not meet this practice. Say which one a project runs, so nobody believes they have cross-provider review when they have same-family review.
 
 **Watch signals (cross-provider specific):**
 
